@@ -1,0 +1,26 @@
+font = Fira Code SemiBold
+font-size = 18
+
+anchor = top
+width = 100%
+height = 100%
+
+outline-width = 0
+border-width = 0
+min-input-width = 130
+result-spacing = 10
+padding-top = 10%
+padding-bottom = 0
+padding-left = 40%
+padding-right = 0
+
+prompt-text = "Run : "
+num-results = 15
+
+background-color = #000A
+text-color = #4b81ab
+input-color = #4b81ab
+selection-color = #a45fbe
+selection-match-color = #a45fbe
+
+clip-to-padding = fa
