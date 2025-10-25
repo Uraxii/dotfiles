@@ -41,7 +41,8 @@ require('lazy').setup({
   require 'plugins.gitsigns', -- Detect tabstop and shiftwidth automatically
 
   -- [[ LANGUAGE SERVER SETUP ]]
-  require 'plugins.lsp-config', -- Configures language servers
+  -- require 'plugins.lsp-config', -- Configures language servers
+  require 'plugins.mason',
   require 'plugins.lazydev', -- Configures Lua language servers
   require 'plugins.conform', -- Text Autoformatter
   require 'plugins.nvim-cmp', -- Text completion engine

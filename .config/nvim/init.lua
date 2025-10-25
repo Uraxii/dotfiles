@@ -1,7 +1,9 @@
-require 'vim_settings'
-require 'keymaps'
-require 'autocommands'
-require 'lazy_plugin_manager_setup'
+require 'config.globals'
+require 'config.options'
+require 'config.keymaps'
+require 'config.autocommands'
+require 'config.lsp'
+require 'config.lazy_plugin_manager'
 
 -- require 'show_file_explorer_plugin'
 
