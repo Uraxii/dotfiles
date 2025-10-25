@@ -23,6 +23,7 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 -- Configurations for each plugin can be found in the respective <plugin>.lua file.
 
+
 require('lazy').setup({
   -- [[ THEMES ]]
   -- require 'plugins.themes.tokyonight',
@@ -41,7 +42,7 @@ require('lazy').setup({
   require 'plugins.gitsigns', -- Detect tabstop and shiftwidth automatically
 
   -- [[ LANGUAGE SERVER SETUP ]]
-  require 'plugins.lsp-config', -- Configures language servers
+  require 'plugins.mason', -- LSP Server Manager
   require 'plugins.lazydev', -- Configures Lua language servers
   require 'plugins.conform', -- Text Autoformatter
   require 'plugins.nvim-cmp', -- Text completion engine
