@@ -1,4 +1,14 @@
+# Useful Commands
+
+# Reloads Z-Shell config witout opening a new shell.
+# source ~/.zshrc
+
+
+# Export Environment Variables
+
 export PATH="$HOME/.local/bin:$PATH"
+
+# Command Line Prompt
 
 # Use powerline
 USE_POWERLINE="true"
@@ -7,11 +17,15 @@ USE_POWERLINE="true"
 #    is not a diamond
 HAS_WIDECHARS="false"
 
-# Use Starship Prompt
+
+## Starship
+
 #eval "$(starship init zsh)"
 
-# Use Oh My Posh prompt
+## Oh My Posh
+
 eval "$(oh-my-posh init zsh --config ~/.config/omp/uraxii_atomic.omp.toml)"
+
 # Applications
 
 ## Zoxide
