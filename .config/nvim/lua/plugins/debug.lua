@@ -110,9 +110,10 @@ return {
 
     dap.configurations.gdscript = {
       type = 'godot',
-      request = 'Launch Main Scene',
-      -- Specific to GDScript
+      request = 'launch',
+      name = 'Launch scene',
       project = '${workspaceFolder}',
+      launch_scene = true,
     }
   end,
 }
