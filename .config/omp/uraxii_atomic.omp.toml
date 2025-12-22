@@ -225,6 +225,10 @@ version = 3
 
     [blocks.segments.properties]
       linux = ''
+      redhat = '󱄛'
+      arch = '󰣇'
+      manjaro = '󱘊'
+      ubuntu = '󰕈'
       macos = ''
       windows = ''
 
