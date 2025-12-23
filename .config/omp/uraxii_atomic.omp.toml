@@ -217,7 +217,7 @@ version = 3
   [[blocks.segments]]
     leading_diamond = ''
     trailing_diamond = '<transparent,background></>'
-    template = ' {{ if .WSL }}WSL at {{ end }}{{.Icon}} '
+    template = ' {{ if .WSL }}{{.Icon}}(WSL){{ end }} '
     foreground = '#222222'
     background = '#b2bec3'
     type = 'os'
