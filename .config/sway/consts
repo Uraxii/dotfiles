@@ -1,0 +1,9 @@
+### Variables
+set $wallpaper /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png
+set $scripts_dir ~/.config/sway/scripts
+
+### Scripts
+set $run_system_idle_monitor $scripts_dir/idle_monitor.sh
+
+set $run_system_lock $scripts_dir/lock_system.sh
+

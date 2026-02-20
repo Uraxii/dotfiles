@@ -1,0 +1,27 @@
+### Default Applications
+set $term ghostty
+
+# Your preferred application launcher
+set $menu wmenu-run
+
+### Swaybg
+# https://man.archlinux.org/man/swaybg.1.en
+set $wallpaper ~/.local/share/wallpaper
+set $wallpaper_mode fill
+
+
+### Power
+set $lock_system_delay 10
+set $turn_display_off_delay 600
+
+
+### Keybinds
+# Logo key. Use Mod1 for Alt.
+set $mod Mod4
+
+# Home row direction keys, like vim
+set $left h
+set $down j
+set $up k
+set $right l
+

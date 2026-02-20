@@ -1,0 +1,16 @@
+include consts
+include prefs
+include modules/*
+
+set $theme makima
+include themes/$theme/*
+
+
+# Default config for sway in /etc/sway/config
+#
+# Copy it to ~/.config/sway/config to restore defaults.
+#
+# Read `man 5 sway` for a complete reference.
+
+include /etc/sway/config.d/*
+

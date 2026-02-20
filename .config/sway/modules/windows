@@ -1,0 +1,11 @@
+### Window Rules
+# Opacity
+for_window [class="Gostty"] opacity 0.92
+
+
+# Borders
+smart_borders on
+gaps inner 5
+gaps outer 3
+default_border pixel 3
+
