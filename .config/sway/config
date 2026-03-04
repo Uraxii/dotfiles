@@ -1,9 +1,10 @@
+set $theme makima
+include themes/$theme/*
+
 include consts
 include prefs
 include modules/*
 
-set $theme makima
-include themes/$theme/*
 
 
 # Default config for sway in /etc/sway/config

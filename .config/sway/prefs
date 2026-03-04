@@ -2,7 +2,28 @@
 set $term ghostty
 
 # Your preferred application launcher
-set $menu wmenu-run
+set $bemenu_opts "\
+bemenu \
+--ignorecase \
+--scrollbar autohide \
+--prompt Launch: \
+--width-factor 0.75 \
+--margin 4 \
+--line-height 36 \
+--ch 12 \
+--cw 3 \
+--list 0 \
+--tf '$fg' \
+--bdr '$yellow' \
+--hb '$fg' \
+--hf '$bg' \
+--scf '$fg' \
+"
+
+set $menu j4-dmenu-desktop --dmenu=$bemenu_opts
+
+set $explorer thunar
+set $browser io.github.zen_browser.zen
 
 ### Swaybg
 # https://man.archlinux.org/man/swaybg.1.en
