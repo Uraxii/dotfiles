@@ -22,9 +22,9 @@ bar {
     status_command while date +'%d %X'; do sleep 1; done
 
     colors {
-        statusline #ffffff
-        background #323232
-        inactive_workspace #32323200 #32323200 #5c5c5c
+        statusline $fg
+        background $bg
+        inactive_workspace #32323200 #32323200 $gray
     }
 }
 
