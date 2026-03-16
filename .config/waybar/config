@@ -87,6 +87,7 @@
         "tooltip-format-wifi": "{essid}\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
         "tooltip-format-ethernet": "⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
         "tooltip-format-disconnected": "Disconnected",
+        "on-click": "networkmanager_dmenu",
         "interval": 3
     },
 

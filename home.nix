@@ -20,6 +20,8 @@
     # Status bar & launcher
     waybar
     wofi
+    networkmanager-dmenu
+    pavucontrol
 
     # Applications
     ghostty
