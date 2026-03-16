@@ -1,0 +1,60 @@
+/* Makima/Gruvbox theme */
+
+* {
+    font-family: "0xProto Nerd Font", monospace;
+    font-size: 16px;
+}
+
+window {
+    background-color: #282828;
+    border: 2px solid #d79921;
+    border-radius: 8px;
+}
+
+#input {
+    background-color: #504945;
+    color: #ebdbb2;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px;
+}
+
+#input:focus {
+    border: 1px solid #d79921;
+}
+
+#scroll {
+    margin: 0 8px 8px 8px;
+}
+
+#inner-box {
+    background-color: transparent;
+}
+
+#outer-box {
+    background-color: transparent;
+}
+
+#entry {
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: #ebdbb2;
+}
+
+image {
+    margin-right: 8px;
+}
+
+#entry:selected {
+    background-color: #ebdbb2;
+    color: #282828;
+}
+
+#text {
+    color: #ebdbb2;
+}
+
+#text:selected {
+    color: #282828;
+}

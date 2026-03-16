@@ -1,0 +1,7 @@
+width=600
+lines=12
+prompt=Launch:
+allow_images=true
+insensitive=true
+allow_markup=true
+term=ghostty
