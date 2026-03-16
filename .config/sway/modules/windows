@@ -1,6 +1,6 @@
 ### Window Rules
 # Opacity
-for_window [class="Gostty"] opacity 0.92
+for_window [app_id="com.mitchellh.ghostty"] opacity 0.92
 
 
 # Borders
