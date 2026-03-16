@@ -3,7 +3,7 @@
 # Colors
 set $bg          #282828
 set $bg_2        #504945
-set $fg          #ebdbb2
+set $fg          #f0e8d0
 set $fg_1        #FBF1C7
 set $fg_2        #D5C4A1
 set $red         #cc241d

@@ -13,7 +13,7 @@ window {
 
 #input {
     background-color: #504945;
-    color: #ebdbb2;
+    color: #f0e8d0;
     border: none;
     border-radius: 4px;
     padding: 8px 12px;
@@ -39,7 +39,7 @@ window {
 #entry {
     padding: 6px 12px;
     border-radius: 4px;
-    color: #ebdbb2;
+    color: #f0e8d0;
 }
 
 image {
@@ -47,12 +47,12 @@ image {
 }
 
 #entry:selected {
-    background-color: #ebdbb2;
+    background-color: #f0e8d0;
     color: #282828;
 }
 
 #text {
-    color: #ebdbb2;
+    color: #f0e8d0;
 }
 
 #text:selected {
