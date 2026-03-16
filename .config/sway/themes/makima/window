@@ -1,6 +1,6 @@
 ## Setting Overrides
 
-set $wallpaper = ~/.config/sway/themes/makima/images/makima.png
+set $wallpaper ~/.config/sway/themes/makima/images/makima.png
 
 # Borders
 default_border pixel 1
