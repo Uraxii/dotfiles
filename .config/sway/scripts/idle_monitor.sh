@@ -9,10 +9,10 @@ do
     esac
 done
 
-system_lock_script="$HOME/.config/sway/scipts/lock.sh"
+system_lock_script="$HOME/.config/sway/scripts/lock_system.sh"
 
 exec swayidle -w \
          timeout $lock_delay $system_lock_script \
-         timeout $display_off_delay 'swaymsg "output * power off"' resume 'swaymsg "output * power on"'.
+         timeout $display_off_delay 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
          before-sleep $system_lock_script
 
