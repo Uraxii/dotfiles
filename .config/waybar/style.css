@@ -1,0 +1,169 @@
+/* V2.5a adapted for Makima/Gruvbox */
+
+@define-color bg  #282828;
+@define-color bg2 #504945;
+@define-color fg  #ebdbb2;
+@define-color ia1 #1d2021;
+
+* {
+    border-radius: 1px;
+    font-family: "Hack Nerd Font", monospace;
+    font-size: 18px;
+    font-weight: bold;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: transparent;
+}
+
+#waybar > box {
+    border-radius: 5px;
+    background-color: @bg;
+    box-shadow: 0 0 2px 1px @ia1;
+    margin: 3px 4px 4px 4px;
+    min-height: 0px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+/* --- Groups --- */
+
+#left1,
+#left2,
+#left3 {
+    color: @fg;
+    background: @bg2;
+    box-shadow: 1px 1px 3px 0px @ia1;
+    margin: 1px 4px 1px 4px;
+    border-radius: 5px;
+    padding: 0;
+}
+
+#left1 widget,
+#left2 widget,
+#left3 widget {
+    margin: 0;
+    padding: 0;
+}
+
+#right,
+#right1 {
+    color: @fg;
+    background: @bg2;
+    box-shadow: 1px 1px 3px 0px @ia1;
+    border-radius: 5px;
+    margin: 1px 4px 1px 4px;
+    padding: 0px;
+}
+
+/* --- Workspaces --- */
+
+#workspaces {
+    background-color: @bg2;
+    box-shadow: 1px 1px 3px 0px @ia1;
+    margin: 1px 4px 1px 4px;
+    border-radius: 5px;
+}
+
+#workspaces button {
+    all: initial;
+    min-width: 0;
+    color: @fg;
+    background-color: @bg;
+    padding: 0px 8px;
+    margin: 1px 3px;
+    border-radius: 5px;
+}
+
+#workspaces button.focused {
+    background-color: @fg;
+    color: @bg;
+}
+
+#workspaces button.urgent {
+    background-color: #cc241d;
+    color: @fg;
+}
+
+#workspaces button:hover {
+    background-color: @fg;
+    color: @bg;
+}
+
+/* --- General modules --- */
+
+#clock,
+#power-profiles-daemon,
+#network,
+#pulseaudio,
+#memory,
+#cpu,
+#battery,
+#tray {
+    min-width: 14px;
+    padding: 0 6px;
+    margin: 0;
+}
+
+/* --- Hover --- */
+
+#clock:hover,
+#power-profiles-daemon:hover,
+#network:hover,
+#pulseaudio:hover,
+#memory:hover,
+#cpu:hover,
+#battery:hover {
+    background-color: @fg;
+    color: @bg;
+    border-radius: 5px;
+}
+
+/* --- Tooltips --- */
+
+tooltip {
+    padding: 4px;
+    background: @bg;
+    font-size: 10px;
+    border: 1.5px solid alpha(@fg, 0.8);
+    border-radius: 8px;
+}
+
+tooltip label {
+    color: @fg;
+    font-weight: normal;
+}
+
+/* --- Battery states --- */
+
+#battery.good {
+    color: #98971a;
+}
+
+#battery.low {
+    color: #cc241d;
+}
+
+#battery.critical:not(.charging) {
+    color: #cc241d;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: steps(12);
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#battery.charging {
+    color: @fg;
+}
+
+@keyframes blink {
+    to {
+        color: @bg;
+    }
+}
+
