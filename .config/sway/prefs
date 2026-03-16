@@ -1,26 +1,12 @@
 ### Default Applications
 set $term ghostty
 
-# Your preferred application launcher
-set $bemenu_opts "\
-bemenu \
---ignorecase \
---scrollbar autohide \
---prompt Launch: \
---width-factor 0.75 \
---margin 4 \
---line-height 36 \
---ch 12 \
---cw 3 \
---list 0 \
---tf '$fg' \
---bdr '$yellow' \
---hb '$fg' \
---hf '$bg' \
---scf '$fg' \
-"
+### Font
+# Note: only applies to sway (titlebars, borders). Waybar and wofi have their own CSS.
+font pango:0xProto Nerd Font 12
 
-set $menu j4-dmenu-desktop --dmenu=$bemenu_opts
+# Your preferred application launcher
+set $menu wofi --show drun
 
 set $explorer thunar
 set $browser io.github.zen_browser.zen
