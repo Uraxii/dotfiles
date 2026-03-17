@@ -141,7 +141,7 @@ tooltip label {
 /* --- Battery states --- */
 
 #battery.good {
-    color: #98971a;
+    color: @fg;
 }
 
 #battery.low {
