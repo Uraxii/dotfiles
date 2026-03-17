@@ -22,6 +22,10 @@ set $lock_system_delay 10
 set $turn_display_off_delay 600
 
 
+### Cursor
+seat seat0 xcursor_theme posy-black 24
+
+
 ### Keybinds
 # Logo key. Use Mod1 for Alt.
 set $mod Mod4
