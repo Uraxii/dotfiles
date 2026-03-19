@@ -3,6 +3,7 @@
 
 -- Lua files located in root/lsp
 vim.lsp.enable {
+  'pyright',
   'gdscript',
   'lua_ls',
 }
