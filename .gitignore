@@ -1,2 +1,5 @@
 
 .claude/settings.local.json
+.config/configstore
+.config/uv
+
