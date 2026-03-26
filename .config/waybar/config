@@ -23,7 +23,7 @@
 
     "group/left2": {
         "orientation": "inherit",
-        "modules": ["power-profiles-daemon", "network"]
+        "modules": ["power-profiles-daemon", "bluetooth", "network"]
     },
 
     "group/right1": {
@@ -77,6 +77,16 @@
                 "today": "<span color='#cc241d'><b>{}</b></span>"
             }
         }
+    },
+
+    "bluetooth": {
+        "format": " 󰂯 ",
+        "format-connected": " 󰂱 ",
+        "format-disabled": " 󰂲 ",
+        "tooltip-format": "{controller_alias}\n{num_connections} connected",
+        "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+        "on-click": "blueman-manager"
     },
 
     "network": {

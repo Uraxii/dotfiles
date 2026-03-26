@@ -92,6 +92,7 @@ window#waybar.hidden {
 
 #clock,
 #power-profiles-daemon,
+#bluetooth,
 #network,
 #pulseaudio,
 #memory,
@@ -107,6 +108,7 @@ window#waybar.hidden {
 
 #clock:hover,
 #power-profiles-daemon:hover,
+#bluetooth:hover,
 #network:hover,
 #pulseaudio:hover,
 #memory:hover,
