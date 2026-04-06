@@ -10,20 +10,14 @@
     "margin-left": 0,
 
     "modules-left": [
-        "group/left1",
         "group/left2"
     ],
     "modules-center": ["sway/workspaces"],
     "modules-right": ["group/right1", "group/right"],
 
-    "group/left1": {
-        "orientation": "inherit",
-        "modules": ["clock"]
-    },
-
     "group/left2": {
         "orientation": "inherit",
-        "modules": ["power-profiles-daemon", "bluetooth", "network"]
+        "modules": ["power-profiles-daemon", "custom/sep", "bluetooth", "custom/sep", "network"]
     },
 
     "group/right1": {
@@ -33,7 +27,13 @@
 
     "group/right": {
         "orientation": "inherit",
-        "modules": ["pulseaudio", "memory", "cpu", "battery"]
+        "modules": ["pulseaudio", "custom/sep", "backlight", "custom/sep", "memory", "custom/sep", "cpu", "custom/sep", "battery", "custom/sep", "clock"]
+    },
+
+    "custom/sep": {
+        "format": "|",
+        "interval": "once",
+        "tooltip": false
     },
 
     "sway/workspaces": {
@@ -136,6 +136,13 @@
             "low": 20,
             "critical": 10
         }
+    },
+
+    "backlight": {
+        "format": " {icon} {percent}%",
+        "format-icons": ["󰃞", "󰃟", "󰃠"],
+        "on-scroll-up": "brightnessctl set 5%+",
+        "on-scroll-down": "brightnessctl set 5%-"
     },
 
     "tray": {

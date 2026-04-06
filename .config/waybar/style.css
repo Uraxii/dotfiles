@@ -48,6 +48,14 @@ window#waybar.hidden {
     padding: 0;
 }
 
+
+#custom-sep {
+    color: alpha(@fg, 0.3);
+    padding: 0 2px;
+    margin: 0;
+    font-size: 14px;
+}
+
 #right,
 #right1 {
     color: @fg;
@@ -95,6 +103,7 @@ window#waybar.hidden {
 #bluetooth,
 #network,
 #pulseaudio,
+#backlight,
 #memory,
 #cpu,
 #battery,
