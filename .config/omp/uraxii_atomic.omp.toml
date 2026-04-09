@@ -239,13 +239,13 @@ version = 3
     background = '#f36943'
     type = 'battery'
     style = 'powerline'
-    background_templates = ['{{if eq "Charging" .State.String}}#b8e994{{end}}', '{{if eq "Discharging" .State.String}}#fff34e{{end}}', '{{if eq "Full" .State.String}}#33DD2D{{end}}']
+    background_templates = ['{{if eq "Charging" .State.String}}#b8e994{{end}}', '{{if eq "Discharging" .State.String}}{{if ge .Percentage 50}}#77DD77{{end}}{{end}}', '{{if eq "Full" .State.String}}#77DD77{{end}}']
     invert_powerline = true
 
     [blocks.segments.properties]
-      charged_icon = ' '
-      charging_icon = ' '
-      discharging_icon = ' '
+      charged_icon = '󰁹 '
+      charging_icon = '󰂄 '
+      discharging_icon = '󰁹 '
 
   [[blocks.segments]]
     leading_diamond = ''
