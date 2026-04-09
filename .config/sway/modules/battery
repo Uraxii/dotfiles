@@ -1,0 +1,3 @@
+### Battery monitoring and notifications
+exec mako
+exec $run_battery_monitor

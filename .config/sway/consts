@@ -7,3 +7,5 @@ set $run_system_idle_monitor $scripts_dir/idle_monitor.sh
 
 set $run_system_lock $scripts_dir/lock_system.sh
 
+set $run_battery_monitor $scripts_dir/battery_monitor.sh
+
