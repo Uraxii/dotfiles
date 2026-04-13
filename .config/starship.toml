@@ -215,7 +215,16 @@ format='[$symbol($percentage)]($style) '
 
 
 [[battery.display]]
-threshold = 1
+threshold = 10
+style = "bold red"
+
+[[battery.display]]
+threshold = 50
+style = "bold yellow"
+
+[[battery.display]]
+threshold = 100
+style = "bold green"
 
 
 [fill]
