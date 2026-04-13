@@ -26,6 +26,14 @@ HAS_WIDECHARS="false"
 
 eval "$(oh-my-posh init zsh --config ~/.config/omp/uraxii_atomic.omp.toml)"
 
+# Key Bindings
+
+bindkey "^[[H"    beginning-of-line   # Home
+bindkey "^[[F"    end-of-line         # End
+bindkey "^[[3~"   delete-char         # Del
+bindkey "^[[1;5C" forward-word        # Ctrl+Right
+bindkey "^[[1;5D" backward-word       # Ctrl+Left
+
 # Applications
 
 ## Zoxide
