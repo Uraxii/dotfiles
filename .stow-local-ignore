@@ -22,3 +22,5 @@ _darcs
 ^/LICENSE.*
 
 scrpits
+
+\.claude/settings\.local\.json
