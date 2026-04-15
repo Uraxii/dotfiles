@@ -36,9 +36,18 @@ bindkey "^[[1;5D" backward-word       # Ctrl+Left
 
 # Applications
 
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# opencode
+export PATH=/home/nikki/.opencode/bin:$PATH
+
 ## Zoxide
 
 # --cmd cd allows you to use cd instead of z/zi
 # Initialized at the end of .zshrc (zoxide requires this)
 export _ZO_DOCTOR=0
 eval "$(zoxide init --cmd cd zsh)"
+
+
