@@ -1,7 +1,8 @@
 # Message Log
 
-All inter-agent communication is logged here chronologically. This replaces per-agent inboxes for
-same-session work. Individual `inbox.md` files are retained for cross-session async communication only.
+Same-session sync comm within single pipeline run. Append-only.
+
+Cross-session async → inbox system: `agents/shared/communication-mode.md`.
 
 ## Format
 

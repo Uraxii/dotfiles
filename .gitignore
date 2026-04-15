@@ -1,5 +1,13 @@
 
-.claude/settings.local.json
+.claude/*local*
+.config/opencode/projects/*
+!.config/opencode/projects/.gitkeep
 .config/configstore
 .config/uv
+.config/opencode/plans/*
+!.config/opencode/plans/.gitkeep
+.config/opencode/memory/*
+!.config/opencode/memory/.gitkeep
+.config/opencode/inbox/
+messages.md
 
