@@ -1,7 +1,7 @@
 ---
 name: architect
 description: Designs system architecture, patterns, tech choices. ADRs + API contracts.
-tools: read, grep, find, ls, write
+tools: Read, Write, Grep, Glob
 tier: mid
 thinking: high
 output: design.md

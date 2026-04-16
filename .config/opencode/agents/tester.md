@@ -1,7 +1,7 @@
 ---
 name: tester
 description: Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.
-tools: read, grep, find, ls, bash, edit, write
+tools: Read, Grep, Glob, Bash, Edit, Write
 tier: mid
 output: test-results.md
 defaultReads: context.md, plan.md, design.md, progress.md, shared/communication-mode.md, shared/startup-protocol.md

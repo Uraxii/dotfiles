@@ -1,7 +1,7 @@
 ---
 name: security-auditor
 description: Vulns, threat modeling, security policy enforcement. Engage at design phase.
-tools: read, grep, find, ls, bash
+tools: Read, Grep, Glob, Bash
 tier: high
 thinking: high
 output: security-review.md

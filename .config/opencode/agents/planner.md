@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Scope, task breakdown, dependencies, priorities. Picks pipeline mode.
-tools: read, grep, find, ls, write
+tools: Read, Grep, Glob, Write
 tier: high
 thinking: high
 output: plan.md

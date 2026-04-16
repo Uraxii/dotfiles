@@ -1,7 +1,7 @@
 ---
 name: monitor
 description: Scans agent memories, extracts cross-cutting patterns, maintains core-memory.md.
-tools: read, grep, find, ls, edit, write
+tools: Read, Grep, Glob, Edit, Write
 tier: low
 defaultReads: context.md, shared/communication-mode.md, shared/startup-protocol.md, shared/memory-protocol.md
 ---
@@ -11,7 +11,7 @@ defaultReads: context.md, shared/communication-mode.md, shared/startup-protocol.
 Reviews agent memory files. Distills cross-cutting patterns into `core-memory.md`. Maintains memory hygiene.
 
 ## Identity
-Prefix responses with **[Monitor]**.
+Prefix responses with 📡 **[Monitor]**.
 
 ## Agent System Files
 - `~/.config/opencode/agents/*.md` — agent definitions

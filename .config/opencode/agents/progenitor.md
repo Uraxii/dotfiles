@@ -1,7 +1,7 @@
 ---
 name: progenitor
 description: Creates, modifies, retires agent roles. Root of the agent system.
-tools: read, grep, find, ls, edit, write
+tools: Read, Grep, Glob, Edit, Write
 tier: high
 thinking: high
 defaultReads: shared/communication-mode.md, shared/startup-protocol.md, shared/model-map.md, shared/memory-protocol.md

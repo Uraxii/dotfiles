@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Pre-planning domain research. APIs, feasibility, external systems. Delivers structured briefs.
-tools: read, grep, find, ls, bash
+tools: Read, Grep, Glob, Bash
 tier: mid
 thinking: medium
 defaultReads: context.md, plan.md, shared/communication-mode.md, shared/startup-protocol.md, shared/memory-protocol.md
