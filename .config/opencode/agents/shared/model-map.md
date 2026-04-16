@@ -29,7 +29,7 @@ Agents specify `tier` in frontmatter. Resolve to vendor model below.
 | skeptic | high |
 | architect | mid |
 | developer | mid |
-| orchestrator | mid |
+
 | researcher | mid |
 | tester | mid |
 | ux-designer | mid |
@@ -37,4 +37,4 @@ Agents specify `tier` in frontmatter. Resolve to vendor model below.
 | monitor | low |
 
 ## Resolution
-Orchestrator reads active vendor → resolves tier → spawns agent w/ correct model.
+Meta-agent (orchestrator) reads active vendor → resolves tier → spawns agent w/ correct model.

@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Reviews code and PRs for quality, consistency, security, performance. Approves or requests changes.
-tools: read, grep, find, ls
+tools: Read, Grep, Glob
 tier: high
 thinking: high
 output: code-review.md

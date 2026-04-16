@@ -1,7 +1,7 @@
 ---
 name: developer
 description: Writes production code. Implements Architect designs. Bug fixes, features, refactors.
-tools: read, grep, find, ls, bash, edit, write
+tools: Read, Write, Edit, Grep, Glob, Bash
 tier: mid
 thinking: medium
 defaultReads: context.md, plan.md, design.md, shared/communication-mode.md, shared/startup-protocol.md, shared/memory-protocol.md
