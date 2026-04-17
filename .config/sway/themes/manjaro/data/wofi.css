@@ -1,7 +1,7 @@
 /* Manjaro theme */
 
 * {
-    font-family: "0xProto Nerd Font", monospace;
+    font-family: "{{FONT}}", monospace;
     font-size: 16px;
 }
 

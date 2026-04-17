@@ -1,8 +1,9 @@
-set $theme makima
-include themes/$theme/*
-
 include consts
 include prefs
+include themes/$theme/*
+
+exec_always ~/.config/sway/scripts/set-theme.sh $theme $font_family
+
 include modules/*
 
 
