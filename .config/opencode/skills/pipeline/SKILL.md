@@ -55,11 +55,11 @@ No fixed modes. You (Orchestrator) pick which roles run, based on Brief.
 | `researcher`     | Brief touches unfamiliar files/libs + no project-index coverage.            |
 | `planner`        | Multi-item Brief OR ambiguous scope. Skip for single clear change.          |
 | `architect`      | New data shape, schema change, state machine, new module boundary.          |
-| `ux-designer`    | UI surface change (visual, interaction, haptics, new component).            |
 | `reviewer`       | Code change > ~50 LoC OR crosses module boundary OR touches shared utils.   |
 | `security-auditor` | External input, auth, crypto, storage, network, permissions, native code.  |
 | `tester`         | Prod code change + existing test coverage OR new behavior needs regression. |
 | `monitor`        | Cross-cutting systemic concern (rare).                                      |
+| `/frontend-design` | UI surface change (visual, interaction, new component). Skill, not agent — invoke inline via `/frontend-design` before Developer. |
 
 **Ops-style short path** — release / PR-merge / dep bump / config sync / pure docs:
 - Dev → Skeptic → Friction. Skip Reviewer, Security, Tester, Planner.
@@ -73,7 +73,7 @@ State plan ≤ 5 lines:
 
 ```
 **[Orchestrator]** Plan:
-- Roles: planner, architect, ux, skeptic(D), dev, reviewer, skeptic(C), tester, friction (9)
+- Roles: planner, architect, skeptic(D), dev, reviewer, skeptic(C), tester, friction (8)
 - Execution: inline (spawn [Reviewer ∥ Skeptic(C) ∥ Security] if diff > 500 LoC)
 - Expected loops: 1 design, 1 code
 - Est. tokens: ~250k  (inline default; multiply ×4-5 if all spawned)
@@ -105,9 +105,8 @@ If est ≤ 200k or Brief = single bug: proceed silent.
 ## Sequencing rules
 
 - Researcher before Planner (if present).
-- Planner before Architect/UX (if present).
-- Architect + UX can run parallel-inline (same session, both sections) or parallel-spawn (two agents, one message).
-- Skeptic(design) after Architect+UX both done.
+- Planner before Architect (if present).
+- Skeptic(design) after Architect done.
 - Developer after all design-phase gates approve.
 - Reviewer + Skeptic(code) + Security — inline-sequential default; spawn-parallel if diff large.
 - Tester after code gates approve.

@@ -1,0 +1,6 @@
+## Setting Overrides
+
+set $wallpaper ~/.config/sway/themes/manjaro/images/78101446-smooth-sailing-with-manjaro-wallpaper.jpg
+
+# Borders
+default_border pixel 1

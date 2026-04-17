@@ -1,19 +1,19 @@
-/* Manjaro theme */
+/* Makima/Gruvbox theme */
 
 * {
-    font-family: "0xProto Nerd Font", monospace;
+    font-family: "{{FONT}}", monospace;
     font-size: 16px;
 }
 
 window {
-    background-color: #0d0b1a;
-    border: 2px solid #e6207a;
+    background-color: #282828;
+    border: 2px solid #d79921;
     border-radius: 8px;
 }
 
 #input {
-    background-color: #1a1530;
-    color: #e8e0f0;
+    background-color: #504945;
+    color: #f0e8d0;
     border: none;
     border-radius: 4px;
     padding: 8px 12px;
@@ -21,7 +21,7 @@ window {
 }
 
 #input:focus {
-    border: 1px solid #e6207a;
+    border: 1px solid #d79921;
 }
 
 #scroll {
@@ -39,7 +39,7 @@ window {
 #entry {
     padding: 6px 12px;
     border-radius: 4px;
-    color: #e8e0f0;
+    color: #f0e8d0;
 }
 
 image {
@@ -47,14 +47,14 @@ image {
 }
 
 #entry:selected {
-    background-color: #e8e0f0;
-    color: #0d0b1a;
+    background-color: #f0e8d0;
+    color: #282828;
 }
 
 #text {
-    color: #e8e0f0;
+    color: #f0e8d0;
 }
 
 #text:selected {
-    color: #0d0b1a;
+    color: #282828;
 }

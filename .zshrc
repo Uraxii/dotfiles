@@ -34,6 +34,11 @@ bindkey "^[[3~"   delete-char         # Del
 bindkey "^[[1;5C" forward-word        # Ctrl+Right
 bindkey "^[[1;5D" backward-word       # Ctrl+Left
 
+# Aliases
+
+# Allows the 'logout' keyword to work as expected in the Sway Window Manager.
+[[ "$SWAYSOCK" ]] && alias logout='swaymsg exit'
+
 # Applications
 
 export NVM_DIR="$HOME/.nvm"
