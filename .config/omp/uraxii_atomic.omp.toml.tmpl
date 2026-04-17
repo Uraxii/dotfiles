@@ -8,7 +8,7 @@ version = 3
 
 [transient_prompt]
   background = "transparent"
-  foreground = "#f5f0ff"
+  foreground = "##FG##"
   template = " {{ .Folder }}> "
   newline = false
 
@@ -19,23 +19,23 @@ version = 3
   [[blocks.segments]]
     leading_diamond = '╭─'
     template = ' {{ .Name }} '
-    foreground = '#f5f0ff'
-    background = '#e6207a'
+    foreground = '##FG##'
+    background = '##PRIMARY##'
     type = 'shell'
     style = 'diamond'
 
   [[blocks.segments]]
     template = '<parentBackground></>  '
     foreground = '#FFFB38'
-    background = '#ff1493'
+    background = '##ERROR##'
     type = 'root'
     style = 'diamond'
 
   [[blocks.segments]]
     template = '  {{ .Path }} '
-    foreground = '#0d0b1a'
+    foreground = '##PATH_FG##'
     powerline_symbol = ''
-    background = '#2eb398'
+    background = '##PATH_BG##'
     type = 'path'
     style = 'powerline'
 
@@ -45,13 +45,13 @@ version = 3
       style = 'folder'
 
   [[blocks.segments]]
-    template = ' {{ .UpstreamIcon }}{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }}  {{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#ff1493>  {{ .Staging.String }}</>{{ end }} '
-    foreground = '#0d0b1a'
+    template = ' {{ .UpstreamIcon }}{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }}  {{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<##ERROR##>  {{ .Staging.String }}</>{{ end }} '
+    foreground = '##GIT_FG##'
     powerline_symbol = ''
-    background = '#d4a017'
+    background = '##GIT_BG##'
     type = 'git'
     style = 'powerline'
-    background_templates = ['{{ if or (.Working.Changed) (.Staging.Changed) }}#c4b8d8{{ end }}', '{{ if and (gt .Ahead 0) (gt .Behind 0) }}#7b2fbe{{ end }}', '{{ if gt .Ahead 0 }}#7b2fbe{{ end }}', '{{ if gt .Behind 0 }}#7b2fbe{{ end }}']
+    background_templates = ['{{ if or (.Working.Changed) (.Staging.Changed) }}##GIT_DIRTY##{{ end }}', '{{ if and (gt .Ahead 0) (gt .Behind 0) }}##GIT_AHEAD##{{ end }}', '{{ if gt .Ahead 0 }}##GIT_AHEAD##{{ end }}', '{{ if gt .Behind 0 }}##GIT_AHEAD##{{ end }}']
 
     [blocks.segments.properties]
       branch_icon = ' '
@@ -61,8 +61,8 @@ version = 3
   [[blocks.segments]]
     trailing_diamond = ''
     template = '  {{ .FormattedMs }}⠀'
-    foreground = '#f5f0ff'
-    background = '#1a1530'
+    foreground = '##FG##'
+    background = '##MUTED##'
     type = 'executiontime'
     style = 'diamond'
 
@@ -218,8 +218,8 @@ version = 3
     leading_diamond = ''
     trailing_diamond = '<transparent,background></>'
     template = ' {{ if .WSL }}{{.Icon}}(WSL){{ end }} '
-    foreground = '#0d0b1a'
-    background = '#6e6580'
+    foreground = '##FG_DARK##'
+    background = '##OS_BG##'
     type = 'os'
     style = 'diamond'
 
@@ -236,7 +236,7 @@ version = 3
     template = ' {{ if not .Error }}{{ .Icon }}{{ .Percentage }}{{ end }}{{ .Error }} '
     foreground = '#262626'
     powerline_symbol = ''
-    background = '#ff1493'
+    background = '##ERROR##'
     type = 'battery'
     style = 'powerline'
     background_templates = ['{{if eq "Charging" .State.String}}#b8e994{{end}}', '{{if eq "Discharging" .State.String}}{{if ge .Percentage 50}}#77DD77{{end}}{{end}}', '{{if eq "Full" .State.String}}#77DD77{{end}}']
@@ -251,8 +251,8 @@ version = 3
     leading_diamond = ''
     trailing_diamond = ''
     template = '  {{ .CurrentDate | date .Format }} '
-    foreground = '#f5f0ff'
-    background = '#e6207a'
+    foreground = '##FG##'
+    background = '##PRIMARY##'
     type = 'time'
     style = 'diamond'
     invert_powerline = true
@@ -267,16 +267,16 @@ version = 3
 
   [[blocks.segments]]
     template = '╰─'
-    foreground = '#e6207a'
+    foreground = '##PRIMARY##'
     type = 'text'
     style = 'plain'
 
   [[blocks.segments]]
     template = ' '
-    foreground = '#f5f0ff'
+    foreground = '##FG##'
     type = 'status'
     style = 'plain'
-    foreground_templates = ['{{ if gt .Code 0 }}#ff1493{{ end }}']
+    foreground_templates = ['{{ if gt .Code 0 }}##ERROR##{{ end }}']
 
     [blocks.segments.properties]
       always_enabled = true

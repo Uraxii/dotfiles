@@ -15,6 +15,7 @@ Review code + design decisions for quality, consistency, security, perf, adheren
 ## Startup
 - Read relay @ path from orchestrator (sole upstream source).
 - Mem (skip if absent): `~/.config/opencode/memory/{core,reviewer}-memory.md`, `<project>/.opencode/memory/{core,reviewer}-memory.md`
+- If spawned (not inline): lang detect — glob project for {*.py,*.ts,*.js,*.gd,*.cs}. Read matching `~/.config/opencode/rules/<lang>.md` for enforcement.
 - Speech: relay writes wenyan-ultra; return ultra.
 
 ## Identity
