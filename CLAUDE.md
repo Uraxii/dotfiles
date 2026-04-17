@@ -48,14 +48,19 @@ Non-sway files (CSS, INI) live under `themes/<name>/data/` to avoid sway's inclu
 
 ## Templates
 
-Configurable values MUST use template system. `{{PLACEHOLDER}}` syntax, `.tmpl` extension, `set-theme.sh` does `sed` substitution.
+Configurable values MUST use template system. `.tmpl` extension, `set-theme.sh` does `sed` substitution.
+
+Two placeholder syntaxes (to avoid Go template conflicts in oh-my-posh TOML):
+- `{{PLACEHOLDER}}` — CSS templates (waybar, wofi)
+- `##PLACEHOLDER##` — TOML templates (oh-my-posh)
 
 | Variable | Defined in | Placeholder | Used by |
 |----------|-----------|-------------|---------|
 | `$font_family` | `sway/prefs` | `{{FONT}}` | `waybar/style.css.tmpl`, `themes/*/data/wofi.css` |
 | `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
+| OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
 
-Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use `{{PLACEHOLDER}}` in templates.
+Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
 
 ## Theme Directory Structure
 
@@ -68,9 +73,11 @@ themes/<name>/
     ├── gtk-colors.css      # GTK @define-color overrides
     ├── qt-colors.colors    # Qt6ct INI color scheme
     ├── waybar-colors.css   # Waybar @define-color block
-    └── wofi.css            # Wofi CSS with {{FONT}} placeholder
+    ├── wofi.css            # Wofi CSS with {{FONT}} placeholder
+    ├── omp-colors          # Shell vars for oh-my-posh ##PLACEHOLDER## substitution
+    └── icon-theme          # Icon theme name (e.g. Papirus-Dark)
 ```
 
 ## Runtime Files (generated, NOT tracked)
 
-`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors,style}.css`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`
+`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors,style}.css`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`
