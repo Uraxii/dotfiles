@@ -8,6 +8,8 @@
 !.config/opencode/plans/.gitkeep
 .config/opencode/memory/*
 !.config/opencode/memory/.gitkeep
+.config/opencode/agents/memory/*
+!.config/opencode/agents/memory/.gitkeep
 .config/opencode/inbox/
 messages.md
 
