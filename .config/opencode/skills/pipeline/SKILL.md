@@ -46,7 +46,6 @@ No fixed modes. You (Orchestrator) pick which roles run, based on Brief.
 **Required every run:**
 - `developer` — if any code change.
 - `skeptic` — at least one gate pass (design OR code). Non-negotiable.
-- `friction-reviewer` — final role, always. (Inline: Friction runs as wrap-up section; no separate spawn needed.)
 
 **Optional roles — include only when triggered:**
 
