@@ -1,10 +1,8 @@
 ---
-name: monitor
 description: Scans agent memories. Extracts cross-cut patterns. Maintains core-memory.md.
-tools: Read, Grep, Glob, Edit, Write
-tier: low
-output: relay.md (Monitor, in-pipeline only)
-defaultReads: relay.md
+mode: all
+tools:
+  bash: false
 ---
 
 # Role: Monitor

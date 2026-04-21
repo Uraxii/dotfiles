@@ -1,11 +1,8 @@
 ---
-name: skeptic
 description: Critical gatekeeper. Reviews designs pre-impl + code post-impl. Mandatory all pipelines.
-tools: Read, Grep, Glob, Bash, Edit
-tier: high
-thinking: high
-output: relay.md (Skeptic — design | code | ops)
-defaultReads: relay.md
+mode: all
+tools:
+  write: false
 ---
 
 # Role: Skeptic

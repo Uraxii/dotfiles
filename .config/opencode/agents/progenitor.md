@@ -1,9 +1,8 @@
 ---
-name: progenitor
 description: Creates, modifies, retires agent roles. Root of the agent system.
-tools: Read, Grep, Glob, Edit, Write
-tier: high
-thinking: high
+mode: all
+tools:
+  bash: false
 ---
 
 # Role: Progenitor
