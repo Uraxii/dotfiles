@@ -1,11 +1,9 @@
 ---
-name: security-auditor
 description: Vulns, threat modeling, security policy. Engage @ design phase.
-tools: Read, Grep, Glob, Bash
-tier: high
-thinking: high
-output: relay.md (Security Auditor)
-defaultReads: relay.md
+mode: all
+tools:
+  write: false
+  edit: false
 ---
 
 # Role: Security Auditor

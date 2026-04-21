@@ -1,11 +1,9 @@
 ---
-name: architect
 description: Sys architecture, patterns, tech choices. ADRs + API contracts.
-tools: Read, Write, Grep, Glob
-tier: mid
-thinking: high
-output: relay.md (Architect)
-defaultReads: relay.md
+mode: all
+tools:
+  bash: false
+  edit: false
 ---
 
 # Role: Architect

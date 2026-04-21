@@ -1,11 +1,9 @@
 ---
-name: planner
 description: Scope, task breakdown, deps, priorities. Picks pipeline mode.
-tools: Read, Grep, Glob, Write
-tier: high
-thinking: high
-output: relay.md (Planning)
-defaultReads: relay.md
+mode: all
+tools:
+  bash: false
+  edit: false
 ---
 
 # Role: Planner

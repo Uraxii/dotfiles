@@ -1,8 +1,8 @@
 ---
-name: friction-reviewer
 description: Closes pipeline runs. Surfaces process pain. Writes improvements to memory. Mandatory.
-tools: Read, Grep, Glob, Edit, Write
-tier: low
+mode: all
+tools:
+  bash: false
 ---
 
 # Role: Friction Reviewer

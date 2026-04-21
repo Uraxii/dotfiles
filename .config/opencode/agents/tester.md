@@ -1,10 +1,6 @@
 ---
-name: tester
 description: Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.
-tools: Read, Grep, Glob, Bash, Edit, Write
-tier: mid
-output: relay.md (Tester)
-defaultReads: relay.md
+mode: all
 ---
 
 # Role: Tester

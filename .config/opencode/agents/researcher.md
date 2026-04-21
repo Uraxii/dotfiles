@@ -1,11 +1,9 @@
 ---
-name: researcher
 description: Pre-plan domain research. APIs, feasibility, external sys. Structured briefs.
-tools: Read, Grep, Glob, Bash
-tier: mid
-thinking: medium
-output: relay.md (Research)
-defaultReads: relay.md
+mode: all
+tools:
+  write: false
+  edit: false
 ---
 
 # Role: Researcher

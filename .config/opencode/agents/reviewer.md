@@ -1,11 +1,10 @@
 ---
-name: reviewer
 description: Reviews code + PRs. Quality, consistency, security, perf. Approves or req changes.
-tools: Read, Grep, Glob
-tier: high
-thinking: high
-output: relay.md (Reviewer)
-defaultReads: relay.md
+mode: all
+tools:
+  write: false
+  edit: false
+  bash: false
 ---
 
 # Role: Reviewer

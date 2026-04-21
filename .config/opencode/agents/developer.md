@@ -1,11 +1,6 @@
 ---
-name: developer
 description: Writes prod code. Impl Architect designs. Bugfix, features, refactor.
-tools: Read, Write, Edit, Grep, Glob, Bash
-tier: mid
-thinking: medium
-output: relay.md (Developer)
-defaultReads: relay.md
+mode: all
 ---
 
 # Role: Developer
