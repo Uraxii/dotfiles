@@ -13,3 +13,6 @@
 .config/opencode/inbox/
 messages.md
 
+.claude/plans
+.claude/projects
+.claude/agents/memory/

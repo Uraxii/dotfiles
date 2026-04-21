@@ -87,17 +87,18 @@ If est ≤ 200k or Brief = single bug: proceed silent.
 1. Pre-flight + compose plan + pick exec mode per stage.
 2. Announce plan.
 3. Per stage — **inline path** (default):
-   - `todowrite` (status: in_progress) before role adopt, `todowrite` (status: completed) after.
+   - TaskCreate before role adopt, TaskUpdate after.
    - Read `~/.config/opencode/agents/<role>.md` if not already in context.
    - Announce role: `**[RoleName]**` + one-line intent.
    - Do the work (read relay, read source as needed, reason, edit).
    - Append role's section to `relay.md`.
-   - `todowrite` (status: completed).
+   - TaskUpdate complete.
 4. Per stage — **spawn path** (only when stage marked spawn):
-   - `todowrite` (status: in_progress).
-   - Spawn via `task` tool: `agent=<role-name>`, `description=<one-line>`, `prompt=<brief>`.
-   - Concurrent (`∥`) → one message, multiple `task` calls.
-   - Task prompt ≤ ~400 tok: acceptance criteria, relay path, files to touch, scope boundaries. No role-def inlining. No speech directive. No unverified metadata.
+   - TaskCreate.
+   - Resolve tier → vendor via `~/.config/opencode/agents/shared/model-map.md`.
+   - Spawn Agent: `subagent_type=<role-name>` (role def auto-loaded), `model`=resolved tier.
+   - Concurrent (`∥`) → one message, all spawns.
+   - Agent prompt ≤ ~400 tok: Task ID, acceptance criteria, relay path, files to touch, scope boundaries. No role-def inlining. No speech directive. No unverified metadata.
 5. Gate reject → loop back. Inline: re-adopt upstream role in same context. Spawn: re-spawn w/ Skeptic's relay section as input. Max loops: **3** code/design, **1** ops-path.
 
 ## Sequencing rules
@@ -134,18 +135,20 @@ Inline: relay already in context; skip re-read unless compaction happened.
 
 ---
 
-## Todo Tracking
+## Task List Format
 
-`todowrite` every stage at start (status: pending → in_progress). Update completed when done.
+TaskCreate every stage at start. TaskCreate/TaskUpdate → live progress.
 
-Content format: `AgentName [Mode] - Task description`
-  - Inline: `Architect inline - Design taxonomy`
-  - Spawn:  `Skeptic spawn - Code review`
+Subject: `AgentName  [Mode]  - Task description`
+  - Inline: `Architect  inline  - Design taxonomy`
+  - Spawn:  `Skeptic  Opus 4.6  - Code review`
 On done:
-  - Inline: mark completed + `✓`.
-  - Spawn: mark completed + append token count if available. Format `X.Yk⛃`.
+  - Inline: same subject + `✓` (no per-role token count; inline shares conversation tokens).
+  - Spawn: append `Tokens⛃` from actual `usage.total_tokens` footer: `<usage>total_tokens: NNNNN ...</usage>`. Format `X.Yk⛃`.
 
-Cancel/interrupt/start → mark all pipeline todos cancelled.
+Model version for spawn: friendly name from model-map.md (Opus 4.6, Sonnet 4.6, Haiku 4.5).
+
+Cancel/interrupt/start → delete all pipeline tasks (done + pending).
 
 ---
 
