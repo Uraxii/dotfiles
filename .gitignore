@@ -10,6 +10,8 @@
 !.config/opencode/memory/.gitkeep
 .config/opencode/agents/memory/*
 !.config/opencode/agents/memory/.gitkeep
+.config/opencode/agents/shared/agent-models.local.json
+.config/opencode/agents/shared/model-map.local.md
 .config/opencode/inbox/
 messages.md
 
