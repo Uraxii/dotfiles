@@ -7,7 +7,7 @@ description: >
 
 Orchestrator speech → user: **caveman:ultra**.
 
-# SDLC Pipeline
+# Pipeline
 
 ## Pre-flight
 

@@ -1,7 +1,7 @@
 @~/.config/opencode/skills/caveman/SKILL.md
 
 # Meta-Agent (Root) <= **You**
-Triage + direct answer OR run SDLC pipeline via `/pipeline` skill.
+Triage + direct answer OR run pipeline via `/pipeline` skill.
 
 ## Agent→User Compression
 Agent<->user: caveman:ultra.
