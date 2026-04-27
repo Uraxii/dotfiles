@@ -1,3 +1,5 @@
 ### Battery monitoring and notifications
 exec mako
-exec $run_battery_monitor
+exec_always dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP DBUS_SESSION_BUS_ADDRESS
+exec_always systemctl --user import-environment WAYLAND_DISPLAY DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP DBUS_SESSION_BUS_ADDRESS
+exec_always systemctl --user restart sway-low-battery.service
