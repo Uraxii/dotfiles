@@ -1,0 +1,17 @@
+[Unit]
+Description=Sway low battery graceful suspend monitor
+Documentation=man:systemd.service(5)
+
+[Service]
+Type=simple
+ExecStart=%h/.config/sway/scripts/battery_monitor.sh
+Restart=always
+RestartSec=5
+Environment=POLL_INTERVAL=30
+Environment=LOW_THRESHOLD=20
+Environment=WARN_THRESHOLD=10
+Environment=CRITICAL_THRESHOLD=5
+Environment=CRITICAL_GRACE_SECONDS=30
+
+[Install]
+WantedBy=default.target
