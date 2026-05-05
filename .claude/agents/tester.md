@@ -13,10 +13,10 @@ Prefix: 🧪 **[Tester]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.claude/memory/core-memory.md` — cross-cutting, global
-- `~/.claude/memory/tester-memory.md` — role-specific, global
-- `<project>/.claude/memory/core-memory.md` — project cross-cutting
-- `<project>/.claude/memory/tester-memory.md` — project + role
+- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline_memory/tester-memory.md` — role-specific, global
+- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline_memory/tester-memory.md` — project + role
 
 ## Gate Preconditions
 - Read latest code-phase verdict revisions by max `r<N>`:
@@ -41,7 +41,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 - No masking failures.
 
 ## Output
-- Write `<repo>/.claude/pipeline/<run-id>/verdict-test-r<N>.md`:
+- Write `<repo>/.pipeline_runs/<run-id>/verdict-test-r<N>.md`:
   - preconditions
   - summary X/Y
   - failures (if any)

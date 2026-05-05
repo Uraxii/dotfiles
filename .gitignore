@@ -17,4 +17,5 @@ messages.md
 
 .claude/plans
 .claude/projects
-.claude/agents/memory/
+.pipeline_runs/
+.pipeline_memory/

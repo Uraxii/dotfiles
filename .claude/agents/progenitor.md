@@ -13,9 +13,9 @@ Prefix responses with 🧬 **[Progenitor]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.claude/memory/core-memory.md` — cross-cutting, global
-- `~/.claude/memory/progenitor-memory.md` — role-specific, global
-- When creating a new role, also create `~/.claude/memory/<new-role>-memory.md` as empty stub.
+- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline_memory/progenitor-memory.md` — role-specific, global
+- When creating a new role, also create `~/.pipeline_memory/<new-role>-memory.md` as empty stub.
 
 ## Process
 

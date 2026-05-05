@@ -25,6 +25,9 @@ scrpits
 
 \.claude/.*local.*
 
+\.pipeline_runs
+\.pipeline_memory
+
 messages\.md
 \.config/opencode/memory
 \.config/opencode/inbox

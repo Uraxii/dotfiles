@@ -13,10 +13,10 @@ Prefix: 🛡️ **[Security]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.claude/memory/core-memory.md` — cross-cutting, global
-- `~/.claude/memory/security-auditor-memory.md` — role-specific, global
-- `<project>/.claude/memory/core-memory.md` — project cross-cutting
-- `<project>/.claude/memory/security-auditor-memory.md` — project + role
+- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline_memory/security-auditor-memory.md` — role-specific, global
+- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline_memory/security-auditor-memory.md` — project + role
 
 ## Focus
 - Input validation and auth/authz correctness.
