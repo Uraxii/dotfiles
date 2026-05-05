@@ -1,4 +1,184 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "orchestrator"
+  "instructions": ["~/.config/opencode/skills/caveman/SKILL.md"],
+  "default_agent": "orchestrator",
+  "permission": {
+    "edit": "ask",
+    "bash": "ask",
+    "write": "ask",
+    "webfetch": "ask"
+  },
+  "agent": {
+    "orchestrator": {
+      "description": "Root orchestrator. Triage direct vs pipeline and route stages.",
+      "mode": "primary",
+      "color": "primary",
+      "model": "openai/gpt-5.3-codex",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "write": "allow",
+        "webfetch": "ask"
+      },
+      "prompt": "{file:./prompts/orchestrator.md}"
+    },
+    "plan": {
+      "description": "Scope and task breakdown. No code changes.",
+      "mode": "all",
+      "color": "accent",
+      "model": "anthropic/claude-opus-4-7",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/plan.md}"
+    },
+    "build": {
+      "description": "Implement production code and tests.",
+      "mode": "all",
+      "color": "success",
+      "model": "anthropic/claude-sonnet-4-6",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "write": "allow",
+        "webfetch": "ask"
+      },
+      "prompt": "{file:./prompts/build.md}",
+      "skill": {
+        "frontend-design": "allow"
+      }
+    },
+    "researcher": {
+      "description": "Pre-plan domain research and external system checks.",
+      "mode": "all",
+      "color": "accent",
+      "model": "google/gemini-3-pro-preview",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "write": "deny",
+        "webfetch": "allow"
+      },
+      "prompt": "{file:./prompts/researcher.md}"
+    },
+    "architect": {
+      "description": "System architecture, ADRs, contracts, tradeoffs.",
+      "mode": "subagent",
+      "color": "secondary",
+      "model": "anthropic/claude-opus-4-5",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/architect.md}"
+    },
+    "skeptic": {
+      "description": "Critical gatekeeper for design/code/ops reviews.",
+      "mode": "subagent",
+      "color": "warning",
+      "model": "openai/gpt-5.3-codex",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/skeptic.md}"
+    },
+    "reviewer": {
+      "description": "Code quality and maintainability review gate.",
+      "mode": "subagent",
+      "color": "info",
+      "model": "openai/gpt-5.3-codex",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/reviewer.md}"
+    },
+    "security-auditor": {
+      "description": "Security review gate and threat checks.",
+      "mode": "subagent",
+      "color": "error",
+      "model": "openai/gpt-5.3-codex",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "write": "allow",
+        "webfetch": "ask"
+      },
+      "prompt": "{file:./prompts/security-auditor.md}"
+    },
+    "tester": {
+      "description": "Test strategy and validation after gates pass.",
+      "mode": "subagent",
+      "color": "success",
+      "model": "openai/gpt-5.3-codex",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/tester.md}"
+    },
+    "friction-reviewer": {
+      "description": "Pipeline process review and improvement suggestions.",
+      "mode": "subagent",
+      "color": "secondary",
+      "model": "openai/gpt-5.3-codex",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/friction-reviewer.md}"
+    },
+    "monitor": {
+      "description": "Memory hygiene and cross-cutting pattern monitor.",
+      "mode": "subagent",
+      "color": "accent",
+      "model": "openai/gpt-4.1",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/monitor.md}"
+    },
+    "progenitor": {
+      "description": "Creates and evolves agent role definitions.",
+      "mode": "primary",
+      "color": "primary",
+      "model": "anthropic/claude-opus-4-7",
+      "permission": {
+        "edit": "allow",
+        "bash": "deny",
+        "write": "allow",
+        "webfetch": "deny"
+      },
+      "prompt": "{file:./prompts/progenitor.md}"
+    },
+    "code-reviewer": {
+      "description": "Manual code review helper.",
+      "mode": "subagent",
+      "color": "warning",
+      "model": "anthropic/claude-opus-4-6",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "deny",
+        "webfetch": "deny"
+      }
+    }
+  }
 }

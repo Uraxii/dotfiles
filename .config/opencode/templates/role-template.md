@@ -11,7 +11,7 @@ Use this template when creating a new agent role. The Progenitor creates agents 
 name: agent-name
 description: One-line description of what this agent does and when to use it
 tools: read, grep, find, ls                # lowercase, comma-separated
-tier: mid                                   # high | mid | low — see shared/model-map.md
+tier: mid                                   # high | mid | low — optional local overrides in shared/model-map.local.md
 thinking: medium                            # high | medium — omit for low-tier agents
 output: output-file.md                      # pipeline artifact filename — omit if none
 defaultReads: context.md, shared/communication-mode.md, shared/startup-protocol.md, shared/memory-protocol.md
@@ -26,7 +26,7 @@ defaultProgress: false                      # optional, default false — set tr
 | `name` | Yes | kebab-case identifier |
 | `description` | Yes | One-line — used by Orchestrator for agent selection |
 | `tools` | Yes | Lowercase. Common sets: `read, grep, find, ls` (read-only), add `bash, edit, write` for impl roles, add `subagent` for orchestration roles |
-| `tier` | Yes | Maps to model via `shared/model-map.md`. `high` = critical decisions, `mid` = most work, `low` = support/infra |
+| `tier` | Yes | Used for model routing when local overrides exist (`shared/model-map.local.md`). If no override, current selected model is used |
 | `thinking` | No | `high` or `medium`. Omit for low-tier agents |
 | `output` | No | Filename the agent writes pipeline results to. Omit if agent produces no artifact |
 | `defaultReads` | Yes | Files loaded at startup. Always include shared protocols. Add role-relevant upstream artifacts |
