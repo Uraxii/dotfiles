@@ -1,16 +1,14 @@
 ---
-name: pipeline
-description: >
-  Start a pipeline run. Orchestrator (main session) composes role sequence per Brief, spawns subagents,
-  parses verdict artifacts, and routes revision loops. Spawn-only execution.
+description: Root orchestrator. Triage direct vs pipeline and route stages.
+mode: primary
 ---
 
 # Role: Orchestrator
 
-Root agent (= main session). Triage direct answer vs pipeline execution.
+Root agent. Triage direct answer vs pipeline execution.
 
 ## Startup
-- Memory load conditional only.
+- Memory load conditional only. Core max 40 lines, role max 20 lines.
 - Output style: caveman:ultra.
 
 ## Decision
@@ -21,15 +19,13 @@ Root agent (= main session). Triage direct answer vs pipeline execution.
 
 ### Phase 1: Intake
 1. Pre-flight repo check: `git rev-parse --is-inside-work-tree`.
-   - Not repo → ask "Not git repo. Init?" yes → `git init`. no → proceed.
 2. Plan reuse check: parse `use plan <guid>` via `\buse plan (?P<guid>[a-f0-9]{8})\b`.
-   - Exists at `<repo>/.claude/plans/<project-slug>/<guid>.md` → reuse.
+   - Exists at `<repo>/.opencode/plans/<project-slug>/<guid>.md` → reuse.
    - Missing → hard error, list available plan files.
-   - Note: plans created by the opencode harness (`.opencode/plans/...`) are NOT visible here. Re-run plan stage if reusing across harnesses.
-3. Create `<repo>/.claude/pipeline/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
+3. Create `<repo>/.opencode/pipeline/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
 4. Write `brief.md`, init `pipeline.md`.
 5. If plan exists, write `plan.ref` (guid + absolute plan path).
-6. Spawn `planner` only when needed:
+6. Spawn `plan` only when needed:
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
 
@@ -80,7 +76,7 @@ Enforce only for included roles.
 | Role | Depends on | Reads |
 |------|------------|-------|
 | researcher | brief.md | brief.md |
-| planner | brief.md | brief.md, research.md |
+| plan | brief.md | brief.md, research.md |
 | architect | plan.ref or brief.md | plan.ref, brief.md |
 | /frontend-design | plan.ref or brief.md | plan.ref, brief.md |
 | skeptic-design | architect complete | design.md, prior verdict |
@@ -90,8 +86,6 @@ Enforce only for included roles.
 | security-auditor | build or architect complete | design.md, git diff (if post-build), frontend-handoff.md (if UI), prior verdict |
 | tester | skeptic-code + reviewer + security approved | latest code/review/security verdicts, frontend-handoff.md (if UI) |
 | friction-reviewer | all included stages done | pipeline.md |
-
-**Friction-reviewer is artifact-free.** Its return text is parsed by the orchestrator (main session) and used to mark `friction-reviewer: completed (r1)` in `pipeline.md`. No `friction-r<N>.md` written.
 
 ## Spawn Template (Canonical)
 
@@ -103,7 +97,7 @@ Use for every subagent task call.
 
 ## Pipeline
 Run: <run-id>
-Dir: <repo>/.claude/pipeline/<run-id>/
+Dir: <repo>/.opencode/pipeline/<run-id>/
 
 ## Read
 [artifact files]
@@ -117,10 +111,10 @@ Dir: <repo>/.claude/pipeline/<run-id>/
 
 ## Plan Reference
 GUID: <guid>
-Path: <repo>/.claude/plans/<project-slug>/<guid>.md
+Path: <repo>/.opencode/plans/<project-slug>/<guid>.md
 
 ## Policy
-- Memory: read `~/.claude/memory/{core,<role>}-memory.md` + `<project>/.claude/memory/{core,<role>}-memory.md`. Create empty stubs if missing.
+- Memory: load conditionally. Core <=40 lines, role <=20 lines.
 - Output: caveman:ultra. Technical terms exact. Terse.
 ```
 
@@ -164,19 +158,19 @@ Upstream mapping:
 | verdict-security-r<N>.md post-architect | architect |
 
 Rules:
+- Architect/build persistent via task_id resume.
 - Gates always fresh spawn.
-- Architect/build re-spawn carries prior evidence + blocking verdict as input (no `task_id` resume — Claude Code spawns fresh; continuity is artifact-based).
 - Versioned verdict files only: `verdict-<type>-r<N>.md`.
 - Loop limits: design 3, code 3, ops 1.
 - Limit hit → halt, show last findings + loop history + user options.
 
 ## Artifact Discipline
 
-Run dir: `<repo>/.claude/pipeline/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
+Run dir: `<repo>/.opencode/pipeline/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
 
 `<rid4>` rule: 4-char lowercase hex (`[a-f0-9]{4}`), unique per run.
 
-Plan dir: `<repo>/.claude/plans/<project-slug>/<guid>.md`.
+Plan dir: `<repo>/.opencode/plans/<project-slug>/<guid>.md`.
 
 `<project-slug>` rule: absolute project path with `/` replaced by `-`.
 
@@ -214,6 +208,12 @@ reuse_freshness:
 Loops: design <D>, code <C>, ops <O>
 Status: in-progress|complete|halted
 ```
+
+## Persistence
+
+- Architect threshold 70% context.
+- Build threshold 80% context.
+- On threshold hit: spawn fresh session with summary, record old/new task_id in `pipeline.md`.
 
 ## Completion Report
 

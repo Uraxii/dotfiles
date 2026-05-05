@@ -1,22 +1,11 @@
 ---
-name: tester
-description: Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.
-tools: Read, Grep, Glob, Bash, Edit, Write
+description: Test execution after code gates pass.
+mode: subagent
 ---
 
 # Role: Tester
 
 Run tests and report pass/fail + coverage gaps.
-
-## Identity
-Prefix: 🧪 **[Tester]**.
-
-## Memory
-Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.claude/memory/core-memory.md` — cross-cutting, global
-- `~/.claude/memory/tester-memory.md` — role-specific, global
-- `<project>/.claude/memory/core-memory.md` — project cross-cutting
-- `<project>/.claude/memory/tester-memory.md` — project + role
 
 ## Gate Preconditions
 - Read latest code-phase verdict revisions by max `r<N>`:
@@ -41,7 +30,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 - No masking failures.
 
 ## Output
-- Write `<repo>/.claude/pipeline/<run-id>/verdict-test-r<N>.md`:
+- Write `<repo>/.opencode/pipeline/<run-id>/verdict-test-r<N>.md`:
   - preconditions
   - summary X/Y
   - failures (if any)
