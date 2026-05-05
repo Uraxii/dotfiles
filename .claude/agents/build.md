@@ -13,10 +13,10 @@ Prefix: 💻 **[Build]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.claude/memory/core-memory.md` — cross-cutting, global
-- `~/.claude/memory/build-memory.md` — role-specific, global
-- `<project>/.claude/memory/core-memory.md` — project cross-cutting
-- `<project>/.claude/memory/build-memory.md` — project + role
+- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline_memory/build-memory.md` — role-specific, global
+- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline_memory/build-memory.md` — project + role
 
 ## Runtime Policy
 - Memory conditional only
@@ -51,7 +51,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 
 ## Pre-build Checklist Contract (Mandatory)
 - For every build revision `r<N>`, write:
-  - `<repo>/.claude/pipeline/<run-id>/prebuild-skeptic-code-r<N>.md`
+  - `<repo>/.pipeline_runs/<run-id>/prebuild-skeptic-code-r<N>.md`
 - Required sections in checklist artifact:
   - revision and timestamp
   - change-risk scan (inputs/authz/schema touchpoints)
@@ -61,7 +61,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 
 ## Evidence Contract (Mandatory)
 - For every build revision `r<N>`, write:
-  - `<repo>/.claude/pipeline/<run-id>/build-evidence-r<N>.md`
+  - `<repo>/.pipeline_runs/<run-id>/build-evidence-r<N>.md`
 - Required sections in evidence file:
   - `revision` and timestamp
   - exact commands run
@@ -80,7 +80,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 - Downstream reviewers/auditors inspect changed files via git diff + evidence artifact
 
 ## Frontend Handoff (when required)
-Write `<repo>/.claude/pipeline/<run-id>/frontend-handoff.md` with:
+Write `<repo>/.pipeline_runs/<run-id>/frontend-handoff.md` with:
 - UX intent (what user should experience)
 - Constraints (platform/latency/accessibility/compat)
 - Acceptance bullets (testable)

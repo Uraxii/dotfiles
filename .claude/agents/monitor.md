@@ -13,10 +13,10 @@ Prefix: 📡 **[Monitor]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Monitor *owns* memory hygiene across all role files.
-- `~/.claude/memory/core-memory.md` — cross-cutting, global (owned)
-- `~/.claude/memory/<role>-memory.md` — every role file, global
-- `<project>/.claude/memory/core-memory.md` — project cross-cutting
-- `<project>/.claude/memory/<role>-memory.md` — every role file, project
+- `~/.pipeline_memory/core-memory.md` — cross-cutting, global (owned)
+- `~/.pipeline_memory/<role>-memory.md` — every role file, global
+- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline_memory/<role>-memory.md` — every role file, project
 
 ## Files
 - `~/.claude/agents/*.md` — defs
