@@ -81,3 +81,35 @@ themes/<name>/
 ## Runtime Files (generated, NOT tracked)
 
 `set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors,style}.css`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`
+
+# Docs
+
+Human-facing per-component docs live in `docs/`. Repo-only — the dir is in `.stow-local-ignore`, never symlinked into `$HOME`.
+
+## Doc inventory
+
+| Component | Doc file |
+|-----------|----------|
+| sway, waybar, wofi, swaylock, networkmanager-dmenu | `docs/desktop.md` |
+| zsh, oh-my-posh, ghostty | `docs/shell.md` |
+| nvim, opencode, systemd/user | `docs/tooling.md` |
+| theming pipeline (companion to "Theming System" above) | `docs/theming.md` |
+
+## Doc template
+
+Every component section in `docs/*.md` MUST use these sub-headings (in this order):
+
+1. **Purpose** — one paragraph, what it is and why it's here.
+2. **Key files** — bullet list of repo paths the component owns.
+3. **Keybindings & UX** — omit if N/A.
+4. **Theming integration** — omit if N/A.
+5. **External dependencies** — packages required outside this repo.
+
+## Update rule
+
+When a component is added, removed, or materially changed (new module, new keybind, new dependency, new theming hook), update its `docs/*.md` file AND the README inventory table in the same change. Stale docs are worse than missing docs.
+
+## No duplication
+
+- Theming pipeline lives in this file's "Theming System" section. `docs/theming.md` links here, then adds howto recipes only.
+- Neovim internals live in `.config/nvim/CLAUDE.md` and `.config/nvim/README.md`. `docs/tooling.md` links — never copies.

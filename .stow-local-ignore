@@ -20,6 +20,7 @@ _darcs
 
 ^/README.*
 ^/LICENSE.*
+^/docs
 
 scrpits
 
