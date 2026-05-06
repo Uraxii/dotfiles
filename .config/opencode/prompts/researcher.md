@@ -18,7 +18,7 @@ Collect facts before plan/design decisions.
 - No speculative claims without evidence.
 
 ## Output
-- Write `<repo>/.opencode/pipeline/<run-id>/research.md`:
+- Write `<repo>/.pipeline/runs/<run-id>/research.md`:
   - question
   - findings
   - risks/unknowns

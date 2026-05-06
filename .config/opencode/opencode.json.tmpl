@@ -13,7 +13,7 @@
       "description": "Root orchestrator. Triage direct vs pipeline and route stages.",
       "mode": "primary",
       "color": "primary",
-      "model": "openai/gpt-5.3-codex",
+      "model": "##MODEL_ORCHESTRATOR##",
       "permission": {
         "edit": "allow",
         "bash": "allow",
@@ -26,7 +26,7 @@
       "description": "Scope and task breakdown. No code changes.",
       "mode": "all",
       "color": "accent",
-      "model": "anthropic/claude-opus-4-7",
+      "model": "##MODEL_PLAN##",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -39,7 +39,7 @@
       "description": "Implement production code and tests.",
       "mode": "all",
       "color": "success",
-      "model": "anthropic/claude-sonnet-4-6",
+      "model": "##MODEL_BUILD##",
       "permission": {
         "edit": "allow",
         "bash": "allow",
@@ -55,7 +55,7 @@
       "description": "Pre-plan domain research and external system checks.",
       "mode": "all",
       "color": "accent",
-      "model": "google/gemini-3-pro-preview",
+      "model": "##MODEL_RESEARCHER##",
       "permission": {
         "edit": "deny",
         "bash": "ask",
@@ -68,7 +68,7 @@
       "description": "System architecture, ADRs, contracts, tradeoffs.",
       "mode": "subagent",
       "color": "secondary",
-      "model": "anthropic/claude-opus-4-5",
+      "model": "##MODEL_ARCHITECT##",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -81,7 +81,7 @@
       "description": "Critical gatekeeper for design/code/ops reviews.",
       "mode": "subagent",
       "color": "warning",
-      "model": "openai/gpt-5.3-codex",
+      "model": "##MODEL_SKEPTIC##",
       "permission": {
         "edit": "deny",
         "bash": "allow",
@@ -94,7 +94,7 @@
       "description": "Code quality and maintainability review gate.",
       "mode": "subagent",
       "color": "info",
-      "model": "openai/gpt-5.3-codex",
+      "model": "##MODEL_REVIEWER##",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -107,7 +107,7 @@
       "description": "Security review gate and threat checks.",
       "mode": "subagent",
       "color": "error",
-      "model": "openai/gpt-5.3-codex",
+      "model": "##MODEL_SECURITY_AUDITOR##",
       "permission": {
         "edit": "deny",
         "bash": "ask",
@@ -120,7 +120,7 @@
       "description": "Test strategy and validation after gates pass.",
       "mode": "subagent",
       "color": "success",
-      "model": "openai/gpt-5.3-codex",
+      "model": "##MODEL_TESTER##",
       "permission": {
         "edit": "deny",
         "bash": "allow",
@@ -133,7 +133,7 @@
       "description": "Pipeline process review and improvement suggestions.",
       "mode": "subagent",
       "color": "secondary",
-      "model": "openai/gpt-5.3-codex",
+      "model": "##MODEL_FRICTION_REVIEWER##",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -146,7 +146,7 @@
       "description": "Memory hygiene and cross-cutting pattern monitor.",
       "mode": "subagent",
       "color": "accent",
-      "model": "openai/gpt-4.1",
+      "model": "##MODEL_MONITOR##",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -159,7 +159,7 @@
       "description": "Creates and evolves agent role definitions.",
       "mode": "primary",
       "color": "primary",
-      "model": "anthropic/claude-opus-4-7",
+      "model": "##MODEL_PROGENITOR##",
       "permission": {
         "edit": "allow",
         "bash": "deny",
@@ -172,7 +172,7 @@
       "description": "Manual code review helper.",
       "mode": "subagent",
       "color": "warning",
-      "model": "anthropic/claude-opus-4-6",
+      "model": "##MODEL_CODE_REVIEWER##",
       "permission": {
         "edit": "deny",
         "bash": "deny",

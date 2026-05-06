@@ -1,0 +1,17 @@
+# Default model assignments for opencode agents.
+# Override locally by creating ~/.config/opencode/models.local with the same vars.
+# After editing either file, run: ~/.config/opencode/gen-config.sh
+
+MODEL_ORCHESTRATOR="openai/gpt-5.3-codex"
+MODEL_PLAN="anthropic/claude-opus-4-7"
+MODEL_BUILD="anthropic/claude-sonnet-4-6"
+MODEL_RESEARCHER="google/gemini-3-pro-preview"
+MODEL_ARCHITECT="anthropic/claude-opus-4-5"
+MODEL_SKEPTIC="openai/gpt-5.3-codex"
+MODEL_REVIEWER="openai/gpt-5.3-codex"
+MODEL_SECURITY_AUDITOR="openai/gpt-5.3-codex"
+MODEL_TESTER="openai/gpt-5.3-codex"
+MODEL_FRICTION_REVIEWER="openai/gpt-5.3-codex"
+MODEL_MONITOR="openai/gpt-4.1"
+MODEL_PROGENITOR="anthropic/claude-opus-4-7"
+MODEL_CODE_REVIEWER="anthropic/claude-opus-4-6"

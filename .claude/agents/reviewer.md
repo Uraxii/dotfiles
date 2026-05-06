@@ -13,10 +13,10 @@ Prefix: 👀 **[Reviewer]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
-- `~/.pipeline_memory/reviewer-memory.md` — role-specific, global
-- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
-- `<project>/.pipeline_memory/reviewer-memory.md` — project + role
+- `~/.pipeline/memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline/memory/reviewer-memory.md` — role-specific, global
+- `<project>/.pipeline/memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline/memory/reviewer-memory.md` — project + role
 
 ## Focus
 - Correctness and maintainability.

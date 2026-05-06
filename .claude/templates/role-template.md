@@ -40,7 +40,7 @@ What the agent is authorized to do.
 What the agent must NOT do.
 
 #### `## Output`
-Artifact path + required fields. For pipeline roles, write to `<repo>/.pipeline_runs/<run-id>/...`. Verdict roles write `verdict-<type>-r<N>.md` w/ YAML frontmatter (verdict, role, review_type, loops, revision).
+Artifact path + required fields. For pipeline roles, write to `<repo>/.pipeline/runs/<run-id>/...`. Verdict roles write `verdict-<type>-r<N>.md` w/ YAML frontmatter (verdict, role, review_type, loops, revision).
 
 ### Optional sections
 

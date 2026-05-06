@@ -13,13 +13,13 @@ Prefix: ⚙️ **[Friction]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
-- `~/.pipeline_memory/friction-reviewer-memory.md` — role-specific, global
-- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
-- `<project>/.pipeline_memory/friction-reviewer-memory.md` — project + role
+- `~/.pipeline/memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline/memory/friction-reviewer-memory.md` — role-specific, global
+- `<project>/.pipeline/memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline/memory/friction-reviewer-memory.md` — project + role
 
 ## Input
-- Read `<repo>/.pipeline_runs/<run-id>/pipeline.md` only.
+- Read `<repo>/.pipeline/runs/<run-id>/pipeline.md` only.
 - Do not read other pipeline artifacts.
 - Do not explore repo except minimal claim verification.
 

@@ -30,7 +30,7 @@ Run tests and report pass/fail + coverage gaps.
 - No masking failures.
 
 ## Output
-- Write `<repo>/.opencode/pipeline/<run-id>/verdict-test-r<N>.md`:
+- Write `<repo>/.pipeline/runs/<run-id>/verdict-test-r<N>.md`:
   - preconditions
   - summary X/Y
   - failures (if any)

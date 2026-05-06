@@ -20,9 +20,9 @@ Root agent. Triage direct answer vs pipeline execution.
 ### Phase 1: Intake
 1. Pre-flight repo check: `git rev-parse --is-inside-work-tree`.
 2. Plan reuse check: parse `use plan <guid>` via `\buse plan (?P<guid>[a-f0-9]{8})\b`.
-   - Exists at `<repo>/.opencode/plans/<project-slug>/<guid>.md` → reuse.
+   - Exists at `<repo>/.pipeline/plans/<project-slug>/<guid>.md` → reuse.
    - Missing → hard error, list available plan files.
-3. Create `<repo>/.opencode/pipeline/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
+3. Create `<repo>/.pipeline/runs/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
 4. Write `brief.md`, init `pipeline.md`.
 5. If plan exists, write `plan.ref` (guid + absolute plan path).
 6. Spawn `plan` only when needed:
@@ -97,7 +97,7 @@ Use for every subagent task call.
 
 ## Pipeline
 Run: <run-id>
-Dir: <repo>/.opencode/pipeline/<run-id>/
+Dir: <repo>/.pipeline/runs/<run-id>/
 
 ## Read
 [artifact files]
@@ -111,7 +111,7 @@ Dir: <repo>/.opencode/pipeline/<run-id>/
 
 ## Plan Reference
 GUID: <guid>
-Path: <repo>/.opencode/plans/<project-slug>/<guid>.md
+Path: <repo>/.pipeline/plans/<project-slug>/<guid>.md
 
 ## Policy
 - Memory: load conditionally. Core <=40 lines, role <=20 lines.
@@ -166,11 +166,11 @@ Rules:
 
 ## Artifact Discipline
 
-Run dir: `<repo>/.opencode/pipeline/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
+Run dir: `<repo>/.pipeline/runs/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
 
 `<rid4>` rule: 4-char lowercase hex (`[a-f0-9]{4}`), unique per run.
 
-Plan dir: `<repo>/.opencode/plans/<project-slug>/<guid>.md`.
+Plan dir: `<repo>/.pipeline/plans/<project-slug>/<guid>.md`.
 
 `<project-slug>` rule: absolute project path with `/` replaced by `-`.
 
