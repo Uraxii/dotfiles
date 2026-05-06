@@ -23,10 +23,9 @@ Root agent (= main session). Triage direct answer vs pipeline execution.
 1. Pre-flight repo check: `git rev-parse --is-inside-work-tree`.
    - Not repo → ask "Not git repo. Init?" yes → `git init`. no → proceed.
 2. Plan reuse check: parse `use plan <guid>` via `\buse plan (?P<guid>[a-f0-9]{8})\b`.
-   - Exists at `<repo>/.claude/plans/<project-slug>/<guid>.md` → reuse.
+   - Exists at `<repo>/.pipeline/plans/<project-slug>/<guid>.md` → reuse.
    - Missing → hard error, list available plan files.
-   - Note: plans created by the opencode harness (`.opencode/plans/...`) are NOT visible here. Re-run plan stage if reusing across harnesses.
-3. Create `<repo>/.pipeline_runs/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
+3. Create `<repo>/.pipeline/runs/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
 4. Write `brief.md`, init `pipeline.md`.
 5. If plan exists, write `plan.ref` (guid + absolute plan path).
 6. Spawn `planner` only when needed:
@@ -103,7 +102,7 @@ Use for every subagent task call.
 
 ## Pipeline
 Run: <run-id>
-Dir: <repo>/.pipeline_runs/<run-id>/
+Dir: <repo>/.pipeline/runs/<run-id>/
 
 ## Read
 [artifact files]
@@ -117,10 +116,10 @@ Dir: <repo>/.pipeline_runs/<run-id>/
 
 ## Plan Reference
 GUID: <guid>
-Path: <repo>/.claude/plans/<project-slug>/<guid>.md
+Path: <repo>/.pipeline/plans/<project-slug>/<guid>.md
 
 ## Policy
-- Memory: read `~/.pipeline_memory/{core,<role>}-memory.md` + `<project>/.pipeline_memory/{core,<role>}-memory.md`. Create empty stubs if missing.
+- Memory: read `~/.pipeline/memory/{core,<role>}-memory.md` + `<project>/.pipeline/memory/{core,<role>}-memory.md`. Create empty stubs if missing.
 - Output: caveman:ultra. Technical terms exact. Terse.
 ```
 
@@ -172,11 +171,11 @@ Rules:
 
 ## Artifact Discipline
 
-Run dir: `<repo>/.pipeline_runs/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
+Run dir: `<repo>/.pipeline/runs/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
 
 `<rid4>` rule: 4-char lowercase hex (`[a-f0-9]{4}`), unique per run.
 
-Plan dir: `<repo>/.claude/plans/<project-slug>/<guid>.md`.
+Plan dir: `<repo>/.pipeline/plans/<project-slug>/<guid>.md`.
 
 `<project-slug>` rule: absolute project path with `/` replaced by `-`.
 

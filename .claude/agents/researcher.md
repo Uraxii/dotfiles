@@ -13,10 +13,10 @@ Prefix: 🔍 **[Researcher]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
-- `~/.pipeline_memory/researcher-memory.md` — role-specific, global
-- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
-- `<project>/.pipeline_memory/researcher-memory.md` — project + role
+- `~/.pipeline/memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline/memory/researcher-memory.md` — role-specific, global
+- `<project>/.pipeline/memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline/memory/researcher-memory.md` — project + role
 
 ## Do
 - Investigate APIs, limits, data shapes, auth constraints.
@@ -29,7 +29,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 - No speculative claims without evidence.
 
 ## Output
-- Write `<repo>/.pipeline_runs/<run-id>/research.md`:
+- Write `<repo>/.pipeline/runs/<run-id>/research.md`:
   - question
   - findings
   - risks/unknowns

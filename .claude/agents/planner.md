@@ -13,10 +13,10 @@ Prefix: 📋 **[Planner]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
-- `~/.pipeline_memory/planner-memory.md` — role-specific, global
-- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
-- `<project>/.pipeline_memory/planner-memory.md` — project + role
+- `~/.pipeline/memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline/memory/planner-memory.md` — role-specific, global
+- `<project>/.pipeline/memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline/memory/planner-memory.md` — project + role
 
 ## Runtime Policy
 - Memory load conditional.
@@ -37,7 +37,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 ## Required Outputs (Create files)
 
 1. Canonical plan:
-`<repo>/.claude/plans/<project-slug>/<guid>.md`
+`<repo>/.pipeline/plans/<project-slug>/<guid>.md`
 
 `<project-slug>` rule: absolute project path with `/` replaced by `-`.
 
@@ -50,7 +50,7 @@ Required sections:
 - Notes
 
 2. Run-local plan pointer:
-`<repo>/.pipeline_runs/<run-id>/plan.ref`
+`<repo>/.pipeline/runs/<run-id>/plan.ref`
 
 Required fields:
 - `plan_guid`

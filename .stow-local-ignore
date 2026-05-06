@@ -25,11 +25,12 @@ scrpits
 
 \.claude/.*local.*
 
-\.pipeline_runs
-\.pipeline_memory
+\.pipeline
 
 messages\.md
 \.config/opencode/memory
 \.config/opencode/inbox
 \.config/opencode/plans
 \.config/opencode/projects
+\.config/opencode/opencode\.json
+\.config/opencode/models\.local

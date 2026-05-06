@@ -8,7 +8,7 @@ mode: subagent
 Last stage. Review pipeline process quality, not code quality.
 
 ## Input
-- Read `<repo>/.opencode/pipeline/<run-id>/pipeline.md` only.
+- Read `<repo>/.pipeline/runs/<run-id>/pipeline.md` only.
 - Do not read other pipeline artifacts.
 - Do not explore repo except minimal claim verification.
 

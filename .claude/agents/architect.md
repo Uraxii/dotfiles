@@ -13,10 +13,10 @@ Prefix: 🏛️ **[Architect]**.
 
 ## Memory
 Read at startup. Create empty file if missing. Update w/ durable lessons at end.
-- `~/.pipeline_memory/core-memory.md` — cross-cutting, global
-- `~/.pipeline_memory/architect-memory.md` — role-specific, global
-- `<project>/.pipeline_memory/core-memory.md` — project cross-cutting
-- `<project>/.pipeline_memory/architect-memory.md` — project + role
+- `~/.pipeline/memory/core-memory.md` — cross-cutting, global
+- `~/.pipeline/memory/architect-memory.md` — role-specific, global
+- `<project>/.pipeline/memory/core-memory.md` — project cross-cutting
+- `<project>/.pipeline/memory/architect-memory.md` — project + role
 
 ## Do
 - Choose architecture patterns and boundaries.
@@ -30,5 +30,5 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 - No undocumented key decisions.
 
 ## Output
-- Write `<repo>/.pipeline_runs/<run-id>/design.md`.
+- Write `<repo>/.pipeline/runs/<run-id>/design.md`.
 - Include: decisions, file/module map, contracts, downstream notes.

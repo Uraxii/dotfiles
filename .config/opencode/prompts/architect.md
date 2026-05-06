@@ -23,5 +23,5 @@ Design system structure and interfaces for build stage.
 - Context threshold 70%; rotate session when exceeded.
 
 ## Output
-- Write `<repo>/.opencode/pipeline/<run-id>/design.md`.
+- Write `<repo>/.pipeline/runs/<run-id>/design.md`.
 - Include: decisions, file/module map, contracts, downstream notes.

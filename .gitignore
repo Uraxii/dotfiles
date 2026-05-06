@@ -13,9 +13,10 @@
 .config/opencode/agents/shared/agent-models.local.json
 .config/opencode/agents/shared/model-map.local.md
 .config/opencode/inbox/
+.config/opencode/opencode.json
+.config/opencode/models.local
 messages.md
 
 .claude/plans
 .claude/projects
-.pipeline_runs/
-.pipeline_memory/
+.pipeline/

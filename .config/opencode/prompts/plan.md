@@ -26,7 +26,7 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 ## Required Outputs (Create files)
 
 1. Canonical plan:
-`<repo>/.opencode/plans/<project-slug>/<guid>.md`
+`<repo>/.pipeline/plans/<project-slug>/<guid>.md`
 
 `<project-slug>` rule: absolute project path with `/` replaced by `-`.
 
@@ -39,7 +39,7 @@ Required sections:
 - Notes
 
 2. Run-local plan pointer:
-`<repo>/.opencode/pipeline/<run-id>/plan.ref`
+`<repo>/.pipeline/runs/<run-id>/plan.ref`
 
 Required fields:
 - `plan_guid`

@@ -40,7 +40,7 @@ Implement design into production code. Clean, testable, maintainable.
 
 ## Pre-build Checklist Contract (Mandatory)
 - For every build revision `r<N>`, write:
-  - `<repo>/.opencode/pipeline/<run-id>/prebuild-skeptic-code-r<N>.md`
+  - `<repo>/.pipeline/runs/<run-id>/prebuild-skeptic-code-r<N>.md`
 - Required sections in checklist artifact:
   - revision and timestamp
   - change-risk scan (inputs/authz/schema touchpoints)
@@ -50,7 +50,7 @@ Implement design into production code. Clean, testable, maintainable.
 
 ## Evidence Contract (Mandatory)
 - For every build revision `r<N>`, write:
-  - `<repo>/.opencode/pipeline/<run-id>/build-evidence-r<N>.md`
+  - `<repo>/.pipeline/runs/<run-id>/build-evidence-r<N>.md`
 - Required sections in evidence file:
   - `revision` and timestamp
   - exact commands run
@@ -69,7 +69,7 @@ Implement design into production code. Clean, testable, maintainable.
 - Downstream reviewers/auditors inspect changed files via git diff + evidence artifact.
 
 ## Frontend Handoff (when required)
-Write `<repo>/.opencode/pipeline/<run-id>/frontend-handoff.md` with:
+Write `<repo>/.pipeline/runs/<run-id>/frontend-handoff.md` with:
 - UX intent (what user should experience)
 - Constraints (platform/latency/accessibility/compat)
 - Acceptance bullets (testable)
