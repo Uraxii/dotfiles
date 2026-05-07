@@ -175,6 +175,9 @@ bindsym Print       exec grim ~/Pictures/screenshots/$(date +'%Y-%m-%d_%H-%M-%S'
 bindsym Shift+Print exec grim -g "$(slurp)" ~/Pictures/screenshots/$(date +'%Y-%m-%d_%H-%M-%S').png
 bindsym Ctrl+Print  exec grim -g "$(slurp)" - | wl-copy
 
+# Clipboard history
+bindsym $mod+ctrl+v exec cliphist list | wofi --dmenu | cliphist decode | wl-copy
+
 ### Input configuration
 #
 # Example configuration:
