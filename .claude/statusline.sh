@@ -83,6 +83,30 @@ if [ -n "$in_tok" ] && [ -n "$out_tok" ] && [ -n "$dur_ms" ]; then
   fi
 fi
 
+# --- (5) Battery ---
+bat_part=""
+bat_dir="/sys/class/power_supply/BAT0"
+if [ -r "$bat_dir/capacity" ]; then
+  bat_cap=$(cat "$bat_dir/capacity" 2>/dev/null)
+  bat_status=$(cat "$bat_dir/status" 2>/dev/null)
+  if [ -n "$bat_cap" ]; then
+    case "$bat_status" in
+      Charging|Full) icon="⚡" ;;
+      *) icon="🔋" ;;
+    esac
+    bat_color=""
+    if [ "$bat_cap" -le 20 ] && [ "$bat_status" != "Charging" ] && [ "$bat_status" != "Full" ]; then
+      bat_color="$warn"
+    fi
+    if [ -n "$bat_color" ]; then
+      reset=$'\033[0m'
+      bat_part="${bat_color}${icon}${bat_cap}%${reset}"
+    else
+      bat_part="${icon}${bat_cap}%"
+    fi
+  fi
+fi
+
 # --- Assemble ---
 out=""
 [ -n "$limit_parts" ] && out="$limit_parts"
@@ -93,6 +117,10 @@ fi
 if [ -n "$tpm_part" ]; then
   [ -n "$out" ] && out="${out}  "
   out="${out}${tpm_part}"
+fi
+if [ -n "$bat_part" ]; then
+  [ -n "$out" ] && out="${out}  "
+  out="${out}${bat_part}"
 fi
 
 printf '%s' "$out"
