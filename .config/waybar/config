@@ -17,7 +17,7 @@
 
     "group/left2": {
         "orientation": "inherit",
-        "modules": ["power-profiles-daemon", "custom/sep", "bluetooth", "custom/sep", "network"]
+        "modules": ["power-profiles-daemon", "bluetooth", "network"]
     },
 
     "group/right1": {
@@ -27,13 +27,7 @@
 
     "group/right": {
         "orientation": "inherit",
-        "modules": ["pulseaudio", "custom/sep", "backlight", "custom/sep", "memory", "custom/sep", "cpu", "custom/sep", "battery", "custom/sep", "clock"]
-    },
-
-    "custom/sep": {
-        "format": "|",
-        "interval": "once",
-        "tooltip": false
+        "modules": ["pulseaudio", "backlight", "memory", "cpu", "battery", "clock"]
     },
 
     "sway/workspaces": {
