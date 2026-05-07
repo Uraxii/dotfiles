@@ -4,3 +4,9 @@
 @define-color ia1 #090714;
 @define-color accent #e6207a;
 @define-color urgent #ff1493;
+
+@define-color info    #5cc8d8;
+@define-color success #2eb398;
+@define-color warning #f0c040;
+@define-color accent1 #a96cef;
+@define-color accent2 #ff1493;

@@ -1,9 +1,9 @@
 @import 'colors.css';
 
 * {
-    border-radius: 1px;
+    border-radius: 0;
     font-family: "{{FONT}}", monospace;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: bold;
     min-height: 0;
 }
@@ -13,64 +13,53 @@ window#waybar {
 }
 
 #waybar > box {
-    border-radius: 5px;
-    background-color: @bg;
-    box-shadow: 0 0 2px 1px @ia1;
-    margin: 3px 4px 4px 4px;
-    min-height: 0px;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    background-color: transparent;
+    box-shadow: none;
+    margin: 4px 6px 4px 6px;
+    min-height: 0;
 }
 
 window#waybar.hidden {
     opacity: 0.2;
 }
 
-/* --- Groups --- */
+/* --- Pill groups --- */
 
-#left1,
 #left2,
-#left3 {
-    color: @fg;
-    margin: 1px 4px 1px 4px;
-    border-radius: 5px;
-    padding: 0;
+#right1,
+#right,
+#workspaces {
+    background-color: @bg;
+    box-shadow: 0 0 2px 1px @ia1;
+    border-radius: 10px;
+    margin: 2px 6px;
+    padding: 2px 6px;
 }
 
-#left1 widget,
 #left2 widget,
-#left3 widget {
+#right1 widget,
+#right widget {
     margin: 0;
     padding: 0;
 }
 
-#right,
-#right1 {
-    color: @fg;
-    border-radius: 5px;
-    margin: 1px 4px 1px 4px;
-    padding: 0px;
-}
-
 /* --- Workspaces --- */
-
-#workspaces {
-    margin: 1px 4px 1px 4px;
-    border-radius: 5px;
-}
 
 #workspaces button {
     all: initial;
     min-width: 0;
     color: @fg;
-    background-color: @bg;
-    padding: 0px 8px;
+    background-color: transparent;
+    padding: 2px 10px;
     margin: 1px 3px;
-    border-radius: 5px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 #workspaces button.focused {
     background-color: @fg;
     color: @bg;
+    box-shadow: 0 0 4px alpha(@fg, 0.4);
 }
 
 #workspaces button.urgent {
@@ -90,14 +79,28 @@ window#waybar.hidden {
 #bluetooth,
 #network,
 #pulseaudio,
+#backlight,
 #memory,
 #cpu,
 #battery,
 #tray {
     min-width: 14px;
-    padding: 0 6px;
-    margin: 0;
+    padding: 2px 10px;
+    margin: 0 2px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* --- Per-module accents --- */
+
+#power-profiles-daemon { color: @warning; }
+#bluetooth             { color: @info; }
+#network               { color: @info; }
+#pulseaudio            { color: @accent1; }
+#backlight             { color: @warning; }
+#memory                { color: @accent2; }
+#cpu                   { color: @accent; }
+#clock                 { color: @fg; }
 
 /* --- Hover --- */
 
@@ -106,38 +109,35 @@ window#waybar.hidden {
 #bluetooth:hover,
 #network:hover,
 #pulseaudio:hover,
+#backlight:hover,
 #memory:hover,
 #cpu:hover,
 #battery:hover {
     background-color: @fg;
     color: @bg;
-    border-radius: 5px;
 }
 
 /* --- Tooltips --- */
 
 tooltip {
-    padding: 4px;
+    padding: 8px 10px;
     background: @bg;
-    font-size: 10px;
+    font-size: 12px;
     border: 1.5px solid alpha(@fg, 0.8);
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 tooltip label {
     color: @fg;
     font-weight: normal;
+    padding: 2px;
 }
 
 /* --- Battery states --- */
 
-#battery.good {
-    color: @fg;
-}
-
-#battery.low {
-    color: @urgent;
-}
+#battery.good     { color: @success; }
+#battery.charging { color: @success; }
+#battery.low      { color: @warning; }
 
 #battery.critical:not(.charging) {
     color: @urgent;
@@ -146,10 +146,6 @@ tooltip label {
     animation-timing-function: steps(12);
     animation-iteration-count: infinite;
     animation-direction: alternate;
-}
-
-#battery.charging {
-    color: @fg;
 }
 
 @keyframes blink {
