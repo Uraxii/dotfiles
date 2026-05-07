@@ -57,3 +57,5 @@ export _ZO_DOCTOR=0
 eval "$(zoxide init --cmd cd zsh)"
 
 
+export PATH="$HOME/dev/flutter/bin:$PATH"
+export PATH="$HOME/Android/Sdk/platform-tools:$HOME/Android/Sdk/emulator:$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH"
