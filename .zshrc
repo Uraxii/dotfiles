@@ -7,6 +7,7 @@
 # Export Environment Variables
 
 export PATH="$HOME/.local/bin:$PATH"
+export CHROME_EXECUTABLE=google-chrome-stable
 
 # Command Line Prompt
 
