@@ -54,6 +54,7 @@ Tiling Wayland compositor. Repo-managed config split across
 | `XF86Audio{Mute,Lower,Raise,MicMute}` | pactl sink/source |
 | `XF86MonBrightness{Up,Down}` | brightnessctl ±5% |
 | `Print` / `Shift+Print` / `Ctrl+Print` | grim full / region / region→clipboard |
+| `$mod+Ctrl+V` | Open clipboard history picker (cliphist + wofi) |
 
 Input: `caps:swapescape` xkb option.
 
@@ -69,7 +70,7 @@ configs (waybar, wofi, GTK, Qt6ct, oh-my-posh). See
 
 `sway`, `swayidle`, `swaybg`, `swaylock` (or `swaylock-effects`),
 `pulseaudio-utils` (`pactl`), `brightnessctl`, `grim`, `slurp`,
-`wl-clipboard` (`wl-copy`).
+`wl-clipboard` (`wl-paste`, `wl-copy`), `cliphist`.
 
 ## waybar
 
