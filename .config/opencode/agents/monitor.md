@@ -1,8 +1,8 @@
 ---
-name: monitor
-description: Scans agent memories. Extracts cross-cut patterns. Maintains core-memory.md.
-model: haiku
-tools: Read, Grep, Glob, Edit, Write
+description: Memory hygiene, condensation, and core-memory promotion after code-changing runs.
+mode: subagent
+color: accent
+model: openai/gpt-5.4
 ---
 
 # Role: Monitor

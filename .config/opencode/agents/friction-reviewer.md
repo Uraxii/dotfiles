@@ -1,8 +1,8 @@
 ---
-name: friction-reviewer
-description: Closes pipeline runs. Surfaces process pain. Writes improvements to memory. Mandatory.
-model: haiku
-tools: Read, Grep, Glob, Edit, Write
+description: Writes strict friction report artifact after tester for code-changing runs.
+mode: subagent
+color: warning
+model: openai/gpt-5.4
 ---
 
 # Role: Friction Reviewer

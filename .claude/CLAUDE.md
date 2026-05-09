@@ -21,15 +21,29 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 
 ### Phase 1: Intake
 1. Pre-flight repo check: `git rev-parse --is-inside-work-tree`.
-2. Plan reuse check: parse `use plan <guid>` via `\buse plan (?P<guid>[a-f0-9]{8})\b`.
-   - Exists at `<repo>/.pipeline/plans/<project-slug>/<guid>.md` → reuse.
+2. Plan reuse check: parse `use plan <id>` via `\buse plan (?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})\b`.
+   - Exists at `~/.pipeline/plans/<project-slug>/<id>.md` → reuse.
    - Missing → hard error, list available plan files.
-3. Create `<repo>/.pipeline/runs/<YYYY-MM-DDTHH-MM-SS-<rid4>>/`.
+3. Create `<repo>/.pipeline/runs/<artifact-id>/`.
 4. Write `brief.md`, init `pipeline.md`.
-5. If plan exists, write `plan.ref` (guid + absolute plan path).
+5. If plan exists, write `plan.ref` (id + absolute plan path).
 6. Spawn `plan` only when needed:
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
+7. Canonical plan and run IDs come from `artifact-slug` output.
+   - Runtime rule:
+     - In OpenCode, use the `artifact-slug` custom tool.
+     - In Claude Code, do not attempt an `artifact-slug` tool call; use `python3 ~/.config/opencode/tools/artifact-slug.py` directly.
+     - In OpenCode, fall back to the Bash helper only if the custom tool is unavailable.
+   - Scope rule: `artifact-slug` is for canonical plan/run IDs only. Do not use it for timestamps, freshness checks, filenames other than canonical artifact IDs, or unrelated naming.
+    - Bind the returned value immediately as `artifact-id`.
+    - Create the run dir using that exact value: `<repo>/.pipeline/runs/<artifact-id>/`.
+    - Reuse that same exact `artifact-id` everywhere in intake for the current run.
+    - Do not generate a second artifact ID during the same intake unless user explicitly requests a new one.
+    - Format: `<slug>-<hex6>`.
+    - Plan canonical ID = `<artifact-id>`.
+    - Run canonical ID = `<artifact-id>`.
+   - Timestamp rule: if an artifact needs a timestamp, obtain it only when writing that artifact or leave a placeholder until the writing stage. Do not run extra timestamp commands during intake unless required for an artifact being written immediately.
 
 ### Phase 2: Compose + Execute
 6. Build role list from brief + plan (if present).
@@ -43,7 +57,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 ### Build Stage Contract
 - Every build revision must produce `build-evidence-r<N>.md` in run dir.
 - Before each build revision, build must complete pre-build skeptic checklist and write `prebuild-skeptic-code-r<N>.md` in run dir.
-- If UI/UX scope present and `/frontend-design` skipped/folded into build, build must write `frontend-handoff.md`.
+- If UI/UX scope present and `ui-ux-designer` did not run, build must write fallback `frontend-handoff.md`.
 - `build-evidence-r<N>.md` required fields:
   - revision, timestamp
   - exact commands run
@@ -53,7 +67,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
   - optional commit_sha
 - Skeptic code gate must read latest build-evidence artifact before verdict.
 - Skeptic code gate must also read latest `prebuild-skeptic-code-r<N>.md`; missing checklist artifact = Blocked.
-- For folded/skipped frontend-design runs with UI changes, skeptic/reviewer/security/tester must read `frontend-handoff.md`; missing artifact = Blocked.
+- When UI changed and `ui-ux-designer` did not run, skeptic/reviewer/security/tester must read fallback `frontend-handoff.md`; missing artifact = Blocked.
 
 ## Role Inclusion Rules
 
@@ -61,6 +75,7 @@ Read at startup. Create empty file if missing. Update w/ durable lessons at end.
 |------|--------------|
 | build | code change needed |
 | architect | schema/state/module-boundary change |
+| ui-ux-designer | UI/UX scope in brief |
 | skeptic | if architect/build/ops gate needed |
 | reviewer | diff > ~50 LoC or cross-module/shared utils |
 | security-auditor | external input/auth/crypto/network/storage/perm/native |
@@ -80,7 +95,7 @@ Enforce only for included roles.
 | researcher | brief.md | brief.md |
 | plan | brief.md | brief.md, research.md |
 | architect | plan.ref or brief.md | plan.ref, brief.md |
-| /frontend-design | plan.ref or brief.md | plan.ref, brief.md |
+| ui-ux-designer | plan.ref or brief.md (after architect if ran) | plan.ref, brief.md, design.md (if architect ran) |
 | skeptic-design | architect complete | design.md, prior verdict |
 | build | skeptic-design approved (if design ran) | plan.ref, design.md, prior verdict |
 | skeptic-code | build complete | design.md, git diff, prebuild-skeptic-code-r<N>.md, build-evidence-r<N>.md, prior verdict |
@@ -98,8 +113,8 @@ Use for every subagent task call.
 [specific instruction]
 
 ## Pipeline
-Run: <run-id>
-Dir: <repo>/.pipeline/runs/<run-id>/
+Run: <artifact-id>
+Dir: <repo>/.pipeline/runs/<artifact-id>/
 
 ## Read
 [artifact files]
@@ -112,11 +127,8 @@ Dir: <repo>/.pipeline/runs/<run-id>/
 [from canonical plan or brief]
 
 ## Plan Reference
-GUID: <guid>
-Path: <repo>/.pipeline/plans/<project-slug>/<guid>.md
-
-## Policy
-- Output: caveman:ultra. Technical terms exact. Terse.
+ID: <artifact-id>
+Path: ~/.pipeline/plans/<project-slug>/<artifact-id>.md
 ```
 
 Gate re-review adds:
@@ -135,7 +147,7 @@ review_type: <design|code|ops|review|security>
 Read latest verdict by globbing `verdict-<type>-r<N>.md` and picking max `N`. Parse YAML frontmatter.
 
 ```yaml
-verdict: Approved | Blocked
+verdict: Approved | Blocked | Conditional
 role: <role>
 review_type: <design|code|ops|review|security>
 loops: <N>
@@ -144,6 +156,7 @@ revision: r<N>
 
 - Approved → continue.
 - Blocked → revision loop.
+- Conditional → revision loop (same routing as Blocked).
 
 ## Revision Loop
 
@@ -167,11 +180,9 @@ Rules:
 
 ## Artifact Discipline
 
-Run dir: `<repo>/.pipeline/runs/<run-id>/` where `<run-id>` = `YYYY-MM-DDTHH-MM-SS-<rid4>`.
+Run dir: `<repo>/.pipeline/runs/<artifact-id>/` where `<artifact-id>` = `<slug>-<hex6>` from `artifact-slug`.
 
-`<rid4>` rule: 4-char lowercase hex (`[a-f0-9]{4}`), unique per run.
-
-Plan dir: `<repo>/.pipeline/plans/<project-slug>/<guid>.md`.
+Plan dir: `~/.pipeline/plans/<project-slug>/<artifact-id>.md`.
 
 `<project-slug>` rule: absolute project path with `/` replaced by `-`.
 
@@ -183,16 +194,17 @@ Required run artifacts:
 - `design.md` (if architect runs)
 - `build-evidence-r<N>.md` (required for each build revision)
 - `prebuild-skeptic-code-r<N>.md` (required for each build revision)
-- `frontend-handoff.md` (required when UI changed and frontend-design skipped/folded)
+- `frontend-handoff.md` (required when UI changed; owned by `ui-ux-designer` if ran, else build fallback)
 - `verdict-design-r<N>.md` / `verdict-code-r<N>.md` / `verdict-ops-r<N>.md`
 - `verdict-review-r<N>.md` / `verdict-security-r<N>.md`
 - `verdict-test-r<N>.md` (tester)
+- `artifact-slug` output is canonical artifact identity for plans and runs.
 
 `pipeline.md` schema (thin ledger, <=30 lines):
 ```yaml
 ---
-run_id: <run-id>
-plan_guid: <guid|none>
+run_id: <artifact-id>
+plan_id: <artifact-id|none>
 brief: <one-line>
 roles_included: [..]
 roles_skipped: {role: reason}
@@ -223,5 +235,5 @@ Include:
 - Files changed count
 - Tests pass ratio
 - Loop counts
-- Artifact dir + plan guid
+- Artifact dir + plan id
 - Token report by role

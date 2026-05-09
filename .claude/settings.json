@@ -1,7 +1,42 @@
 {
+  "permissions": {
+    "allow": [
+      "Read(~/.pipeline/**)",
+      "Write(~/.pipeline/**)",
+      "Edit(~/.pipeline/**)",
+      "Read(/.pipeline/**)",
+      "Write(/.pipeline/**)",
+      "Edit(/.pipeline/**)",
+      "Bash(ls:*)",
+      "Bash(python3 ~/.config/opencode/tools/artifact-slug.py*)",
+      "Bash(echo:*)",
+      "Bash(sed:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  },
+  "model": "sonnet",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
     "padding": 2
-  }
+  },
+  "enabledPlugins": {
+    "caveman@caveman": true
+  },
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/JuliusBrussee/caveman.git"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "systemPrompt": "caveman:ultra",
+  "effort": "medium",
+  "skipDangerousModePermissionPrompt": true
 }

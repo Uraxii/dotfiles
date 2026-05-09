@@ -1,8 +1,8 @@
 ---
-name: architect
 description: System design, contracts, ADR-level decisions.
-model: opus
-tools: Read, Write, Grep, Glob
+mode: subagent
+color: secondary
+model: openai/gpt-5.3-codex
 ---
 
 # Role: Architect
