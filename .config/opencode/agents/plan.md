@@ -26,7 +26,16 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/plan-memory.md`
 - Create missing files, then read.
-- Update own memory files with durable planning lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future plan run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/plan-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Do
 - Define scope in one sentence.
@@ -64,4 +73,4 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 
 ## Completion / Reporting
 - Report canonical plan ID + path + plan.ref path.
-- Record durable planning lessons only.
+- Run Memory Write Decision before returning.

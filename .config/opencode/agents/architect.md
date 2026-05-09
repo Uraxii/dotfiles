@@ -28,7 +28,16 @@ Design system structure and interfaces for build stage.
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/architect-memory.md`
 - Create missing files, then read.
-- Update own memory files with durable design lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future architect run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/architect-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Do
 - Choose architecture patterns and boundaries.
@@ -63,4 +72,4 @@ Design system structure and interfaces for build stage.
 
 ## Completion / Reporting
 - Reference exact design artifact path.
-- Record durable design lessons only.
+- Run Memory Write Decision before returning.

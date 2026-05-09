@@ -26,7 +26,16 @@ Run tests and report pass/fail, coverage gaps, and runtime verification outcome.
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/tester-memory.md`
 - Create missing files, then read.
-- Update own memory files with durable testing/runtime lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future tester run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/tester-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Review Types
 - `test`: execute tests, assess coverage gaps, perform runtime verification when runnable.
@@ -67,7 +76,7 @@ Run tests and report pass/fail, coverage gaps, and runtime verification outcome.
 ## Completion / Reporting
 - Reference exact verdict file path.
 - Hand off to friction-reviewer after verdict write on code-changing runs.
-- Record durable testing lessons only.
+- Run Memory Write Decision before returning.
 
 ## Verdict Schema
 ```yaml

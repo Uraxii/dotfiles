@@ -29,7 +29,16 @@ Turn product intent into clear, implementation-ready UI/UX direction. Raise qual
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/ui-ux-designer-memory.md`
 - Create missing files, then read.
-- Agent may update own role memory + matching project-role memory with durable design-system, product-pattern, UX-preference lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future ui-ux-designer run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/ui-ux-designer-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 - Cross-cutting lessons go to core memory only via Monitor unless user explicitly requests otherwise.
 
 ## Do
@@ -91,7 +100,7 @@ Turn product intent into clear, implementation-ready UI/UX direction. Raise qual
 - No broad brand strategy unless brief asks.
 
 ## Completion / Reporting
-- Record durable lessons only.
+- Run Memory Write Decision before returning.
 - Reference exact artifact path written.
 - If unresolved ambiguity remains, record it in `open questions / escalations` with impact, blocked decision, and why local decision unsafe.
 
