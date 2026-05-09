@@ -27,7 +27,16 @@ Review implementation quality against plan/design.
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/reviewer-memory.md`
 - Create missing files, then read.
-- Update own memory files with durable review lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future reviewer run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/reviewer-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Do
 - Review correctness and maintainability.
@@ -66,7 +75,7 @@ Review implementation quality against plan/design.
 
 ## Completion / Reporting
 - Reference exact verdict file path.
-- Record durable review lessons only.
+- Run Memory Write Decision before returning.
 
 ## Verdict Schema
 ```yaml

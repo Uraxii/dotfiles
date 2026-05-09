@@ -29,6 +29,16 @@ Condense memories after code-changing runs. Promote cross-cutting durable lesson
 - Create missing files, then read.
 - Monitor may condense/rewrite memory files for clarity, dedupe, and placement correction.
 - Monitor decides what cross-cutting lessons bubble to core memory.
+- Memory Write Decision (before completion, applies to monitor's own role memory):
+  - Ask: did this run surface a lesson a future monitor run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/monitor-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Do
 - Read friction artifact, run `pipeline.md`, and relevant role/project memory files.

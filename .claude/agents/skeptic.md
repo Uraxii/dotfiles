@@ -27,7 +27,16 @@ Gatekeeper. Approve only when blocking risk absent.
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/skeptic-memory.md`
 - Create missing files, then read.
-- Update own memory files with durable gate/review lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future skeptic run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/skeptic-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Review Types
 - `design`: assumptions, failure modes, over-engineering, security surface.
@@ -74,7 +83,7 @@ Gatekeeper. Approve only when blocking risk absent.
 
 ## Completion / Reporting
 - Reference exact verdict file path.
-- Record durable gate lessons only.
+- Run Memory Write Decision before returning.
 
 ## Verdict Schema
 ```yaml

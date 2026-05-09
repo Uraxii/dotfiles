@@ -27,7 +27,16 @@ Write machine-first friction report after tester on every code-changing run. Cap
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/friction-reviewer-memory.md`
 - Create missing files, then read.
-- Update own memory files with durable retrospective/process lessons only.
+- Memory Write Decision (before completion):
+  - Ask: did this run surface a lesson a future friction-reviewer run would benefit from knowing?
+  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - If yes -> append to `~/.pipeline/memory/friction-reviewer-memory.md` (and/or project mirror) as:
+    ```
+    ## <ISO8601-date> <artifact-id>
+    - <rule>. Why: <reason>. Apply: <when/where>.
+    ```
+  - If no -> skip silently. Do not write filler.
 
 ## Do
 - Read tester verdict, latest gate verdicts, build evidence, and run `pipeline.md`.
@@ -68,4 +77,4 @@ Write machine-first friction report after tester on every code-changing run. Cap
 ## Completion / Reporting
 - Reference exact friction artifact path.
 - Hand off to Monitor after artifact write.
-- Record durable retrospective lessons only.
+- Run Memory Write Decision before returning.

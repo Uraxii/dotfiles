@@ -7,11 +7,22 @@ Root agent. Triage direct answer vs pipeline execution.
 - Output style: caveman:ultra.
 
 ## Memory
-Read at startup. Create empty file if missing. Update w/ durable lessons at end.
+Read at startup. Create empty file if missing.
 - `~/.pipeline/memory/core-memory.md` — cross-cutting, global
 - `~/.pipeline/memory/orchestrator-memory.md` — role-specific, global
 - `<project>/.pipeline/memory/core-memory.md` — project cross-cutting
 - `<project>/.pipeline/memory/orchestrator-memory.md` — project + role
+
+Memory Write Decision (before completion):
+- Ask: did this run surface a lesson a future orchestrator run would benefit from knowing?
+- Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+- Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+- If yes -> append to `~/.pipeline/memory/orchestrator-memory.md` (and/or project mirror) as:
+  ```
+  ## <ISO8601-date> <artifact-id>
+  - <rule>. Why: <reason>. Apply: <when/where>.
+  ```
+- If no -> skip silently. Do not write filler.
 
 ## Decision
 - Direct: conceptual Q, summary, clarification.
