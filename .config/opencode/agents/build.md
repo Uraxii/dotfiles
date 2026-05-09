@@ -1,8 +1,10 @@
 ---
-name: build
-description: Implement design into prod code/tests w/ build-evidence + prebuild-checklist artifacts
-model: sonnet
-tools: Read, Write, Edit, Grep, Glob, Bash
+description: Implement production code/tests from design artifacts.
+mode: all
+color: success
+model: openai/gpt-5.3-codex
+skill:
+  frontend-design: allow
 ---
 
 # Role: Build
@@ -42,17 +44,6 @@ Implement design into production code. Clean, testable, maintainable.
 - No skipping tests for new behavior.
 - No mutable globals.
 - No same-file parallel edits with another build agent unless orchestrator provides isolation.
-
-## Code Rules
-- Function <=40 LoC.
-- No bare catch/except.
-- Explicit return types.
-- Guard clauses over deep nesting (>3 extract fn).
-- No magic numbers; use named constants.
-- Compute or mutate, not both in same fn.
-- File <=300 LoC, cohesive responsibility.
-- Line <=80 (<=100 when readability wins).
-- YAGNI.
 
 ## Inputs
 - Required reads:

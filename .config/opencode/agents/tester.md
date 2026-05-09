@@ -1,8 +1,8 @@
 ---
-name: tester
-description: Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.
-model: sonnet
-tools: Read, Grep, Glob, Bash, Edit, Write
+description: Test execution after code gates pass.
+mode: subagent
+color: success
+model: openai/gpt-5.3-codex
 ---
 
 # Role: Tester
@@ -35,7 +35,7 @@ Run tests and report pass/fail, coverage gaps, and runtime verification outcome.
 - Execute relevant unit/integration/e2e tests.
 - Probe boundary/failure cases when needed.
 - Report regressions clearly.
-- If UI changed: map tests to `frontend-handoff.md` acceptance bullets, whether authored by `ui-ux-designer` or build fallback.
+- If UI changed: map tests to `frontend-handoff.md` acceptance bullets, whether authored by `ui-ux-designer` or Build fallback.
 - Own runtime verification when target is runnable.
 
 ## Don't

@@ -25,22 +25,32 @@ nvim-specific guidance, see the linked files above.
 
 ### Purpose
 
-OpenCode CLI agent stack. Generates a runtime `opencode.json` from a
-template + model defaults so model assignments can vary per machine
-without dirtying the tracked config.
+OpenCode CLI agent stack. Agent model assignments are updated in-place
+from `models.defaults` plus optional `models.local` overrides, so
+per-machine model changes do not require hand-editing each role file.
 
 ### Key files
 
-- `.config/opencode/gen-config.py` — Python renderer. Loads
-  `models.defaults`, then `models.local` (optional override), then
-  substitutes `##MODEL_*##` placeholders in `opencode.json.tmpl` and
-  writes `opencode.json`.
-- `.config/opencode/opencode.json.tmpl` — tracked template.
+- `.config/opencode/update-models.py` — updates `model:` frontmatter
+  in `.config/opencode/agents/*.md` from `models.defaults` plus optional
+  `models.local` overrides.
+- `.config/opencode/agent-model-map.cfg` — explicit mapping of
+  `agents/*.md` files to `MODEL_*` keys.
 - `.config/opencode/models.defaults` — tracked default model
   assignments (shell-style `KEY="value"`).
 - `.config/opencode/models.local` — optional per-machine override
   (stow-ignored).
 - `.config/opencode/opencode.json` — runtime, generated, stow-ignored.
+- `.config/opencode/tools/artifact-slug.ts` — custom OpenCode tool
+  (`artifact-slug`) that returns human-readable artifact IDs in the
+  form `<slug>-<hex6>`.
+- `.config/opencode/tools/artifact-slug.py` — Python helper invoked by
+  `artifact-slug` tool.
+- `.claude/sdk/artifact-slug-server.ts` — Claude Code Agent SDK MCP
+  server that reuses the same Python helper and exposes
+  `mcp__pipeline__artifact_slug`.
+- `.claude/sdk/artifact-slug-example.ts` — minimal Claude Code Agent SDK
+  query example wiring the MCP server into `allowedTools`.
 - `.config/opencode/prompts/` — per-agent system prompts.
 - `.config/opencode/skills/` — invocable skill definitions
   (incl. `caveman/SKILL.md` instruction file).
@@ -50,7 +60,7 @@ without dirtying the tracked config.
 
 ### Agent roles
 
-Defined in `opencode.json.tmpl`:
+Defined in `.config/opencode/agents/*.md`:
 
 | Agent | Mode | Purpose |
 |-------|------|---------|
@@ -59,14 +69,10 @@ Defined in `opencode.json.tmpl`:
 | `build` | all | Implement production code + tests |
 | `researcher` | all | Pre-plan domain research; webfetch |
 | `architect` | subagent | ADRs, contracts, tradeoffs |
-| `skeptic` | subagent | Critical gatekeeper |
-| `reviewer` | subagent | Code-quality review |
+| `skeptic` | subagent | Critical gatekeeper (includes code-quality review scope) |
 | `security-auditor` | subagent | Security gate |
 | `tester` | subagent | Test strategy / validation |
-| `friction-reviewer` | subagent | Pipeline-process review |
-| `monitor` | subagent | Memory hygiene + cross-cutting patterns |
 | `progenitor` | primary | Creates / evolves agent role definitions |
-| `code-reviewer` | subagent | Manual code-review helper |
 
 ### Runtime / ignored dirs
 
@@ -77,7 +83,8 @@ legacy snapshot — not part of the runtime config.
 
 ### External dependencies
 
-`opencode` CLI, `python3` (for `gen-config.py`), and the model
+`opencode` CLI, `python3` (for `update-models.py` and `artifact-slug`
+tool helper), Claude Code Agent SDK runtime for `.claude/sdk/*.ts`, and the model
 providers configured in `models.defaults`.
 
 ## systemd / user

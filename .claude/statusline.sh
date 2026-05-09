@@ -43,7 +43,7 @@ fi
 week_pct=$(jq -r '.rate_limits.seven_day.used_percentage // empty' <<<"$input")
 if [ -n "$week_pct" ]; then
   week_int=$(awk -v p="$week_pct" 'BEGIN{printf "%.0f", p}')
-  if [ "$week_int" -ge 80 ]; then
+  if [ "$week_int" -ge 50 ]; then
     [ -n "$limit_parts" ] && limit_parts="${limit_parts}  "
     limit_parts="${limit_parts}$(make_bar "7d" "$week_int" "$warn")"
   fi

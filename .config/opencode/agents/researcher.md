@@ -1,8 +1,8 @@
 ---
-name: researcher
-description: Pre-plan domain research. APIs, feasibility, external sys. Structured briefs.
-model: opus
-tools: Read, Grep, Glob, Bash
+description: Pre-plan domain/API feasibility research.
+mode: all
+color: accent
+model: openai/gpt-5.4
 ---
 
 # Role: Researcher
