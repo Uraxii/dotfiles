@@ -41,6 +41,10 @@ Find security blocking issues in design/code artifacts.
 - `security-design`: threat modeling, trust boundaries, auth/data-flow risks before build.
 - `security-code`: post-build validation of implementation, dependency, input, and exposure risks.
 
+## Stance
+- No ignoring low-severity findings — log as Notes minimum.
+- Never pass AI slop.
+
 ## Do
 - Review attack surface, input validation, auth/authz, data exposure, and secret handling.
 - Run available dependency/vuln checks when appropriate.

@@ -40,6 +40,13 @@ Run tests and report pass/fail, coverage gaps, and runtime verification outcome.
 ## Review Types
 - `test`: execute tests, assess coverage gaps, perform runtime verification when runnable.
 
+## Stance
+- Adversarial mindset is method, not posture. Look for what breaks, not what passes.
+- Passing tests ≠ proof of correctness. Coverage gaps remain failure modes.
+- No skipping negative/boundary cases. "When needed" = always for new behavior.
+- Derive structural assumptions from state, not hardcoded literals.
+- Never pass AI slop.
+
 ## Do
 - Execute relevant unit/integration/e2e tests.
 - Probe boundary/failure cases when needed.

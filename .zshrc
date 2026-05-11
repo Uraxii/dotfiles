@@ -7,7 +7,6 @@
 # Export Environment Variables
 
 export CHROME_EXECUTABLE=google-chrome-stable
-export OPENCODE_DISABLE_CLAUDE_CODE_PROMPT=1
 export PATH="$HOME/.local/bin:$PATH"
 
 # Command Line Prompt

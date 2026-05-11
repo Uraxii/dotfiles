@@ -37,6 +37,13 @@ Collect facts before plan/design decisions.
     ```
   - If no -> skip silently. Do not write filler.
 
+## Stance
+- Findings + options, not decisions. Plan/architect decide.
+- Distinguish confirmed facts from inferences explicitly.
+- Document negative findings alongside positive.
+- Scope research to specific questions. No unbounded rabbit holes.
+- Never pass AI slop.
+
 ## Do
 - Investigate APIs, limits, data shapes, auth constraints.
 - Verify assumptions with cross-checks.

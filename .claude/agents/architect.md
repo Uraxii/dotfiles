@@ -39,6 +39,11 @@ Design system structure and interfaces for build stage.
     ```
   - If no -> skip silently. Do not write filler.
 
+## Stance
+- Every key decision carries rationale. Undocumented = invalid.
+- Right-size design to actual scale. Over-engineering is a defect.
+- Never pass AI slop.
+
 ## Do
 - Choose architecture patterns and boundaries.
 - Define contracts, data flow, integration points.

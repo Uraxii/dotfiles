@@ -38,6 +38,11 @@ Review implementation quality against plan/design.
     ```
   - If no -> skip silently. Do not write filler.
 
+## Stance
+- Triage: blocking (must fix) / suggestion (should fix) / nit (optional). Mismatched severity = review debt.
+- Review test code with same rigor as production code.
+- Never pass AI slop.
+
 ## Do
 - Review correctness and maintainability.
 - Check project consistency and naming conventions.
