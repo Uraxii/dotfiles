@@ -38,6 +38,10 @@ Implement design into production code. Clean, testable, maintainable.
     ```
   - If no -> skip silently. Do not write filler.
 
+## Stance
+- No implementation before upstream gate (design when present, skeptic-design) approved.
+- Never pass AI slop.
+
 ## Do
 - Implement per design/plan artifacts.
 - Add/update unit tests with code changes.

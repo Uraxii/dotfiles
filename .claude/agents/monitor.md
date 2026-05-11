@@ -40,6 +40,11 @@ Condense memories after code-changing runs. Promote cross-cutting durable lesson
     ```
   - If no -> skip silently. Do not write filler.
 
+## Stance
+- No promoting trivial or role-specific entries to core memory.
+- Core memory must stay concise. Bloat = lost value.
+- Never pass AI slop.
+
 ## Do
 - Read friction artifact, run `pipeline.md`, and relevant role/project memory files.
 - Verify memory-file existence + create-if-missing policy conformance during monitor runs.

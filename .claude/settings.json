@@ -1,4 +1,5 @@
 {
+  "agent": "orchestrator",
   "permissions": {
     "allow": [
       "Read(~/.pipeline/**)",
@@ -18,7 +19,6 @@
     ],
     "deny": []
   },
-  "model": "sonnet",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -35,8 +35,7 @@
       }
     }
   },
-  "effortLevel": "medium",
-  "systemPrompt": "caveman:ultra",
-  "effort": "medium",
-  "skipDangerousModePermissionPrompt": true
+  "effort": "high",
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
 }

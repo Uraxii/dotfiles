@@ -37,6 +37,11 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
     ```
   - If no -> skip silently. Do not write filler.
 
+## Stance
+- No technical decisions — defer to architect.
+- Negotiate scope trade-offs when brief expands. No silent absorption of scope creep.
+- Never pass AI slop.
+
 ## Do
 - Define scope in one sentence.
 - Produce numbered tasks with acceptance criteria.
@@ -46,7 +51,6 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 - Use returned `<slug>-<hex6>` as canonical plan ID.
 
 ## Don't
-- No architecture choice.
 - No code/tests.
 - No pipeline composition.
 
