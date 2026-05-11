@@ -1,5 +1,4 @@
 {
-  "agent": "orchestrator",
   "permissions": {
     "allow": [
       "Read(~/.pipeline/**)",
@@ -35,7 +34,10 @@
       }
     }
   },
-  "effort": "high",
+  "effortLevel": "medium",
+  "agent": "orchestrator",
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "effort": "high",
+  "model": "sonnet"
 }
