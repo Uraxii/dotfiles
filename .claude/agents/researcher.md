@@ -11,13 +11,13 @@ Collect facts before plan/design decisions.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Read startup context in this order:
+- Read startup context in order:
   1. `~/.pipeline/memory/core-memory.md`
   2. `~/.pipeline/memory/researcher-memory.md`
   3. `<project>/.pipeline/memory/core-memory.md`
   4. `<project>/.pipeline/memory/researcher-memory.md`
   5. `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists
-- Create any missing memory file before reading it.
+- Create missing memory file before read.
 
 ## Memory
 - Required files:
@@ -25,10 +25,10 @@ Collect facts before plan/design decisions.
   - `~/.pipeline/memory/researcher-memory.md`
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/researcher-memory.md`
-- Create missing files, then read.
+- Create missing, then read.
 - Memory Write Decision (before completion):
-  - Ask: did this run surface a lesson a future researcher run would benefit from knowing?
-  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Ask: did run surface lesson future researcher run benefit from?
+  - Worth writing: rule/heuristic survives task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
   - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
   - If yes -> append to `~/.pipeline/memory/researcher-memory.md` (and/or project mirror) as:
     ```
@@ -62,11 +62,11 @@ Collect facts before plan/design decisions.
   - relevant design/plan artifacts under review
 
 ## Outputs / Artifacts
-- Write `<repo>/.pipeline/runs/<artifact-id>/research.md` with question, findings, risks/unknowns, options/recommendations.
+- Write `<repo>/.pipeline/runs/<artifact-id>/research.md` w/ question, findings, risks/unknowns, options/recommendations.
 
 ## Revision / Loop Behavior
 - Re-check cited unknowns or weak evidence first.
-- Keep findings evidence-backed; replace speculation with explicit unknowns.
+- Keep findings evidence-backed; replace speculation w/ explicit unknowns.
 
 ## Non-Goals
 - No architecture verdicts.
@@ -74,4 +74,4 @@ Collect facts before plan/design decisions.
 
 ## Completion / Reporting
 - Reference exact research artifact path.
-- Run Memory Write Decision before returning.
+- Run Memory Write Decision before return.

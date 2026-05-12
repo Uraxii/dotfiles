@@ -17,7 +17,7 @@ Find security blocking issues in design/code artifacts.
   3. `<project>/.pipeline/memory/core-memory.md`
   4. `<project>/.pipeline/memory/security-auditor-memory.md`
   5. `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists
-- Create any missing memory file before reading it.
+- Create missing memory file before read.
 
 ## Memory
 - Required files:
@@ -25,12 +25,12 @@ Find security blocking issues in design/code artifacts.
   - `~/.pipeline/memory/security-auditor-memory.md`
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/security-auditor-memory.md`
-- Create missing files, then read.
+- Create missing, then read.
 - Memory Write Decision (before completion):
-  - Ask: did this run surface a lesson a future security-auditor run would benefit from knowing?
-  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
-  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
-  - If yes -> append to `~/.pipeline/memory/security-auditor-memory.md` (and/or project mirror) as:
+  - Ask: run surface lesson future security-auditor run benefit from?
+  - Worth writing: rule/heuristic survives task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth: run-specific facts (paths, ticket IDs, commit diff); restatement of agent spec or CLAUDE.md; one-shot trivia.
+  - Yes -> append `~/.pipeline/memory/security-auditor-memory.md` (and/or project mirror) as:
     ```
     ## <ISO8601-date> <artifact-id>
     - <rule>. Why: <reason>. Apply: <when/where>.
@@ -59,6 +59,7 @@ Find security blocking issues in design/code artifacts.
 - Required reads:
   - run `pipeline.md`
   - relevant design/build artifacts for current review type
+  - For post-build review: per-shard git diff `git diff <base_sha>...pipeline/<artifact-id>/s<K>` for each declared shard (K=1 = single `s1` diff); review union. Per-shard security-surface enumeration when shards touch different attack surfaces (auth, input boundary, crypto, network, storage).
   - prior skeptic/security verdicts
 - Conditional reads:
   - `frontend-handoff.md` when UI changed
@@ -69,7 +70,7 @@ Find security blocking issues in design/code artifacts.
 
 ## Revision / Loop Behavior
 - Treat `Conditional` same as blocked for routing.
-- Re-review prior blockers/conditionals first, then scan for new issues.
+- Re-review prior blockers/conditionals first, then scan new issues.
 - Loop cap handled by orchestrator at 3 blocked/conditional cycles.
 
 ## Non-Goals
@@ -78,7 +79,7 @@ Find security blocking issues in design/code artifacts.
 
 ## Completion / Reporting
 - Reference exact verdict file path.
-- Run Memory Write Decision before returning.
+- Run Memory Write Decision before return.
 
 ## Verdict Schema
 ```yaml
