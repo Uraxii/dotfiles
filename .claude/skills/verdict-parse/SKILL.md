@@ -1,7 +1,6 @@
 ---
 name: verdict-parse
 description: Glob verdict-<type>-r<N>.md files in pipeline run dir, pick max N, parse YAML frontmatter. Returns verdict + role + revision + loops. Use when orchestrator routes or any gate reads prior verdict.
-disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---

@@ -1,7 +1,6 @@
 ---
 name: dream
 description: Memory curation skill. Five operations on pipeline memory files - consolidate duplicates, remove stale, extract patterns, reorg by signal, tier-promote (role to core). Writes diff artifact only. Review-mode default; Auto mode opt-in per-project.
-disable-model-invocation: true
 source: pipeline-native (modeled on https://claude.com/blog/new-in-claude-managed-agents)
 output-style: caveman:ultra
 ---

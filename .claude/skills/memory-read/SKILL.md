@@ -1,7 +1,6 @@
 ---
 name: memory-read
 description: Load pipeline agent memory files at startup. Reads 4 canonical paths in order (global core, global role, project core, project role). Creates missing files before reading. Use when agent spawns and needs startup context.
-disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---

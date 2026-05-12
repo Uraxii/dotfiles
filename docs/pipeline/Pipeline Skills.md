@@ -38,13 +38,17 @@ Every SKILL.md starts with YAML:
 ---
 name: <invocation-name>                       # exact name used in Skill(...)
 description: <auto-load trigger + use-when>
-disable-model-invocation: true                # pipeline skills: no description-match auto-load
 source: pipeline-native | mattpocock/skills:<path>
 output-style: caveman:ultra                   # when invoked from pipeline agent
 ---
 ```
 
-`disable-model-invocation: true` is set on every pipeline skill. This prevents the model from picking the skill via description-match on user prompts. The only invocation path is explicit `Skill(skill: "...")` from agent or orchestrator bodies.
+**Invocation semantics**:
+
+- Agent-invokable skills (10 of 11) omit `disable-model-invocation`. Default behavior: Claude can both auto-load (description match) AND invoke via `Skill` tool. Auto-load risk is mitigated by precise `description` text — keep triggers narrow.
+- `dream-apply` is the sole exception. Its frontmatter sets `disable-model-invocation: true` + `invoke-from: user-only`. This blocks model invocation entirely; only USER may invoke via `/dream-apply`. See [[Pipeline Memory]] for the three-layer enforcement (frontmatter + agent body exclusion + friction audit).
+
+Earlier doctrine claimed `disable-model-invocation: true` would block description-match auto-load while still allowing explicit `Skill(skill: "...")` calls. That was a misread — the flag blocks all model invocation. Plan rev 4 carried the misread; fix landed in commit after `dfc40f3`.
 
 ## Skill catalog
 

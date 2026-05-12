@@ -1,7 +1,6 @@
 ---
 name: memory-write
 description: Append rule to pipeline agent memory file via Memory Write Decision gate. Routes pipeline doctrine to memory file; project-wide conventions to claudemd-proposal artifact. Use when agent completes work and may have surfaced a durable lesson.
-disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---

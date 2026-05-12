@@ -1,7 +1,6 @@
 ---
 name: worktree-lifecycle
 description: Pipeline shard worktree primitives — create, stale-probe, cleanup. Wraps git worktree commands. Use by orchestrator for shard management + build for self-verify scope check.
-disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---

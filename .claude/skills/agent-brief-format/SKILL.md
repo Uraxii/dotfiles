@@ -1,7 +1,6 @@
 ---
 name: agent-brief-format
 description: Pipeline brief.md template. Durable-over-precise (no file paths, no line numbers). Behavioral not procedural. Complete acceptance criteria. Explicit out-of-scope. Use by orchestrator at intake.
-disable-model-invocation: true
 source: mattpocock/skills:skills/engineering/triage/AGENT-BRIEF.md
 output-style: caveman:ultra
 ---

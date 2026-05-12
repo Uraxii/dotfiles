@@ -16,6 +16,6 @@ Reusable procedures invoked by pipeline agents via the `Skill` tool. Skill dirs 
 | [dream](dream/SKILL.md) | Memory curation: dedup, stale-removal, pattern-extract, signal-reorg, tier-promote. Review-mode default. |
 | [dream-apply](dream-apply/SKILL.md) | **USER-ONLY**. Apply dream diff. Mutates memory files. Archive recovery hatch. |
 
-All pipeline skills set `disable-model-invocation: true` — invoked by explicit `Skill(skill: "...")` calls only, not by description-match auto-load.
+Only `dream-apply` blocks model invocation (`disable-model-invocation: true` + `invoke-from: user-only`). The other 10 are agent-invokable via `Skill(skill: "...")` and may auto-load on matching prompts — keep `description` text precise to avoid misfires.
 
 Companion documentation: [`docs/pipeline/Pipeline Skills.md`](../../docs/pipeline/Pipeline%20Skills.md).

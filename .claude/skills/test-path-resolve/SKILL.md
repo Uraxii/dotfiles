@@ -1,7 +1,6 @@
 ---
 name: test-path-resolve
 description: Canonical test-path regex set. Reads optional test-paths.txt manifest in run-dir; falls back to default regex set. Use by skeptic + tester for prod-vs-test partitioning + prod-diff-sha.
-disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---

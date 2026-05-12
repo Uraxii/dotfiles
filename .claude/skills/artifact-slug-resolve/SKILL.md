@@ -1,7 +1,6 @@
 ---
 name: artifact-slug-resolve
 description: Resolve canonical artifact-id via runtime-aware artifact-slug tool. Returns slug-hex6 identifier for plan + run dirs. Use by orchestrator at intake.
-disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---

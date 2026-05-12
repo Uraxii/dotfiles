@@ -1,7 +1,6 @@
 ---
 name: handoff-doc
 description: Compact persistence-rotation summary template. References existing artifacts by path, never duplicates content. Use when architect (70% context) or build (80% context) rotates fresh session.
-disable-model-invocation: true
 source: mattpocock/skills:skills/productivity/handoff/SKILL.md
 output-style: caveman:ultra
 ---
