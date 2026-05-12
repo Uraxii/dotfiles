@@ -1,90 +1,85 @@
+<!-- GENERATED FROM .pipeline/_shared/templates/role-template.md — DO NOT EDIT -->
 # Role Template
 
-Use this template when creating a new agent role. The Progenitor creates agents by writing a `.config/opencode/agents/<name>.md` file with YAML frontmatter.
+This template shows the canonical frontmatter + body shape for pipeline agents on both platforms.
 
----
-
-## YAML Frontmatter (required)
+## Claude Code frontmatter example
 
 ```yaml
 ---
-name: agent-name
-description: One-line description of what this agent does and when to use it
-tools: read, grep, find, ls                # lowercase, comma-separated
-tier: mid                                   # high | mid | low — optional local overrides in shared/model-map.local.md
-thinking: medium                            # high | medium — omit for low-tier agents
-output: output-file.md                      # pipeline artifact filename — omit if none
-defaultReads: context.md, shared/communication-mode.md, shared/startup-protocol.md, shared/memory-protocol.md
-defaultProgress: false                      # optional, default false — set true for impl roles
+name: <role-slug>
+description: <one-line description>
+model: opus|sonnet|haiku
+tools: Read, Write, Edit, Grep, Glob, Bash, Skill
 ---
 ```
 
-### Field reference
+Notes:
+- Root agents (orchestrator) OMIT `tools:` — inherits full harness surface.
+- `model`: `opus` (complex reasoning), `sonnet` (balanced), `haiku` (fast/cheap).
 
-| Field | Required | Notes |
-|-------|----------|-------|
-| `name` | Yes | kebab-case identifier |
-| `description` | Yes | One-line — used by Orchestrator for agent selection |
-| `tools` | Yes | Lowercase. Common sets: `read, grep, find, ls` (read-only), add `bash, edit, write` for impl roles, add `subagent` for orchestration roles |
-| `tier` | Yes | Used for model routing when local overrides exist (`shared/model-map.local.md`). If no override, current selected model is used |
-| `thinking` | No | `high` or `medium`. Omit for low-tier agents |
-| `output` | No | Filename the agent writes pipeline results to. Omit if agent produces no artifact |
-| `defaultReads` | Yes | Files loaded at startup. Always include shared protocols. Add role-relevant upstream artifacts |
-| `defaultProgress` | No | Set `true` for roles that update `progress.md` (developer, orchestrator) |
+## OpenCode frontmatter example
 
+```yaml
 ---
+description: <one-line description>
+mode: primary|subagent|all
+color: primary|secondary|accent|success|warning|error|info|#RRGGBB
+model: anthropic/claude-opus-4-5|anthropic/claude-sonnet-4-5|anthropic/claude-haiku-4-5
+steps: 100
+permission:
+  <tool-name>: allow|ask|deny
+  task:
+    "*": deny
+    "<agent-name>": allow
+---
+```
 
-## Markdown Body
+Notes:
+- `name:` key absent — filename is the agent name.
+- `mode: primary` for orchestrator + progenitor; `mode: subagent` for all others.
+- `task:` block ONLY for mode-primary agents (orchestrator, progenitor). Omit for subagents.
+- `steps:` orchestrator=100, build=80, plan=60. Others: omit (use OC default).
 
-After the frontmatter, write the full role definition in markdown.
+## Required body sections
 
-### Required sections
+```markdown
+# Role: <Role Name>
 
-#### # Role: Name
+<one-paragraph purpose>
 
-One-sentence purpose statement.
+## Startup / Runtime Policy
+- Output style: caveman:ultra.
+- [Memory load — via snippet include]
 
-#### ## Identity
+## Memory
+[Memory Write Decision — via snippet include]
 
-**Required.** Every agent must have an emoji prefix for pipeline-context output.
+## Stance
+- [core stance bullets]
 
-`Always prefix your responses with <emoji> **[Name]** in your output.`
+## Do
+- [allowed actions]
 
-The emoji prefix is mandatory — it identifies the agent's contributions in pipeline-context and makes cross-role output scannable.
+## Don't
+- [prohibited actions]
 
-#### ## Additional Startup Reads
+## Inputs
+- Required reads: [list]
+- Conditional reads: [list]
 
-Shared startup protocol (`agents/shared/startup-protocol.md`) runs automatically via `defaultReads` before role-specific reads. Handles memory + inbox (see `shared/communication-mode.md`).
+## Outputs / Artifacts
+- [artifacts produced]
 
-List only role-relevant upstream artifacts:
+## Revision / Loop Behavior
+- [how to handle gate feedback]
 
-- `plan.md` — planner output (architect, developer)
-- `design.md` — architect output (developer, tester, reviewer)
-- `progress.md` — impl state (tester, reviewer, skeptic)
-- `code-review.md` — skeptic output (security-auditor, tester)
-- Pipeline context file — upstream context (mid/late-pipeline roles)
+## Non-Goals
+- [explicit non-goals]
 
-Only list what the role needs. No full menu copy.
+## Completion / Reporting
+- [what to report at end]
 
-#### ## Capabilities (or ## Process or ## Key Rules)
-
-What this agent is authorized to do.
-
-#### ## Constraints
-
-What this agent must NOT do.
-
-#### ## Output
-
-What this agent writes to its output artifact. Must use emoji prefix when writing to pipeline-context.
-
-### Optional sections
-
-Agents may add domain-specific sections as needed. Common patterns:
-
-- `## Review Process` / `## Research Process` — methodology steps (reviewer, researcher, tester)
-- `## Audit Checklist` — itemized checks (security-auditor)
-- `## Key Patterns` — best practices & conventions (architect, security-auditor)
-- `## Pipeline Modes` — decision logic for pipeline paths (planner)
-- `## After [Action]` — post-work procedures (developer, reviewer, researcher)
-- `## Duplicate Avoidance` — coordination with overlapping roles (security-auditor)
+## Skill invocation rules
+- `dream-apply` skill is USER-ONLY. <Role> MUST NOT invoke it.
+```

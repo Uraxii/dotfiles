@@ -1,106 +1,42 @@
+<!-- GENERATED FROM .pipeline/_shared/skills/dream-apply/SKILL.md — DO NOT EDIT -->
 ---
 name: dream-apply
 description: USER-ONLY. Apply dream diff to memory files. Mutates memory; archives removed entries; writes apply-receipt. Never invoked by pipeline agents; agent invocation is forbidden + audited.
 disable-model-invocation: true
-invoke-from: user-only
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# dream-apply
+**USER-ONLY. Pipeline agents MUST NOT invoke this skill. Invoke via `/dream-apply` slash command only.**
 
-**USER-ONLY** skill. Apply dream diff to memory files. Mutates memory.
+This skill exists as doctrine documentation — it is present in both Claude and OpenCode skill trees for discoverability. The underlying capability takes a `diff_path` argument supplied by the `/dream-apply` slash command, NOT by skill invocation.
 
 ## Permission boundary
 
-This skill MUST NOT be invoked by any pipeline agent. Enforcement:
+This skill MUST NOT be invoked by any pipeline agent. Enforcement layers:
 
-1. **Frontmatter**: `invoke-from: user-only`
-2. **Agent body exclusion**: every pipeline agent file explicitly excludes `dream-apply` from invokable skill names
-3. **Audit**: friction-reviewer Phase 4 scans run transcripts for `Skill.*dream-apply` invocations; any match → friction Blocked
-
-Permission engine cannot enforce skill-name at allow/deny level. Defense is doctrine + audit, not permission.
+1. **OC permission**: `permission.skill.dream-apply: deny` globally in `opencode.json`
+2. **Bash ask gate**: `python3 .../dream-apply.py *` is set to `ask` — user must approve
+3. **Slash command only**: invoke via `/dream-apply <diff-path>` in user session
+4. **Agent body prohibition**: every pipeline agent file explicitly prohibits invocation
+5. **Split by construction**: `dream-generate` (read-only) and `dream-apply` (mutating) are separate tools; no arg flip possible
 
 ## Invocation (USER only)
 
 ```
-/dream-apply <diff-path>
+/dream-apply ~/.pipeline/dreams/<iso8601>-<scope>.diff.md
 ```
 
-Or via Skill tool when USER invokes (not from agent transcript):
+The slash command invokes `python3 ~/.config/opencode/tools/dream-apply.py --diff-path <path>` via bash. The bash `ask` gate presents the command to the user for approval.
 
-```
-Skill(skill: "dream-apply", args: "diff=<path>")
-```
+## What it does
 
-## Procedure
+1. Read diff at path. Parse sections: to-merge, to-remove.
+2. For each affected memory file: apply merge/remove operations.
+3. Archive removed entries to `~/.pipeline/memory/.archive/`.
+4. Write apply-receipt to `~/.pipeline/memory/.archive/apply-receipt-<iso8601>.md`.
+5. Return receipt path.
 
-1. Read diff at `<path>`. Parse sections: to-merge, to-remove, to-promote, to-demote, to-tier.
-2. For each affected memory file:
-   a. Read current content.
-   b. Apply mutations per diff blocks.
-   c. Archive removed entries to `~/.pipeline/memory/.archive/<diff-iso8601>/<role>-memory-removed.md`.
-   d. Write new memory file content.
-3. Write apply-receipt: `~/.pipeline/dreams/<diff-iso8601>-apply-receipt.md`.
-4. Mark diff as applied: rename to `<diff-iso8601>-<scope>.diff.applied.md`.
+## Audit
 
-## Apply-receipt schema
-
-```markdown
-# Dream apply receipt: <iso8601>
-
-**Diff source**: ~/.pipeline/dreams/<iso8601>-<scope>.diff.md
-**Applied at**: <iso8601-apply-time>
-**Files mutated**:
-- ~/.pipeline/memory/<file> (N entries removed, M entries added/modified)
-- (... per file)
-
-**Archive location**: ~/.pipeline/memory/.archive/<iso8601>/
-
-**Verification**:
-- All removed entries archived (count match)
-- All added entries match diff to-merge/to-promote/to-tier blocks
-- No memory file exceeds line cap (core 40, role 20)
-```
-
-## Archive rotation (USER cron-configured)
-
-Bundled setup script: `scripts/setup-archive-prune.py`. USER-invoked. Pipeline agents MUST NOT invoke.
-
-```bash
-# Default (cron, 30-day retention, 03:00 daily):
-.claude/skills/dream-apply/scripts/setup-archive-prune.py
-
-# Custom retention + time:
-setup-archive-prune.py --days 60 --hour 4 --minute 30
-
-# Systemd user timer alternative (more transparent than cron):
-setup-archive-prune.py --mode systemd
-
-# Inspect changes without applying:
-setup-archive-prune.py --dry-run
-
-# Uninstall:
-setup-archive-prune.py --remove
-```
-
-Idempotent: re-runs replace prior entry. Tags entries `# dream-apply-archive-prune` so detection survives across versions.
-
-Raw recipe (if scripting unavailable):
-
-```bash
-find ~/.pipeline/memory/.archive -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec rm -rf {} \;
-```
-
-Pipeline does not auto-prune. Script is opt-in.
-
-## Safety
-
-- Mutations are NOT atomic across files. If apply fails mid-batch, partial mutations remain. Use git to recover (memory files under version control recommended; otherwise archive is recovery hatch).
-- Verify line caps after apply. Cap exceedance = bug in diff (dream should not propose over-cap state).
-
-## Don't
-
-- NEVER invoked by pipeline agent.
-- No diff modification (read-only on diff).
-- No archive deletion (rotation = user cron only).
+friction-reviewer Phase 4 scans run transcripts for `Skill.*dream-apply` invocations. Any match → friction Blocked.

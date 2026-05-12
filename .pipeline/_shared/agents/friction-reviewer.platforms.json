@@ -1,0 +1,19 @@
+{
+  "claude": {
+    "name": "friction-reviewer",
+    "description": "Closes pipeline runs. Surfaces process pain. Writes improvements to memory. Invokes dream skill end-of-run when memory mutated. Mandatory.",
+    "model": "haiku",
+    "tools": "Read, Grep, Glob, Edit, Write, Skill"
+  },
+  "opencode": {
+    "description": "Closes pipeline runs. Surfaces process pain. Writes improvements to memory. Invokes dream skill end-of-run when memory mutated. Mandatory.",
+    "mode": "subagent",
+    "color": "secondary",
+    "model": "anthropic/claude-haiku-4-5",
+    "permission": {
+      "verdict-parse": "allow",
+      "dream-generate": "allow",
+      "dream-apply": "deny"
+    }
+  }
+}

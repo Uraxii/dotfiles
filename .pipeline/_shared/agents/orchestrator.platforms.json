@@ -1,0 +1,25 @@
+{
+  "claude": {
+    "name": "orchestrator",
+    "description": "Root agent. Triage direct answer vs pipeline execution. Composes role list, spawns subagents, routes verdicts.",
+    "model": "opus"
+  },
+  "opencode": {
+    "description": "Root agent. Triage direct answer vs pipeline execution. Composes role list, spawns subagents, routes verdicts.",
+    "mode": "primary",
+    "color": "primary",
+    "model": "anthropic/claude-opus-4-5",
+    "steps": 100,
+    "permission": {
+      "task": {"*": "deny", "plan": "allow", "architect": "allow", "build": "allow", "skeptic": "allow", "tester": "allow", "reviewer": "allow", "security-auditor": "allow", "ui-ux-designer": "allow", "researcher": "allow", "friction-reviewer": "allow", "progenitor": "allow", "content-designer": "allow"},
+      "artifact-slug": "allow",
+      "verdict-parse": "allow",
+      "worktree-lifecycle": "allow",
+      "prod-diff-sha": "allow",
+      "handoff-doc": "allow",
+      "test-path-resolve": "allow",
+      "dream-generate": "allow",
+      "dream-apply": "deny"
+    }
+  }
+}

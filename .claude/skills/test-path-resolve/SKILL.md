@@ -1,3 +1,4 @@
+<!-- GENERATED FROM .pipeline/_shared/skills/test-path-resolve/SKILL.md — DO NOT EDIT -->
 ---
 name: test-path-resolve
 description: Canonical test-path regex set. Reads optional test-paths.txt manifest in run-dir; falls back to default regex set. Use by skeptic + tester for prod-vs-test partitioning + prod-diff-sha.
@@ -11,18 +12,16 @@ Canonical test-path glob set. Pipeline-internal.
 
 ## Invocation
 
-```
-Skill(skill: "test-path-resolve", args: "run-dir=<path>")
-```
+Claude: `Skill(skill: "test-path-resolve", args: "run-dir=<path>")`
 
-Returns list of glob patterns.
+OC: `test-path-resolve` custom tool with `{run_dir}` arg.
 
 ## Resolution order
 
-1. If `<run-dir>/test-paths.txt` exists → read it. One path-glob per line. Skip empty + `#`-prefixed lines. Return list.
+1. If `<run-dir>/test-paths.txt` exists → read it. One path-glob per line. Skip empty + `#`-prefixed lines.
 2. Else → return default set (below).
 
-## Default regex/glob set
+## Default glob set
 
 ```
 **/test_*.py
@@ -38,28 +37,15 @@ Returns list of glob patterns.
 **/*.spec.js
 **/*.test.go
 **/*_test.go
-**/*Test.cs
+**/*Test.java
+**/*Tests.java
+**/test_*.rb
+**/*_spec.rb
 **/*Tests.cs
+**/*Test.cs
 **/test_*.gd
-**/*.spec.*
-**/cypress/**
-**/e2e/**
-**/integration-tests/**
-**/playwright/**
-**/.github/**
 ```
 
-## Build manifest override
+## Returns
 
-Build agent MAY emit `<run-dir>/test-paths.txt` to override default set for unlisted ecosystems or project-specific layouts. One path-glob per line.
-
-## Used by
-
-- skeptic: shard scope-check, prod-vs-test partitioning
-- tester: test-only revision routing
-- prod-diff-sha skill: exclude test paths from prod diff
-
-## Don't
-
-- No directory scanning. Globs only.
-- No project-CLAUDE.md inference (test path = build-emitted manifest or default).
+Newline-separated list of glob patterns.

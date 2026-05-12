@@ -1,0 +1,21 @@
+{
+  "claude": {
+    "name": "build",
+    "description": "Implement design into prod code/tests w/ build-evidence + prebuild-checklist artifacts. TDD doctrine when test runner permits red-green loop.",
+    "model": "sonnet",
+    "tools": "Read, Write, Edit, Grep, Glob, Bash, Skill"
+  },
+  "opencode": {
+    "description": "Implement design into prod code/tests w/ build-evidence + prebuild-checklist artifacts. TDD doctrine when test runner permits red-green loop.",
+    "mode": "subagent",
+    "color": "success",
+    "model": "anthropic/claude-sonnet-4-5",
+    "steps": 80,
+    "permission": {
+      "verdict-parse": "allow",
+      "worktree-lifecycle": "allow",
+      "test-path-resolve": "allow",
+      "handoff-doc": "allow"
+    }
+  }
+}

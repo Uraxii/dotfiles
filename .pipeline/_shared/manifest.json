@@ -1,0 +1,79 @@
+{
+  "agents": [
+    {"role": "orchestrator", "class": "shared", "mode": "primary"},
+    {"role": "plan", "class": "shared", "mode": "subagent"},
+    {"role": "architect", "class": "shared", "mode": "subagent"},
+    {"role": "build", "class": "shared", "mode": "subagent"},
+    {"role": "skeptic", "class": "shared", "mode": "subagent"},
+    {"role": "tester", "class": "shared", "mode": "subagent"},
+    {"role": "reviewer", "class": "shared", "mode": "subagent"},
+    {"role": "security-auditor", "class": "shared", "mode": "subagent"},
+    {"role": "ui-ux-designer", "class": "shared", "mode": "subagent"},
+    {"role": "researcher", "class": "shared", "mode": "subagent"},
+    {"role": "friction-reviewer", "class": "shared", "mode": "subagent"},
+    {"role": "progenitor", "class": "shared", "mode": "primary"},
+    {"role": "content-designer", "class": "shared", "mode": "subagent"}
+  ],
+  "skills": {
+    "shared": ["caveman", "frontend-design", "agent-brief-format", "dream-apply"],
+    "custom-tool-only": ["verdict-parse", "handoff-doc", "test-path-resolve", "prod-diff-sha", "worktree-lifecycle", "dream-generate"],
+    "retired": ["memory-read", "memory-write", "artifact-slug-resolve"]
+  },
+  "replacements": {
+    "{{SPAWN_TOOL}}": {"claude": "Agent", "opencode": "task"},
+    "{{ROOT_TOOL_SURFACE}}": {
+      "claude": "no `tools:` frontmatter — inherits full harness tool surface (Bash, Edit, Write, Read, Agent, Skill, ToolSearch, ScheduleWakeup, deferred tools).",
+      "opencode": "full tool surface available; permissions defined in `opencode.json`."
+    },
+    "{{AGENTS_DIR}}": {"claude": ".claude/agents/", "opencode": ".config/opencode/agents/"}
+  },
+  "plan_path_template": {
+    "claude": "~/.pipeline/plans/-home-nikki-dotfiles/<id>.md",
+    "opencode": "~/.config/opencode/plans/<id>.md"
+  },
+  "invoke_table": {
+    "agent-brief-format": {
+      "claude": "Skill(skill: \"agent-brief-format\", args: \"run-dir=<RUN_DIR>, raw-request=<RAW_REQUEST>\")",
+      "opencode": "skill({ name: \"agent-brief-format\" })  # caller MUST provide run-dir + raw-request as inline prose in the calling prompt"
+    },
+    "verdict-parse": {
+      "claude": "Skill(skill: \"verdict-parse\", args: \"<args>\")",
+      "opencode": "verdict-parse(<args>)"
+    },
+    "handoff-doc": {
+      "claude": "Skill(skill: \"handoff-doc\", args: \"<args>\")",
+      "opencode": "handoff-doc(<args>)"
+    },
+    "test-path-resolve": {
+      "claude": "Skill(skill: \"test-path-resolve\", args: \"<args>\")",
+      "opencode": "test-path-resolve(<args>)"
+    },
+    "prod-diff-sha": {
+      "claude": "Skill(skill: \"prod-diff-sha\", args: \"<args>\")",
+      "opencode": "prod-diff-sha(<args>)"
+    },
+    "worktree-lifecycle": {
+      "claude": "Skill(skill: \"worktree-lifecycle\", args: \"<args>\")",
+      "opencode": "worktree-lifecycle(<args>)"
+    },
+    "dream-generate": {
+      "claude": "Skill(skill: \"dream-generate\", args: \"<args>\")",
+      "opencode": "dream-generate(<args>)"
+    },
+    "memory-read": {
+      "claude": "Skill(skill: \"memory-read\", args: \"role=<role>\")",
+      "opencode": "(inlined via {{INCLUDE:_shared/snippets/memory-read.md}})"
+    },
+    "memory-write": {
+      "claude": "Skill(skill: \"memory-write\", args: \"<args>\")",
+      "opencode": "(inlined via {{INCLUDE:_shared/snippets/memory-write.md}})"
+    },
+    "artifact-slug-resolve": {
+      "claude": "python3 ~/.config/opencode/tools/artifact-slug.py (via Bash)",
+      "opencode": "artifact-slug custom tool"
+    }
+  },
+  "pre_render_directives": ["{{INCLUDE:<path>}}"],
+  "claude_only": [],
+  "opencode_only": []
+}

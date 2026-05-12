@@ -22,7 +22,7 @@ _darcs
 ^/LICENSE.*
 ^/docs
 
-scrpits
+^/scripts/?$
 
 \.claude/.*local.*
 

@@ -1,0 +1,19 @@
+{
+  "claude": {
+    "name": "tester",
+    "description": "Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.",
+    "model": "sonnet",
+    "tools": "Read, Grep, Glob, Bash, Edit, Write, Skill"
+  },
+  "opencode": {
+    "description": "Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.",
+    "mode": "subagent",
+    "color": "secondary",
+    "model": "anthropic/claude-sonnet-4-5",
+    "permission": {
+      "verdict-parse": "allow",
+      "test-path-resolve": "allow",
+      "prod-diff-sha": "allow"
+    }
+  }
+}

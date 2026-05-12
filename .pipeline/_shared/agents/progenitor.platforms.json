@@ -1,0 +1,18 @@
+{
+  "claude": {
+    "name": "progenitor",
+    "description": "Creates, modifies, retires agent roles AND skills. Root of agent system.",
+    "model": "haiku",
+    "tools": "Read, Grep, Glob, Edit, Write, Skill"
+  },
+  "opencode": {
+    "description": "Creates, modifies, retires agent roles AND skills. Root of agent system.",
+    "mode": "primary",
+    "color": "accent",
+    "model": "anthropic/claude-haiku-4-5",
+    "permission": {
+      "task": {"*": "deny"},
+      "dream-apply": "deny"
+    }
+  }
+}

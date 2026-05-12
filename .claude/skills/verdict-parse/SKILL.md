@@ -1,3 +1,4 @@
+<!-- GENERATED FROM .pipeline/_shared/skills/verdict-parse/SKILL.md — DO NOT EDIT -->
 ---
 name: verdict-parse
 description: Glob verdict-<type>-r<N>.md files in pipeline run dir, pick max N, parse YAML frontmatter. Returns verdict + role + revision + loops. Use when orchestrator routes or any gate reads prior verdict.
@@ -11,19 +12,19 @@ Parse pipeline gate verdicts. Pipeline-internal.
 
 ## Invocation
 
-```
-Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<design|code|ops|review|security|test|test-audit|friction>")
-```
+Claude: `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`
+
+OC: `verdict-parse` custom tool with `{run_dir, type}` args.
+
+## Verdict types (canonical 5 skeptic values + friction)
+
+`design|code|ops|review|test-audit|friction`
 
 ## Glob pattern
 
-```
-<run-dir>/verdict-<type>-r<N>.md
-```
+`<run-dir>/verdict-<type>-r<N>.md`
 
 Where `<N>` = integer revision. Pick file w/ max `<N>`.
-
-Regex: `^verdict-<type>-r(?P<rev>\d+)\.md$`
 
 ## Frontmatter schema
 
@@ -31,29 +32,15 @@ Regex: `^verdict-<type>-r(?P<rev>\d+)\.md$`
 ---
 verdict: Approved | Blocked | Conditional
 role: <role-name>
-review_type: <design|code|ops|review|security|test|test-audit>
+review_type: <design|code|ops|review|test-audit>
 loops: <N>
 revision: r<N>
 prod_diff_sha: <sha>  # optional, pinned gates only
 ---
 ```
 
-Parse + return as structured dict.
+## Returns
 
-## Routing semantics (caller)
+JSON: `{verdict, role, review_type, loops, revision, prod_diff_sha, path}`
 
-- `Approved` → continue downstream
-- `Blocked` → re-spawn upstream (revision loop)
-- `Conditional` → same routing as Blocked
-
-`prod_diff_sha` (when present) used by orchestrator for pin validation on test-only revisions.
-
-## Versioned-only
-
-Pipeline uses ONLY versioned verdict files (`verdict-<type>-r<N>.md`). No `verdict-<type>.md` (unversioned). Skill rejects unversioned matches.
-
-## Don't
-
-- No write. Read-only skill.
-- No verdict mutation (caller writes new revision via own write).
-- No cross-run reads (scoped to single run-dir).
+Non-zero exit if no file found.

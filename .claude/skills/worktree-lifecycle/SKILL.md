@@ -1,6 +1,7 @@
+<!-- GENERATED FROM .pipeline/_shared/skills/worktree-lifecycle/SKILL.md — DO NOT EDIT -->
 ---
 name: worktree-lifecycle
-description: Pipeline shard worktree primitives — create, stale-probe, cleanup. Wraps git worktree commands. Use by orchestrator for shard management + build for self-verify scope check.
+description: Pipeline shard worktree primitives — create, stale-probe, cleanup, scope-check. Wraps git worktree commands. Use by orchestrator for shard management + build for self-verify scope check.
 source: pipeline-native
 output-style: caveman:ultra
 ---
@@ -11,17 +12,15 @@ Git worktree primitives for pipeline shards. Pipeline-internal.
 
 ## Invocation
 
-```
-Skill(skill: "worktree-lifecycle", args: "op=<create|probe|cleanup|scope-check>, ...")
-```
+Claude: `Skill(skill: "worktree-lifecycle", args: "op=<create|probe|cleanup|scope-check>, ...")`
+
+OC: `worktree-lifecycle` custom tool with `{op, ...}` args.
 
 ## Operations
 
 ### create
 
-```
-op=create, run-id=<artifact-id>, shard-id=s<K>, base-sha=<sha>, repo-root=<path>
-```
+Args: `op=create, run_id=<artifact-id>, shard_id=s<K>, base_sha=<sha>, repo_root=<path>`
 
 ```bash
 WT_PATH=<repo>/.pipeline/runs/<run-id>/worktrees/<shard-id>/
@@ -31,9 +30,7 @@ git worktree add "$WT_PATH" -b "$BRANCH" <base-sha>
 
 ### probe (stale check)
 
-```
-op=probe, worktree-path=<path>
-```
+Args: `op=probe, worktree_path=<path>`
 
 ```bash
 if test -d <path> && ! git worktree list | grep -q <path>; then
@@ -43,34 +40,18 @@ fi
 
 ### cleanup
 
-```
-op=cleanup, worktree-path=<path>
-```
+Args: `op=cleanup, worktree_path=<path>`
 
 ```bash
-git worktree remove <path>
+git worktree remove --force <path>
 ```
 
-### scope-check (build self-verify)
+### scope-check
 
-```
-op=scope-check, base-sha=<sha>, head=<ref>, scope-globs=<glob-list>
-```
+Args: `op=scope-check, base_sha=<sha>, head=<ref>, scope_globs=<globs>`
 
-```bash
-CHANGED=$(git diff --name-only <base-sha>...<head>)
-# Verify CHANGED ⊆ scope-globs
-# Fail if any file outside declared shard scope
-```
+Diffs `base_sha..head`, checks each changed file is within declared scope globs. Returns `OK` or `LEAK` with offending paths.
 
-## Idempotency
+## Returns
 
-- `create` fails if branch exists; caller must probe first
-- `cleanup` succeeds if path already gone (idempotent)
-- `probe` returns STALE | OK | ABSENT
-
-## Don't
-
-- No automatic stale cleanup (always surface to user).
-- No branch deletion outside `git worktree remove`.
-- No mutation of base ref.
+JSON: `{status, ...}`. Non-zero exit on error.
