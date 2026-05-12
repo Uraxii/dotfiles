@@ -42,7 +42,7 @@ Memory Write Decision (before completion):
    - Exists at `~/.pipeline/plans/<project-slug>/<id>.md` → reuse.
    - Missing → hard error, list available plan files.
 3. Create `<repo>/.pipeline/runs/<artifact-id>/`.
-4. Write `brief.md`, init `pipeline.md`. At intake — every run — capture `base_ref` + `base_sha = git rev-parse <base_ref>` into pipeline.md frontmatter. Gates use `base_sha` as diff anchor. Compute initial `prod_diff_sha` (sentinel `0000000000000000000000000000000000000000` if no pre-existing local commits vs base; else per `prod_diff_sha mechanism` below).
+4. Write `brief.md`, init `pipeline.md`. At intake — every run — capture `base_ref` + `base_sha = git rev-parse <base_ref>` into pipeline.md frontmatter. Gates use `base_sha` as diff anchor.
 5. If plan exists, write `plan.ref` (id + absolute plan path).
 6. Spawn `plan` only when needed:
    - Spawn: multi-task, new subsystem, ambiguous scope.
@@ -158,61 +158,6 @@ Memory Write Decision (before completion):
 - **Loop counting**: revision counter `r<N>` global. Shard suffix `s<K>` stable across revisions. Loop limit = 3 revisions, not 3 shard spawns.
 - **Tool deps**: orchestrator uses raw `git worktree`, `git rev-parse`, `git diff`, `gh` commands via Bash. `EnterWorktree`/`ExitWorktree` deferred tools NOT used here.
 
-### Test-Audit Gate
-
-New `skeptic-test-audit` gate runs after `tester` Approved, before `pr_publish`, before `friction-reviewer`. Audits test design quality via static diff. See skeptic.md `review_type: test-audit` for detection patterns.
-
-**Trigger**: `skeptic-test-audit` runs when tester verdict Approved AND prod-code diff vs `base_sha` non-empty. Skip on ops-only short path, docs-only diff, tester skipped, tester verdict in {Blocked, Conditional}, or unlisted-ecosystem w/ no `test-paths.txt`.
-
-**Routing**:
-- Approved → continue to `pr_publish` → `friction-reviewer`.
-- Blocked or Conditional → re-spawn build w/ `test_only: true` Shard block at incremented revision. Test-only revision re-fires only build + tester + test-audit; skeptic-code/reviewer/security verdicts PINNED via `prod_diff_sha`.
-
-**Test-only revision path**:
-- Build receives Shard block w/ `test_only: true` and `scope` restricted to test paths mapped from `verdict-test-audit-r<N>.md` cited paths.
-- Tester re-runs full suite.
-- Test-audit re-audits.
-- skeptic-code/reviewer/security skip — last Approved verdict carries forward, pinned to current `prod_diff_sha` via pipeline.md.
-
-**Test-only revision shard mapping** (path-to-shard):
-- Per file path cited in `verdict-test-audit-r<N>.md`: find shards whose `scope:` globs match.
-- Re-spawn build only for matched shards. Unmatched shards' `r<N>` artifacts carry forward.
-- K=1 case: implicit `s1` scope=`["."]` matches all paths; always re-spawned.
-- Orphan path (no shard match) → halt run, surface to user.
-
-**`prod_diff_sha` mechanism**:
-- **Writer**: orchestrator (alongside pipeline.md ledger updates).
-- **Write trigger**: at intake (initial sentinel) + after each build-evidence write (recompute + compare).
-- **Algorithm**:
-  ```
-  TEST_PATHS = test-paths.txt globs if present, else default regex set (per skeptic.md)
-  PROD_DIFF = git diff <base_sha> HEAD -- $(non-test paths via :!exclude on TEST_PATHS)
-  prod_diff_sha = printf '%s' "$PROD_DIFF" | sha1sum | cut -c1-40
-  ```
-  - `printf '%s'` strips trailing newline. Apply identically at write + validate.
-  - Empty diff → sentinel SHA `0000000000000000000000000000000000000000` (cannot collide w/ any non-empty sha1sum output).
-- **Pin validation** (before skipping gate on test-only revision):
-  - Read pinned `prod_diff_sha` from gate's last-Approved-verdict frontmatter.
-  - Recompute current.
-  - Equal → pin valid; skip gate; carry forward verdict.
-  - Mismatch → pin INVALIDATED. Pin invalidation counts as NEW code-loop revision: increment code-loop counter (subject to limit 3), reset test-audit retry counter, re-fire pinned gates (skeptic-code, reviewer, security-auditor) at r(N+1). Degrades to full code-loop revision.
-- **Code-loop boundary detection**:
-  - Boundary = `prod_diff_sha` changed between successive build-evidence writes.
-  - Intake → first build = initial state, NOT boundary.
-  - Pin invalidation IS boundary.
-- **Trust-but-verify**: build's self-verify via `git diff --name-only` (build.md `## Don't`) catches scope-leak BEFORE evidence write. Orchestrator's post-evidence recompute = safety net. Mechanism filename-level; hunk-level prod regressions inside `test-paths.txt`-listed files NOT caught (accepted hole — see plan §Risks; AST-tooling mitigation deferred).
-
-**Loop semantics**:
-- test-audit loop limit = 1 retry per code-loop revision (max 2 test-audit verdicts per code rev).
-- Halt + surface after retry Blocks; orchestrator does NOT cascade further.
-- Counter resets on code-loop revision boundary.
-- test-audit `<N>` matches tester verdict `<N>` under review.
-- If tester returns non-Approved at any revision, test-audit skipped at that revision per inclusion rule; orchestrator routes via existing tester mapping.
-
-**Worst-case cost** (per plan):
-- K=1 code-loop 3: 28 spawns.
-- K=4 code-loop 3: 45 spawns (54 if pin-invalidation cascades fire).
-
 ## Role Inclusion Rules
 
 | Role | Include when |
@@ -224,7 +169,6 @@ New `skeptic-test-audit` gate runs after `tester` Approved, before `pr_publish`,
 | reviewer | diff > ~50 LoC or cross-module/shared utils |
 | security-auditor | external input/auth/crypto/network/storage/perm/native |
 | tester | prod code changed + tests/regression needed |
-| skeptic-test-audit | tester ran AND `verdict-test-r<N>.md` `verdict == Approved` AND prod-code diff against `base_sha` non-empty; skip on ops-only short path, docs-only diff, tester skipped, tester verdict in {Blocked, Conditional}, or unlisted-ecosystem w/ no `test-paths.txt` |
 | researcher | unfamiliar libs/surface + no project index coverage |
 | monitor | cross-cutting memory concern |
 | friction-reviewer | always last |
@@ -247,8 +191,7 @@ Enforce only for included roles.
 | reviewer | all build shards terminal AND zero failed | design.md, union of shard diffs, all shard evidence, frontend-handoff.md (if UI), prior verdict |
 | security-auditor | build or architect complete | design.md, union of shard diffs (if post-build), frontend-handoff.md (if UI), prior verdict |
 | tester | skeptic-code + reviewer + security approved | latest code/review/security verdicts, all shard branches (per-shard; combined-state temp merge when K≥2), frontend-handoff.md (if UI) |
-| skeptic-test-audit | tester complete (verdict-test-r<N>.md present, `verdict == Approved`, prod-code diff non-empty) | verdict-test-r<N>.md, design.md (if architect ran), frontend-handoff.md (if UI), test-diff + prod-diff against base_sha, prior skeptic-test-audit verdict |
-| pr_publish | all gates approved incl. test-audit | pipeline.md, shard branches. Orchestrator-owned, no subagent. Writes `pr-report.md`. |
+| pr_publish | all gates approved | pipeline.md, shard branches. Orchestrator-owned, no subagent. Writes `pr-report.md`. |
 | friction-reviewer | pr_publish complete | pipeline.md, pr-report.md |
 
 ## Spawn Template (Canonical)
@@ -289,14 +232,13 @@ base_ref: <base-branch>
 base_sha: <sha-at-intake>
 scope: [paths]
 depends_on: [shard-ids]
-test_only: true|false                      # true forbids prod-path edits (used by test-only revision path)
 ```
 
 Gate re-review adds:
 
 ```md
 ## Review Type
-review_type: <design|code|ops|review|security|test-audit>
+review_type: <design|code|ops|review|security>
 
 ## Review Framing
 1) Verify prior blocking issues resolved.
@@ -310,7 +252,7 @@ Read latest verdict by globbing `verdict-<type>-r<N>.md` + picking max `N`. Pars
 ```yaml
 verdict: Approved | Blocked | Conditional
 role: <role>
-review_type: <design|code|ops|review|security|test-audit>
+review_type: <design|code|ops|review|security>
 loops: <N>
 revision: r<N>
 ```
@@ -332,22 +274,16 @@ Upstream mapping:
 | verdict-security-r<N>.md post-build | build |
 | verdict-security-r<N>.md post-architect | architect |
 | verdict-test-r<N>.md | tester |
-| verdict-test-audit-r<N>.md | build (test-only revision) |
 
-Footnote: `verdict-test-r<N>.md → tester` mapping fixes pre-existing missing-mapping bug, independent of test-audit feature. `verdict-test-audit-r<N>.md → build (test-only)` = new test-audit Blocked routing path.
+Footnote: `verdict-test-r<N>.md → tester` mapping fixes pre-existing missing-mapping bug.
 
 Rules:
 - Architect/build persistent via task_id resume.
 - Gates always fresh spawn.
 - Versioned verdict files only: `verdict-<type>-r<N>.md`.
-- Loop limits: design 3, code 3, ops 1, test-audit 1 retry per code-loop revision. Code limit = revisions, not shard spawns.
-- Test-audit counter semantics: per code-loop revision, max 2 test-audit verdicts (initial + 1 retry). If retry also Blocks → halt + surface; orchestrator does NOT cascade further.
-- Counter resets on code-loop revision boundary (build spawned w/ NEW prod_diff_sha vs prior code-loop revision; pin invalidation IS boundary).
-- Test-audit `<N>` matches `<N>` of tester verdict it audits.
-- Test-only revision path: when test-audit triggers build re-spawn, skeptic-code/reviewer/security verdicts pin via `prod_diff_sha`. Orchestrator recomputes prod_diff_sha after each build-evidence write; pin invalid → invalidate + re-fire pinned gates at r(N+1).
-- Test-only revision: orchestrator re-spawns only shards whose `scope:` globs match flagged paths in `verdict-test-audit-r<N>.md`. K=1 synthesized `s1` matches all paths. Orphan paths (no shard match) → halt + surface.
+- Loop limits: design 3, code 3, ops 1. Code limit = revisions, not shard spawns.
 - Build revisions: re-spawn only `failed` shard ids in existing worktree/branch (new commits stack). Passing shards keep last commit.
-- Worst-case spawn budget (K=4, 3 code revisions): 12 build + 12 gate = 24 subagents (combined-test attribution probes assumed in-tester). With test-audit + pin invalidation: up to 54 subagents.
+- Worst-case spawn budget (K=4, 3 code revisions): 12 build + 12 gate = 24 subagents (combined-test attribution probes assumed in-tester).
 - Limit hit → halt, show last findings + loop history + user options.
 
 ## Artifact Discipline
@@ -370,7 +306,6 @@ Required run artifacts:
 - `verdict-design-r<N>.md` / `verdict-code-r<N>.md` / `verdict-ops-r<N>.md`
 - `verdict-review-r<N>.md` / `verdict-security-r<N>.md`
 - `verdict-test-r<N>.md` (tester)
-- `verdict-test-audit-r<N>.md` (skeptic test-audit; per tester revision when included)
 - `pr-report.md` (after PR creation or branches-only fallback)
 - Optional: `test-paths.txt` (build-emitted manifest in run dir; one path-glob per line; overrides skeptic's default test-path regex set)
 - `artifact-slug` output = canonical artifact identity for plans + runs.
@@ -389,7 +324,6 @@ design_handoff: required|n/a
 parallel: true|false                                  # true when K>=2, false when K=1 (synthesized s1)
 base_ref: <base-branch>
 base_sha: <sha-at-intake>
-prod_diff_sha: <sha>                                 # tracks prod-code state for gate-pin reuse on test-only revisions
 github_delivery: pr|branches-only
 shards:                                               # always present, K>=1
   s1: {status: pending|running|passed|failed|skipped_due_to_dep, branch: <ref>, worktree: <path>, evidence: <file>, depends_on: [..]}
