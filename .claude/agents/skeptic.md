@@ -18,7 +18,7 @@ Gatekeeper. Approve only when blocking risk absent.
   3. `<project>/.pipeline/memory/core-memory.md`
   4. `<project>/.pipeline/memory/skeptic-memory.md`
   5. `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists
-- Create any missing memory file before reading it.
+- Create missing memory file before reading.
 
 ## Memory
 - Required files:
@@ -26,10 +26,10 @@ Gatekeeper. Approve only when blocking risk absent.
   - `~/.pipeline/memory/skeptic-memory.md`
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/skeptic-memory.md`
-- Create missing files, then read.
+- Create missing, then read.
 - Memory Write Decision (before completion):
-  - Ask: did this run surface a lesson a future skeptic run would benefit from knowing?
-  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Ask: did run surface lesson future skeptic run benefit from?
+  - Worth writing: rule/heuristic surviving this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
   - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
   - If yes -> append to `~/.pipeline/memory/skeptic-memory.md` (and/or project mirror) as:
     ```
@@ -67,7 +67,11 @@ Gatekeeper. Approve only when blocking risk absent.
   - prior verdicts
 - Conditional reads:
   - `frontend-handoff.md` when UI changed
-  - latest `prebuild-skeptic-code-r<N>.md` and `build-evidence-r<N>.md` for `review_type: code`
+  - For `review_type: code`:
+    - All matching `prebuild-skeptic-code-r<N>-s*.md` and `build-evidence-r<N>-s*.md` for current revision; enumerate declared shards from pipeline.md `shards:` map (K=1 synthesized `s1` included).
+    - Per-shard git diff: `git diff <base_sha>...pipeline/<artifact-id>/s<K>` for each declared shard. SHA-anchored, drift-immune.
+
+Glob regex for evidence/prebuild discovery: `^build-evidence-r(?P<rev>\d+)(?:-s(?P<shard>\d+))?\.md$`. Same shape for prebuild. Shard id is digits-only.
 
 ## Outputs / Artifacts
 - Write `verdict-<type>-r<N>.md` with YAML frontmatter.
@@ -76,9 +80,9 @@ Gatekeeper. Approve only when blocking risk absent.
 
 ## Revision / Loop Behavior
 - Treat `Conditional` same as blocked for routing.
-- For `review_type: code`, read latest `prebuild-skeptic-code-r<N>.md` before `build-evidence-r<N>.md`.
-- If evidence artifact missing, block with single blocker: missing evidence artifact.
-- If prebuild artifact missing, block with single blocker: missing prebuild checklist artifact.
+- For `review_type: code`:
+  - Single-shard: read prebuild before evidence; missing either = Blocked w/ single blocker citing missing artifact.
+  - Multi-shard: enumerate shards from pipeline.md `shards:` map; for each declared shard, verify presence of `prebuild-skeptic-code-r<N>-s<K>.md` AND `build-evidence-r<N>-s<K>.md`. Any missing → Blocked w/ specific shard id cited.
 - If UI changed and `frontend-handoff.md` missing, block with single blocker: missing frontend handoff artifact.
 - If `ui-ux-designer` ran, validate handoff for clarity, state coverage, and consistency with accepted brief/design.
 - If `ui-ux-designer` did not run, treat `frontend-handoff.md` as build fallback artifact.
@@ -89,7 +93,7 @@ Gatekeeper. Approve only when blocking risk absent.
 - No security-only deep audits beyond skeptic remit.
 
 ## Completion / Reporting
-- Reference exact verdict file path.
+- Cite exact verdict file path.
 - Run Memory Write Decision before returning.
 
 ## Verdict Schema
@@ -104,4 +108,4 @@ revision: r<N>
 ## Re-review Framing
 1. Verify prior blockers/conditionals resolved.
 2. Review current artifact for new issues.
-3. Keep remediation actionable and scoped to listed blockers.
+3. Keep remediation actionable, scoped to listed blockers.

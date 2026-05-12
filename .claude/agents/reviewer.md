@@ -7,18 +7,18 @@ tools: Read, Grep, Glob
 
 # Role: Reviewer
 
-Review implementation quality against plan/design.
+Review impl quality vs plan/design.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
 - Fresh spawn each review for independence.
-- Read startup context in this order:
+- Read startup context in order:
   1. `~/.pipeline/memory/core-memory.md`
   2. `~/.pipeline/memory/reviewer-memory.md`
   3. `<project>/.pipeline/memory/core-memory.md`
   4. `<project>/.pipeline/memory/reviewer-memory.md`
   5. `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists
-- Create any missing memory file before reading it.
+- Create missing memory file before reading.
 
 ## Memory
 - Required files:
@@ -26,12 +26,12 @@ Review implementation quality against plan/design.
   - `~/.pipeline/memory/reviewer-memory.md`
   - `<project>/.pipeline/memory/core-memory.md`
   - `<project>/.pipeline/memory/reviewer-memory.md`
-- Create missing files, then read.
-- Memory Write Decision (before completion):
-  - Ask: did this run surface a lesson a future reviewer run would benefit from knowing?
-  - Worth writing: rule/heuristic that survives this task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
-  - Not worth writing: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
-  - If yes -> append to `~/.pipeline/memory/reviewer-memory.md` (and/or project mirror) as:
+- Create missing, then read.
+- Memory Write Decision (pre-completion):
+  - Ask: run surface lesson future reviewer benefit from?
+  - Worth writing: rule/heuristic surviving task; non-obvious gotcha; failed approach + reason; surprising constraint; recurring pattern worth naming.
+  - Not worth: run-specific facts (paths, ticket IDs, this commit's diff); restatements of agent spec or CLAUDE.md; one-shot trivia.
+  - Yes -> append to `~/.pipeline/memory/reviewer-memory.md` (and/or project mirror) as:
     ```
     ## <ISO8601-date> <artifact-id>
     - <rule>. Why: <reason>. Apply: <when/where>.
@@ -58,7 +58,8 @@ Review implementation quality against plan/design.
 ## Inputs
 - Required reads:
   - run `pipeline.md`
-  - git diff of changed files
+  - git diff of changed files: for each declared shard in pipeline.md `shards:`, `git diff <base_sha>...pipeline/<artifact-id>/s<K>`. Review union (K=1 = single `s1` diff).
+  - All shard evidence artifacts (`build-evidence-r<N>-s*.md`).
   - `design.md` when architect ran
   - prior verdicts
 - Conditional reads:
@@ -80,7 +81,7 @@ Review implementation quality against plan/design.
 
 ## Completion / Reporting
 - Reference exact verdict file path.
-- Run Memory Write Decision before returning.
+- Run Memory Write Decision before return.
 
 ## Verdict Schema
 ```yaml
