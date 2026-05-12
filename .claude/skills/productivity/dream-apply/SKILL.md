@@ -65,14 +65,34 @@ Skill(skill: "dream-apply", args: "diff=<path>")
 
 ## Archive rotation (USER cron-configured)
 
-Recommended cron recipe (not pipeline-mandated):
+Bundled setup script: `scripts/setup-archive-prune.py`. USER-invoked. Pipeline agents MUST NOT invoke.
 
 ```bash
-# 30-day retention; prune older archives
+# Default (cron, 30-day retention, 03:00 daily):
+.claude/skills/productivity/dream-apply/scripts/setup-archive-prune.py
+
+# Custom retention + time:
+setup-archive-prune.py --days 60 --hour 4 --minute 30
+
+# Systemd user timer alternative (more transparent than cron):
+setup-archive-prune.py --mode systemd
+
+# Inspect changes without applying:
+setup-archive-prune.py --dry-run
+
+# Uninstall:
+setup-archive-prune.py --remove
+```
+
+Idempotent: re-runs replace prior entry. Tags entries `# dream-apply-archive-prune` so detection survives across versions.
+
+Raw recipe (if scripting unavailable):
+
+```bash
 find ~/.pipeline/memory/.archive -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec rm -rf {} \;
 ```
 
-User adds to `crontab -e` or systemd timer if desired. Pipeline does not auto-prune.
+Pipeline does not auto-prune. Script is opt-in.
 
 ## Safety
 
