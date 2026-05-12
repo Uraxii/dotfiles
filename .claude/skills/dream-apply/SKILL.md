@@ -69,7 +69,7 @@ Bundled setup script: `scripts/setup-archive-prune.py`. USER-invoked. Pipeline a
 
 ```bash
 # Default (cron, 30-day retention, 03:00 daily):
-.claude/skills/productivity/dream-apply/scripts/setup-archive-prune.py
+.claude/skills/dream-apply/scripts/setup-archive-prune.py
 
 # Custom retention + time:
 setup-archive-prune.py --days 60 --hour 4 --minute 30

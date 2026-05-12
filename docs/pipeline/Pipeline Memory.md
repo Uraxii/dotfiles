@@ -97,7 +97,7 @@ Permission engine cannot match on skill-name arguments, so defense is doctrine +
 
 ## Archive recovery hatch
 
-`dream-apply` preserves removed entries to `~/.pipeline/memory/.archive/<iso8601>/<role>-memory-removed.md` before mutating the live memory file. 30-day retention configured via the setup script at `.claude/skills/productivity/dream-apply/scripts/setup-archive-prune.py` (cron or systemd, USER-installed).
+`dream-apply` preserves removed entries to `~/.pipeline/memory/.archive/<iso8601>/<role>-memory-removed.md` before mutating the live memory file. 30-day retention configured via the setup script at `.claude/skills/dream-apply/scripts/setup-archive-prune.py` (cron or systemd, USER-installed).
 
 If `dream` removes something useful, recover by reading the archive copy and re-appending manually.
 

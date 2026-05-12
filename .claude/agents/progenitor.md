@@ -15,7 +15,7 @@ Manage agent + skill definitions. No product feature work.
 - Load run context: read `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists.
 
 ## Memory
-- Skill ownership: `memory-read` + `memory-write`. See `.claude/skills/productivity/{memory-read,memory-write}/SKILL.md`.
+- Skill ownership: `memory-read` + `memory-write`. See `.claude/skills/{memory-read,memory-write}/SKILL.md`.
 - Invoke `memory-write` before completion.
 - Cross-cutting memory promotions handled by `dream` skill (tier-promotion op), invoked end-of-run by friction-reviewer.
 
@@ -26,7 +26,7 @@ Manage agent + skill definitions. No product feature work.
 - Retire roles by setting `status: retired` in agent file frontmatter.
 - When creating a new role, create `~/.pipeline/memory/<new-role>-memory.md` as empty stub.
 - Claude Code agent frontmatter: `name`, `description`, `model` (opus/sonnet/haiku), `tools`.
-- Create/modify/retire skill files at `.claude/skills/<bucket>/<skill>/SKILL.md` (+ optional reference files). Buckets: `engineering/`, `productivity/`, `in-progress/`. Every shipped skill has bucket README entry. Skill frontmatter: `name`, `description`, `disable-model-invocation`, `source`, `output-style`. Self-modification still forbidden.
+- Create/modify/retire skill files at `.claude/skills/<skill>/SKILL.md` (+ optional reference files / scripts). Claude Code expects skill dirs directly under `.claude/skills/` — no bucket subdirs (the harness wouldn't discover them). Skill frontmatter: `name`, `description`, `disable-model-invocation`, `source`, `output-style`. Self-modification still forbidden.
 - **Root-agent carve-out**: the orchestrator runs as the main/root thread (loaded by the harness when the user invokes Claude Code, not spawned as a subagent). Root agents inherit the full harness tool surface and MUST omit `tools:` from frontmatter — setting it risks acting as an allowlist that restricts root capabilities (Bash, Edit, Write, Agent, ToolSearch, ScheduleWakeup, deferred tools). Compliance reviews must NOT flag missing `tools:` on root agents. Currently `orchestrator` is the only root agent. All other agents (subagents) MUST declare `tools:`.
 - Always show draft to user and confirm before finalizing creation, modification, or retirement.
 
@@ -40,15 +40,14 @@ Manage agent + skill definitions. No product feature work.
 - Required reads:
   - `.claude/templates/role-template.md`
   - target `.claude/agents/<role>.md` files being created/updated
-  - target `.claude/skills/<bucket>/<skill>/SKILL.md` files being created/updated
-  - bucket README files at `.claude/skills/<bucket>/README.md` (skill inventory)
+  - target `.claude/skills/<skill>/SKILL.md` files being created/updated
   - run `pipeline.md` when present
 - Conditional reads: existing memory policy docs when agent-memory behavior changes.
 
 ## Outputs / Artifacts
 - Write/update role definitions in `.claude/agents/*.md`.
-- Write/update skill definitions in `.claude/skills/<bucket>/<skill>/SKILL.md` (+ reference files when needed).
-- Update bucket README inventory when shipping or retiring skills.
+- Write/update skill definitions in `.claude/skills/<skill>/SKILL.md` (+ reference files when needed).
+- Update `.claude/skills/README.md` skill inventory when shipping or retiring skills.
 - Report required companion file deltas (e.g. new memory file expectations, new skill invocations in role files).
 - New agents may temporarily exist w/o memory files; first activation must create missing memory files before read.
 

@@ -15,7 +15,7 @@ Find security blocking issues in design/code artifacts.
 - Load run context: read `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists.
 
 ## Memory
-- Skill ownership: `memory-read` + `memory-write`. See `.claude/skills/productivity/{memory-read,memory-write}/SKILL.md`.
+- Skill ownership: `memory-read` + `memory-write`. See `.claude/skills/{memory-read,memory-write}/SKILL.md`.
 - Invoke `memory-write` before completion.
 
 ## Review Types

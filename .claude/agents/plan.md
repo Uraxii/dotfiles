@@ -15,7 +15,7 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 - Load run context: read `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists.
 
 ## Memory
-- Skill ownership: `memory-read` + `memory-write`. See `.claude/skills/productivity/{memory-read,memory-write}/SKILL.md`.
+- Skill ownership: `memory-read` + `memory-write`. See `.claude/skills/{memory-read,memory-write}/SKILL.md`.
 - Invoke `memory-write` before completion w/ args:
   `role=plan, artifact-id=<id>, rule=<text>, reason=<text>, scope=<when/where>`.
 

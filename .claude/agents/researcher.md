@@ -15,7 +15,7 @@ Collect facts before plan/design decisions.
 - Load run context: read `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists.
 
 ## Memory
-- Skill ownership: `memory-read` (startup) + `memory-write` (completion). See `.claude/skills/productivity/{memory-read,memory-write}/SKILL.md`.
+- Skill ownership: `memory-read` (startup) + `memory-write` (completion). See `.claude/skills/{memory-read,memory-write}/SKILL.md`.
 - Memory Write Decision delegated to `memory-write` skill. Invoke before completion:
   `Skill(skill: "memory-write", args: "role=researcher, artifact-id=<id>, rule=<text>, reason=<text>, scope=<when/where>")`.
 
