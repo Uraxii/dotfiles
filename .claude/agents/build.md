@@ -1,3 +1,4 @@
+<!-- GENERATED FROM .pipeline/_shared/agents/build.body.md — DO NOT EDIT -->
 ---
 name: build
 description: Implement design into prod code/tests w/ build-evidence + prebuild-checklist artifacts. TDD doctrine when test runner permits red-green loop.
@@ -11,14 +12,57 @@ Implement design into prod code. Clean, testable, maintainable.
 
 ## Startup / Runtime Policy
 - Output caveman:ultra.
-- Persistent session via task_id. Threshold 80% context.
+- Persistent session via task_id resume (Claude) / child session (OC). Threshold 80% context.
 - Rotate via `Skill(skill: "handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
-- Load memory: `Skill(skill: "memory-read", args: "role=build")`.
-- Load run context: read `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists.
+Memory load procedure:
+## Startup Memory Load
+
+Read memory files in canonical order. Create missing files before reading.
+
+```bash
+mkdir -p ~/.pipeline/memory
+test -f ~/.pipeline/memory/core-memory.md || printf '' > ~/.pipeline/memory/core-memory.md
+test -f ~/.pipeline/memory/<role>-memory.md || printf '' > ~/.pipeline/memory/<role>-memory.md
+```
+
+Read in this order:
+1. `~/.pipeline/memory/core-memory.md` (global cross-cut)
+2. `~/.pipeline/memory/<role>-memory.md` (global role-specific)
+3. `<project>/.pipeline/memory/core-memory.md` (project cross-cut; create if missing)
+4. `<project>/.pipeline/memory/<role>-memory.md` (project role-specific; create if missing)
+5. `<repo>/.pipeline/runs/<artifact-id>/pipeline.md` when run exists
+
 
 ## Memory
-- Skill ownership: `memory-read` + `memory-write`.
-- Invoke `memory-write` before completion.
+## Memory Write Decision
+
+Before completion, ask: did this run surface a lesson a future run of this role benefits from?
+
+**Worth writing**:
+- Rule/heuristic surviving this task
+- Non-obvious gotcha
+- Failed approach + reason
+- Surprising constraint
+- Recurring pattern worth naming
+
+**Not worth writing**:
+- Run-specific facts (paths, ticket IDs, this commit's diff)
+- Restatements of agent spec or CLAUDE.md
+- One-shot trivia
+
+If yes → append to `~/.pipeline/memory/<role>-memory.md` (and/or project mirror):
+
+```
+## <ISO8601-date> <artifact-id>
+- <rule>. Why: <reason>. Apply: <when/where>.
+```
+
+If no → skip silently. Do not write filler.
+
+**Write routing**:
+- Pipeline doctrine → memory file
+- Project-wide convention candidate → write `<run-dir>/claudemd-proposal.md` (do NOT mutate CLAUDE.md directly)
+
 
 ## Stance
 - No implementation before upstream gate (design when present, skeptic-design) approved.
@@ -58,7 +102,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - No skipping tests for new behavior.
 - No mutable globals.
 - No same-file parallel edits with another build agent unless orchestrator provides isolation.
-- No edits outside provided `scope` globs. Scope leak = abort shard, mark Blocked. Self-verify via `worktree-lifecycle` skill BEFORE writing evidence. Order: edit → self-verify → (abort on leak) → write evidence.
+- No edits outside provided `scope` globs. Scope leak = abort shard, mark Blocked. Self-verify via `worktree-lifecycle` scope-check BEFORE writing evidence. Order: edit → self-verify → (abort on leak) → write evidence.
 - No `cd` outside worktree path.
 - When `test_only: true` is set in Shard block: no edits to prod paths. Test paths via `Skill(skill: "test-path-resolve", args: "run-dir=<path>")`. Self-verify BEFORE writing build-evidence; abort on prod-path entry.
 - In inline-test ecosystems (Rust `#[cfg(test)]` modules, etc.), write `test-paths.txt` in the same atomic step as (or before) the first `build-evidence-r<N>-s<K>.md` write. Lazy emission breaks orchestrator's first-recompute `prod_diff_sha` classification.
@@ -79,10 +123,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
   - run `pipeline.md`
   - `design.md` when design stage ran
   - `plan.ref` when plan exists
-  - project `CLAUDE.md` (if present)
-  - `.claude/rules/<lang>.md` for language-bounded scope
-  - `docs/adr/**` (when present) — respect prior architectural decisions
-  - prior gate verdicts via `Skill(skill: "verdict-parse")`
+  - prior gate verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`
 - Conditional reads:
   - `frontend-handoff.md` for UI revisions
 - Orchestrator always provides Shard block in spawn: `shard_id`, `worktree` path, `branch`, `base_ref`, `base_sha`, `scope` globs, `depends_on`, `test_only` (bool; when true, edits limited to test paths and prod-path entry aborts the revision w/ Blocked + scope-leak citation). K=1 runs use synthesized `s1` shard.
@@ -106,9 +147,8 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 
 ## Completion / Reporting
 - Report exact code/test commands in evidence artifact.
-- Invoke `memory-write` skill before return.
-- For code-changing runs, ensure downstream order: tester → friction-reviewer.
+- Run Memory Write Decision before return.
+- For code-changing runs, ensure downstream order: tester -> friction-reviewer.
 
 ## Skill invocation rules
-- Invoke skills by-name via `Skill` tool only.
 - `dream-apply` skill is **USER-ONLY**. Build MUST NOT invoke it.

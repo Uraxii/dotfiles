@@ -1,3 +1,4 @@
+<!-- GENERATED FROM .pipeline/_shared/skills/agent-brief-format/SKILL.md — DO NOT EDIT -->
 ---
 name: agent-brief-format
 description: Pipeline brief.md template. Durable-over-precise (no file paths, no line numbers). Behavioral not procedural. Complete acceptance criteria. Explicit out-of-scope. Use by orchestrator at intake.
@@ -9,11 +10,13 @@ output-style: caveman:ultra
 
 Pipeline brief.md template. Pipeline-internal. Used by orchestrator intake.
 
+**Caller MUST provide `run-dir` and `raw-request` inline in the invocation prompt. This skill is invoked WITHOUT `args:` field; data passes via caller-provided context, NOT typed parameters.**
+
 ## Invocation
 
-```
-Skill(skill: "agent-brief-format", args: "run-dir=<path>, raw-request=<user text>")
-```
+Claude: `Skill(skill: "agent-brief-format", args: "run-dir=<path>, raw-request=<user text>")`
+
+OC: `skill({ name: "agent-brief-format" })` — caller provides `run-dir` and `raw-request` inline in calling prompt.
 
 Writes `<run-dir>/brief.md`.
 
@@ -41,35 +44,31 @@ State what is OUT of scope. Prevents gold-plating + adjacent-feature drift.
 ## Template
 
 ```markdown
-## Brief
+# AGENT-BRIEF
 
-**Category:** bug | enhancement | refactor | ops
-**Summary:** one-line description
+**Run**: <artifact-id>
+**Brief type**: feature | bugfix | research | ops | refactor | docs
+**Date**: <ISO8601>
 
-**Current behavior:**
-What happens now. Bugs = broken behavior. Enhancements = status quo.
+## Request (raw)
+<raw user request — verbatim>
 
-**Desired behavior:**
-What should happen after work complete. Specific about edge cases + error conditions.
+## Interpreted request
+<one-sentence behavioral description — what changes, not how>
 
-**Key interfaces:**
-- `TypeName` — what changes + why
-- `functionName()` return type — current vs desired
-- Config shape — new options needed
+## Scope
+<what is IN scope — behavioral boundaries>
 
-**Acceptance criteria:**
-- [ ] Specific testable criterion 1
-- [ ] Specific testable criterion 2
-- [ ] Specific testable criterion 3
+## Out of scope
+<what is explicitly NOT scope — prevent gold-plating>
 
-**Out of scope:**
-- Thing NOT changed in this issue
-- Adjacent feature that's separate
+## Acceptance criteria
+- [ ] AC1: <concrete, independently verifiable>
+- [ ] AC2: ...
+
+## Dependencies / assumptions
+- <known constraints, required context>
+
+## Open questions
+- <unresolved high-impact ambiguity>
 ```
-
-## Don't
-
-- No file paths.
-- No line numbers.
-- No vague AC ("works correctly").
-- No "what to do" procedural steps.

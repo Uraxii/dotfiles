@@ -19,4 +19,13 @@ messages.md
 
 .claude/plans
 .claude/projects
-.pipeline/
+# Ignore .pipeline/ runtime dirs but keep _shared/ SSoT source tracked
+.pipeline/runs/
+.pipeline/dreams/
+.pipeline/memory/
+# Catch any other .pipeline/ children that aren't explicitly tracked
+.pipeline/*
+!/.pipeline/_shared/
+!/.pipeline/_shared/**
+# OpenCode pipeline-aware config tracked; runtime overrides still in .local variants
+!/.config/opencode/opencode.json

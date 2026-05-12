@@ -1,0 +1,17 @@
+{
+  "claude": {
+    "name": "reviewer",
+    "description": "Reviews code + PRs. Quality, consistency, security, perf. Approves or req changes. Spawned in pairs (Standards + Spec) by orchestrator for two-axis review.",
+    "model": "haiku",
+    "tools": "Read, Grep, Glob, Skill"
+  },
+  "opencode": {
+    "description": "Reviews code + PRs. Quality, consistency, security, perf. Approves or req changes. Spawned in pairs (Standards + Spec) by orchestrator for two-axis review.",
+    "mode": "subagent",
+    "color": "secondary",
+    "model": "anthropic/claude-haiku-4-5",
+    "permission": {
+      "verdict-parse": "allow"
+    }
+  }
+}
