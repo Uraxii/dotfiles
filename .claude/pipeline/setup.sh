@@ -41,10 +41,10 @@ check_cmd() {
   fi
 }
 
-check_cmd python3 "Install Python 3.11+ (system package or pyenv)."
-check_cmd uv      "Install: curl -LsSf https://astral.sh/uv/install.sh | sh"
-check_cmd stow    "Install via your distro package manager (e.g. pacman -S stow)."
-check_cmd jq      "Install via your distro package manager (used by hooks + setup)."
+check_cmd python3 "Install Python 3.11+ (system package or pyenv). NixOS: in home.nix."
+check_cmd uv      "Install: curl -LsSf https://astral.sh/uv/install.sh | sh   (NixOS: home.nix has uv)"
+check_cmd stow    "Install via your distro package manager (e.g. pacman -S stow). NixOS: home.nix."
+check_cmd jq      "Install via your distro package manager. NixOS: home.nix."
 check_cmd curl    "Install via your distro package manager."
 check_cmd git     "Install via your distro package manager."
 
@@ -154,6 +154,7 @@ if command -v uvx >/dev/null 2>&1; then
   note "Linux system libs may be required by weasyprint: pango cairo gdk-pixbuf."
   note "  Debian/Ubuntu: sudo apt install libpango-1.0-0 libpangoft2-1.0-0"
   note "  Arch:           sudo pacman -S pango"
+  note "  NixOS:          home.nix lists pango + cairo + gdk-pixbuf + libffi"
   note "  macOS:          brew install pango"
 else
   warn "uvx missing — HTML auto-PDF disabled. Install: ships with uv."
