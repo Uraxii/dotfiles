@@ -118,7 +118,7 @@
   "effortLevel": "low",
   "agent": "orchestrator",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-ansi",
+  "theme": "custom:manjaro",
   "skipAutoPermissionPrompt": true,
   "effort": "high"
 }
