@@ -25,8 +25,12 @@ features:
 oauth_config:
   scopes:
     bot:
-      - chat:write
-      - chat:write.public
+      - chat:write          # post messages
+      - chat:write.public   # post to public channels w/o being member
+      - channels:history    # read public-channel msgs (Phase 2: free-text replies)
+      - groups:history      # read private-channel msgs (Phase 2: free-text replies)
+      - files:read          # read file metadata (permalink etc) after upload
+      - files:write         # upload question attachments to thread
 
 settings:
   interactivity:
