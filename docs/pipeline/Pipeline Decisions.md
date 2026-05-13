@@ -1,6 +1,6 @@
 # Pipeline Decisions
 
-Human-in-the-loop branching for pipeline runs. Lets the orchestrator pause at declared decision points, present N options (N ≤ 4), and resume on user pick. Two delivery channels: synchronous terminal prompt (`AskUserQuestion`) or asynchronous GitHub issue + 10-minute poll.
+Human-in-the-loop branching for pipeline runs. Lets the orchestrator pause at declared decision points, present N options (N ≤ 4), and resume on user pick. Two delivery channels: synchronous terminal prompt (`AskUserQuestion`) or asynchronous Slack Socket Mode (outbound-only WebSocket; no inbound port required).
 
 ## When the stage runs
 
@@ -11,7 +11,7 @@ A decision-elicitation stage is injected by the orchestrator only when:
 
 POC scope = declarative only. Self-flag = follow-up phase.
 
-Default channel is `sync`. Use `async` when the user is off-terminal, when the decision involves stakeholders beyond the runner, or when the pipeline runs headless (e.g. cron via [[Pipeline Skills|schedule]]).
+Default channel is `sync`. Use `async` when the user is off-terminal (Slack notification on phone/desktop), when the decision involves stakeholders beyond the runner, or when the pipeline runs headless (e.g. cron via [[Pipeline Skills|schedule]]). Async delivery spawns one Slack listener per run on demand — see [[Pipeline Slack Setup]].
 
 ## Declaration
 
@@ -48,76 +48,97 @@ Blocking terminal prompt via `AskUserQuestion`:
 
 Fast path. No GH dependency. Best when runner is at the terminal.
 
-## Async delivery
+## Async delivery (Slack Socket Mode)
 
-Preconditions:
+Outbound-only architecture. The orchestrator never calls Slack directly. When a run enters async-mode decision-elicitation, the orchestrator spawns a per-run listener process (`.claude/pipeline/slack_listener.py <project> <run-id>`) detached via `subprocess.Popen(..., start_new_session=True)`. The listener opens a Slack Socket Mode WebSocket, watches its run dir via inotify, and bridges in both directions:
 
-- `command -v gh` succeeds
-- `gh auth status` is clean
-- `git remote get-url origin` matches `github.com[:/]`
+- New `awaiting-decision-r<N>.md` written → listener posts a threaded message with N buttons.
+- Button click → listener writes `decision-r<N>.md` into the run dir + deletes the awaiting file.
 
-Any failure degrades to `sync` with a warning logged to `pipeline.md`.
+The pipeline's only Slack interaction is filesystem-level: write awaiting file, poll for decision file. No tokens in pipeline code.
 
-Flow:
+### Preconditions
 
-1. `gh issue create` with labels `pipeline-decision` and `pipeline-<artifact-id>`, assignee `@me`, body synthesized from `options-r<N>.md` plus a reply-protocol footer.
-2. Write `awaiting-decision-r<N>.md` with issue URL, number, timeout, poll cadence.
-3. Update `pipeline.md`: `status: paused_on_decision`, add `paused_on_decision:` block.
-4. `ScheduleWakeup(delaySeconds=600, prompt="<<resume-pipeline-<artifact-id>>>", reason="polling decision issue #N @10min")`.
-5. Orchestrator halts. Control returns to the user (or the harness).
+- `~/.claude/pipeline/slack.env.local` populated with `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_CHANNEL` (channel ID, not name).
+- `~/.claude/pipeline/slack_listener.py` present + executable; `uv` resolves on PATH.
+- Bot user invited to the channel (`/invite @your-bot` once, ever).
+- Optional: `<project>/.pipeline/pipeline.toml` `[slack].channel` overrides the env default for this project only.
 
-The user gets a GitHub notification (email + mobile push) and replies on the issue from any device.
+Any precondition fails → fall back to `sync` with a warning logged to `pipeline.md`.
+
+### Per-project config (`<project>/.pipeline/pipeline.toml`)
+
+```toml
+[slack]
+channel = "C0123ABC456"   # required; Slack channel ID (right-click channel → View details → Channel ID)
+project_name = "myproject"  # optional; shown in parent thread message
+```
+
+If `pipeline.toml` is missing the `[slack]` block, the orchestrator falls back to `sync` and offers via `AskUserQuestion` to persist a channel for next time.
+
+### Flow
+
+1. Verify preconditions; degrade to `sync` on failure.
+2. Ensure the per-run listener is alive (idempotent): read `<run-dir>/slack-listener.pid` + `os.kill(pid, 0)`. If dead/missing, spawn detached via `subprocess.Popen(..., start_new_session=True)`; redirect stdout/stderr to `<run-dir>/slack-listener.log`.
+3. Write `<run-dir>/awaiting-decision-r<N>.md` (single trigger for the listener — no API call from orchestrator).
+4. Update `pipeline.md`: `status: paused_on_decision`, add `paused_on_decision:` block.
+5. `ScheduleWakeup(delaySeconds=600, prompt="<<resume-pipeline-<artifact-id>>>", reason="polling decision d<N> @10min")`.
+6. Halt. Control returns to the user.
+
+Listener behavior (informative):
+
+- First decision for a run → posts a parent message (`🟡 Pipeline started <run-id>`) and captures `thread_ts`. Subsequent decisions for the same run reply in that thread. State persisted in `<run-dir>/slack-state.json` (listener-owned; gitignored).
+- Each decision post = section blocks per option + an actions block with up to 4 buttons (`action_id=decision_pick_<A|B|C|D>`, `value=<run_id>|<decision_id>|<choice>`).
+- On click → optional allowlist check (`SLACK_ALLOWED_USERS`), write `decision-r<N>.md` with `verdict: chosen`, edit the original message to a locked confirmation, post a thread reply (`Recorded Option B for run-id / d1. Pipeline resuming.`), delete the awaiting file.
+- Self-exits 30 seconds after the run's awaiting set has been empty. Orchestrator re-spawns idempotently on the next decision in the same run.
+- WebSocket reconnects automatically within a single listener lifetime; missed clicks reappear on reconnect.
 
 ### Poll loop
 
 Each wake:
 
-1. Read `awaiting-decision-r<N>.md` to recover state.
-2. `gh issue view <N> --json state,comments,closedAt`.
-3. Route:
-   - Issue closed without parsed reply → `verdict: cancelled`. Halt.
-   - New comment from issue author matches `/pick A|B|C|D` (or `/pick 1-4`) → confirmation reply, close issue, write `decision-r<N>.md`, resume pipeline.
-   - New comment but no strict match → hint comment, re-wake. After 3 hint comments → halt + surface.
-   - `now >= timeout_at` → `verdict: timeout`. Comment on issue, halt.
-   - Else → update `last_polled_at`, `next_wake_at`; `ScheduleWakeup` 600s.
+1. Read `<run-dir>/awaiting-decision-r<N>.md` to recover state.
+2. Check `<run-dir>/decision-r<N>.md` existence:
+   - Exists → parse `verdict` + `chosen_option`, remove `paused_on_decision` block from `pipeline.md`, resume pipeline (re-spawn `options_source` with decision file in Read set).
+3. Else check `now >= timeout_at`:
+   - True → write `decision-r<N>.md` with `verdict: timeout`, halt + surface.
+4. Else check listener health: read `<run-dir>/slack-listener.pid`, then `os.kill(pid, 0)`.
+   - File missing or process dead → respawn (idempotent). After 2 consecutive wakes where respawn fails, offer sync fallback via `AskUserQuestion`.
+5. Else → update `last_polled_at` + `next_wake_at`; `ScheduleWakeup` 600s.
 
 ### Resume sentinel
 
 `<<resume-pipeline-<artifact-id>>>` is recognized at orchestrator startup. The orchestrator skips intake, locates `awaiting-decision-*.md` in the matching run dir, and routes directly to the poll procedure.
 
-Fallback: if `ScheduleWakeup` is unavailable (no `/loop` context), the user can re-invoke manually with `resume <artifact-id>` once they've replied on the issue.
+Fallback: if `ScheduleWakeup` is unavailable (no `/loop` context), the user can re-invoke manually with `resume <artifact-id>` once they've clicked the Slack button.
 
 ## Reply syntax
 
-POC supports strict only:
+Click a button. No text parsing.
 
-```
-/pick A
-/pick option-2
-/pick 3
-```
-
-(Phase 4 adds free-form LLM-parsed replies with confirmation comments.)
+(Future phase: free-form Slack reply parsing via LLM, with confirmation message before acting.)
 
 ## Guardrails
 
-- N ≤ 4 (matches `AskUserQuestion` limit).
-- One paused decision per run. Multi-decision runs sequence them.
+- N ≤ 4 (matches `AskUserQuestion` limit + keeps the Slack actions block under the 5-button visual cap).
+- One paused decision per run. Multi-decision runs sequence them; each posts in the same run thread.
 - Default timeout 7 days; override via `timeout_days` per point.
-- Confirmation comment posted **before** any pick is acted on. Audit trail.
-- Comments from non-author/non-assignee are ignored.
-- [[Pipeline Stages|friction-reviewer]] end-of-run audit closes any orphaned `pipeline-<artifact-id>` labeled issues with `Run complete. Decision no longer needed.`
+- Confirmation message posted **before** the pipeline reads the decision file (listener writes the file last, after the Slack confirmation succeeds).
+- Optional `SLACK_ALLOWED_USERS` allowlist (comma-separated user IDs in `slack.env`) restricts who can click.
+- [[Pipeline Stages|friction-reviewer]] end-of-run audit scans `<run-dir>/awaiting-decision-*.md`. Any remaining = anomaly logged; orphan cleanup deferred to next orchestrator startup scan.
 
 ## Failure modes
 
 | Case | Behavior |
 |---|---|
-| `gh` missing / unauthed / non-github remote | Fall back to sync, log warning |
-| Issue create succeeds but state-file write fails | Close issue with abort comment, halt, surface |
-| User closes issue pre-reply | `verdict: cancelled`, halt |
-| Free-form comment (POC) | Hint reply, re-wake; halt after 3 hints |
+| `pipeline.toml` missing `[slack].channel` | `AskUserQuestion` offers to persist channel, otherwise sync fallback |
+| Listener spawn fails (Popen returns nonzero or PID file never written) | Tail `<run-dir>/slack-listener.log` for traceback. Fall back to sync |
+| `slack.env.local` tokens missing/invalid | Listener exits with `SLACK_BOT_TOKEN and SLACK_APP_TOKEN required` in log. Fall back to sync |
+| Bot not in channel | Listener logs `not_in_channel`; orchestrator detects inactivity beyond 2 wake cycles and falls back to sync |
+| User dismisses Slack message without clicking | Awaits until `timeout_at`, then `verdict: timeout`, halt + surface |
 | Session dies mid-wait | Resume via sentinel on next orchestrator invocation OR manual `resume <id>` |
-| `ScheduleWakeup` no-op (no `/loop`) | Document fallback: user manually re-invokes; orchestrator polls on demand |
+| `ScheduleWakeup` no-op (no `/loop`) | User manually re-invokes; orchestrator polls on demand |
+| Slack workspace outage | Listener reconnects automatically. Idempotent: re-click overwrites the same `decision-r<N>.md` |
 
 ## Related
 
