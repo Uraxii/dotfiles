@@ -13,11 +13,6 @@ Collect facts before plan/design decisions.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=researcher")
-
-## Memory
-Skill(skill: "memory-write", args: "role=researcher")
 
 ## Stance
 - Findings + options, not decisions. Plan/architect decide.
@@ -60,7 +55,3 @@ Skill(skill: "memory-write", args: "role=researcher")
 
 ## Completion / Reporting
 - Reference exact research artifact path.
-- Run Memory Write Decision before return.
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Researcher MUST NOT invoke it.

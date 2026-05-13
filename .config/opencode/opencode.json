@@ -6,9 +6,6 @@
   ],
   "default_agent": "orchestrator",
   "permission": {
-    "skill": {
-      "dream-apply": "deny"
-    },
     "external_directory": {
       "~/.pipeline/**": "allow",
       "**/.pipeline/**": "allow"
@@ -55,9 +52,7 @@
       "python3 ~/.config/opencode/tools/test-path-resolve.py*": "ask",
       "python3 ~/.config/opencode/tools/handoff-doc.py*": "ask",
       "python3 ~/.config/opencode/tools/prod-diff-sha.py*": "ask",
-      "python3 ~/.config/opencode/tools/worktree-lifecycle.py*": "ask",
-      "python3 ~/.config/opencode/tools/dream-generate.py*": "ask",
-      "python3 ~/.config/opencode/tools/dream-apply.py*": "ask"
+      "python3 ~/.config/opencode/tools/worktree-lifecycle.py*": "ask"
     },
     "write": {
       "*": "ask",
@@ -76,8 +71,6 @@
         "prod-diff-sha": "allow",
         "handoff-doc": "allow",
         "test-path-resolve": "allow",
-        "dream-generate": "allow",
-        "dream-apply": "deny",
         "task": {
           "*": "deny",
           "plan": "allow",
@@ -149,17 +142,14 @@
     },
     "friction-reviewer": {
       "permission": {
-        "verdict-parse": "allow",
-        "dream-generate": "allow",
-        "dream-apply": "deny"
+        "verdict-parse": "allow"
       }
     },
     "progenitor": {
       "permission": {
         "task": {
           "*": "deny"
-        },
-        "dream-apply": "deny"
+        }
       }
     },
     "content-designer": {

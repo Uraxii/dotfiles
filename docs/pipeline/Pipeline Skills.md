@@ -1,6 +1,6 @@
 # Pipeline Skills
 
-Skills are reusable procedures defined under `.claude/skills/<name>/SKILL.md`. They exist to remove duplication from agent files — algorithms like `prod_diff_sha`, verdict parsing, and memory I/O were spelled out in multiple agents before the refactor.
+Skills are reusable procedures defined under `.claude/skills/<name>/SKILL.md`. They exist to remove duplication from agent files — algorithms like `prod_diff_sha`, verdict parsing, and worktree primitives were spelled out in multiple agents before the refactor.
 
 Skills are invoked by name via the `Skill` tool. Every pipeline agent has `Skill` in its frontmatter `tools:` list. The orchestrator (root agent) has full tool inheritance.
 
@@ -12,23 +12,16 @@ Claude Code discovers skills by scanning `.claude/skills/` for direct subdirecto
 .claude/skills/
 ├── README.md                              # human-facing inventory
 ├── agent-brief-format/SKILL.md
-├── artifact-slug-resolve/SKILL.md
-├── dream/
-│   ├── SKILL.md
-│   └── REFERENCE.md
-├── dream-apply/
-│   ├── SKILL.md
-│   └── scripts/setup-archive-prune.py
+├── artifact-slug/SKILL.md
+├── caveman/SKILL.md
+├── decision-elicitation/SKILL.md
+├── frontend-design/SKILL.md
 ├── handoff-doc/SKILL.md
-├── memory-read/SKILL.md
-├── memory-write/SKILL.md
 ├── prod-diff-sha/SKILL.md
 ├── test-path-resolve/SKILL.md
 ├── verdict-parse/SKILL.md
 └── worktree-lifecycle/SKILL.md
 ```
-
-Plus other top-level skill dirs not owned by the pipeline (caveman, frontend-design, etc.).
 
 ## Skill frontmatter
 
@@ -43,20 +36,9 @@ output-style: caveman:ultra                   # when invoked from pipeline agent
 ---
 ```
 
-**Invocation semantics**:
-
-- Agent-invokable skills (10 of 11) omit `disable-model-invocation`. Default behavior: Claude can both auto-load (description match) AND invoke via `Skill` tool. Auto-load risk is mitigated by precise `description` text — keep triggers narrow.
-- `dream-apply` is the sole exception. Its frontmatter sets `disable-model-invocation: true` + `invoke-from: user-only`. This blocks model invocation entirely; only USER may invoke via `/dream-apply`. See [[Pipeline Memory]] for the three-layer enforcement (frontmatter + agent body exclusion + friction audit).
-
-Earlier doctrine claimed `disable-model-invocation: true` would block description-match auto-load while still allowing explicit `Skill(skill: "...")` calls. That was a misread — the flag blocks all model invocation. Plan rev 4 carried the misread; fix landed in commit after `dfc40f3`.
+**Invocation semantics**: agent-invokable skills omit `disable-model-invocation`. Default behavior: Claude can both auto-load (description match) AND invoke via `Skill` tool. Auto-load risk is mitigated by precise `description` text — keep triggers narrow.
 
 ## Skill catalog
-
-### `memory-read`
-Loads pipeline agent memory at startup. Reads the 4 canonical paths in order, creates missing files as empty stubs, returns concatenated content with source-path headers. Used by every agent in its `## Startup` step.
-
-### `memory-write`
-Memory Write Decision gate + append. Routes pipeline doctrine to memory file, project-wide convention candidates to `claudemd-proposal.md`. Never writes to project CLAUDE.md directly. See [[Pipeline Memory]].
 
 ### `verdict-parse`
 Globs `<run-dir>/verdict-<type>-r<N>.md`, picks max N, parses YAML frontmatter. Returns `{verdict, role, review_type, loops, revision, prod_diff_sha?}`. Used by orchestrator for routing and by every gate to read prior verdicts.
@@ -76,27 +58,28 @@ sha=$(printf '%s' "$PROD_DIFF" | sha1sum | cut -c1-40)
 Empty diff returns the sentinel `00…00` SHA (cannot collide with non-empty sha1sum output).
 
 ### `handoff-doc`
-Persistence-rotation summary template. Architect rotates at 70% context; build at 80%. The skill writes a markdown doc that **references existing artifacts by path** rather than duplicating content. Suggested-skills line tells the resumed session which skills to load. Threshold value is role config — the skill only owns the template + write path.
+Persistence-rotation summary template. Used by any persistent role at its context threshold (architect 70%, all other persistent roles 80%). The skill writes a markdown doc that **references existing artifacts by path** rather than duplicating content. Threshold + task_id key are role config — the skill owns the template + write path only.
 
 ### `worktree-lifecycle`
 Wraps `git worktree` primitives: `op=create | probe | cleanup | scope-check`. Used by orchestrator for shard management and by build for self-verify before writing evidence. See [[Pipeline Shards]].
 
 ### `agent-brief-format`
-Writes the `brief.md` template at intake. Durability-over-precision contract: no file paths, no line numbers (they go stale before the agent runs). Sections: category, summary, current behavior, desired behavior, key interfaces, acceptance criteria, out-of-scope. Pattern adapted from mattpocock/skills `triage/AGENT-BRIEF.md`.
+Writes the `brief.md` template at intake. Durability-over-precision contract: no file paths, no line numbers (they go stale before the agent runs). Sections: category, summary, current behavior, desired behavior, key interfaces, acceptance criteria, out-of-scope.
 
-### `artifact-slug-resolve`
-Returns the canonical artifact-id `<slug>-<hex6>`. Wraps the runtime-aware shell helper at `~/.config/opencode/tools/artifact-slug.py` (Claude Code path; OpenCode has a custom tool). Used only at intake — one slug per run.
+### `artifact-slug`
+Returns the canonical artifact-id `<slug>-<hex6>`. Wraps the runtime helper at `~/.config/opencode/tools/artifact-slug.py`. Used only at intake — one slug per run.
 
 ### `test-path-resolve`
 Returns the test-path glob set. Reads `<run-dir>/test-paths.txt` if the build emitted one; otherwise returns the default regex set covering Python, JS/TS, C#, Java, Kotlin, Swift, Go, Ruby, Godot, Elixir, PHP, Rust. Used by `prod-diff-sha`, skeptic test-audit, and tester smuggling scan.
 
-### `dream`
-Memory curation — five operations (consolidate, remove stale, extract patterns, reorg by signal, tier-promote). Review-mode default; writes diff artifact only. See [[Pipeline Memory]].
+### `decision-elicitation`
+Orchestrator-owned decision-point flow. Elicits human pick between N options (N ≤ 4). Sync delivery via `AskUserQuestion`; async via `gh issue create` + 10-minute `ScheduleWakeup` poll. Records pick in `decision-r<N>.md`. Triggers when brief/plan declares `decision_points:` or a role flags ambiguity.
 
-### `dream-apply`
-**USER-ONLY.** Reads a dream diff, mutates memory files, writes apply-receipt + archives removed entries. Three-layer enforcement against agent invocation: frontmatter `invoke-from: user-only`, agent-body skill exclusion, friction Phase-4 transcript scan.
+### `frontend-design`
+Optional build-time aesthetics guidance for UI implementation. Distinct from `ui-ux-designer` agent — this is a stylistic helper for build, not a role.
 
-Bundled at `.claude/skills/dream-apply/scripts/setup-archive-prune.py` is a setup helper for the 30-day archive retention cron (or systemd timer alternative).
+### `caveman`
+Output-style autoload. Drops articles/filler/pleasantries while preserving technical substance. Code blocks unchanged. Errors quoted verbatim.
 
 ## Invocation pattern
 
@@ -117,10 +100,8 @@ Skill bodies parse the args string themselves; there's no formal schema validati
 Pattern: SKILL.md stays ≤ 100 lines. Anything more lives in companion files inside the same skill dir:
 
 - `REFERENCE.md` — full algorithm details, schema specs, examples
-- `scripts/` — utility scripts (e.g. `dream-apply/scripts/setup-archive-prune.py`)
+- `scripts/` — utility scripts
 - Examples or templates as needed
-
-The `dream` skill body is ~70 lines pointing at `dream/REFERENCE.md` for the diff-format spec and algorithm details. Keeps SKILL.md fast to skim during agent execution.
 
 ## Adding a new skill
 
@@ -130,11 +111,10 @@ Goes through the `progenitor` agent. Progenitor:
 2. Updates `.claude/skills/README.md` skill inventory.
 3. Reports any agent files that should gain a new `Skill(...)` invocation.
 
-The progenitor cannot self-edit. Changes to progenitor itself (like the skills-authority expansion in Phase 0a of plan `zazzy-riding-popcorn`) require a USER manual edit.
+The progenitor cannot self-edit.
 
 ## Related
 
 - [[Pipeline Overview]]
 - [[Pipeline Stages]] — every subagent's tool list includes Skill
-- [[Pipeline Memory]] — memory-read / memory-write / dream / dream-apply
 - [[Pipeline Permissions]] — skill name cannot be permission-denied (audit-only defense)

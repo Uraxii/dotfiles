@@ -24,11 +24,11 @@ Patterns in committed `settings.json`. ~70 allows; portable (no absolute paths, 
 ### Pipeline directories
 
 ```
-Read|Write|Edit(~/.pipeline/**)        # memory, plans, runs, dreams, archive
+Read|Write|Edit(~/.pipeline/**)        # plans, runs
 Read|Write|Edit(.pipeline/**)          # project mirror
 ```
 
-The single `~/.pipeline/**` glob covers `memory/`, `plans/`, `runs/`, `dreams/`, and `memory/.archive/` — no separate entries needed.
+The single `~/.pipeline/**` glob covers `plans/` and `runs/` — no separate entries needed.
 
 ### Project doctrine reads
 
@@ -137,9 +137,9 @@ Bash(git clean:*)
 Bash(rm -rf:*)
 ```
 
-- `Write|Edit(CLAUDE.md)` enforces the no-direct-write rule. CLAUDE.md candidates surface as proposal artifacts; user merges manually. See [[Pipeline Memory]].
+- `Write|Edit(CLAUDE.md)` enforces the no-direct-write rule. The user owns CLAUDE.md edits.
 - Destructive git ops require explicit user confirmation (no agent grant possible).
-- `rm -rf` is denied to agents — even the dream-archive-prune setup script runs from USER context (cron or systemd timer), not from agent context.
+- `rm -rf` is denied to agents.
 
 ## Portability rules
 
@@ -163,7 +163,7 @@ grep -rnE '"\.(pipeline|claude)/' .claude/settings.json | wc -l
 
 ## What permissions can't enforce
 
-- **Skill names**. The engine matches tool invocations (`Bash`, `Read`, `Skill`, `Agent`, etc.), not skill-name arguments. `Skill(skill: "dream-apply", ...)` cannot be permission-denied. The dream-apply USER-only defense is doctrine + audit, not permission rule. See [[Pipeline Skills]] dream-apply entry.
+- **Skill names**. The engine matches tool invocations (`Bash`, `Read`, `Skill`, `Agent`, etc.), not skill-name arguments. Skill-name-level deny rules cannot be enforced by the permission engine alone — defense rests on doctrine + audit.
 - **Shell-builtin variants** as noted above (`[`, `[[`).
 - **`~` expansion semantics**. If a Bash invocation reaches the matcher with `~` already expanded to `/home/<user>/`, patterns using `~` won't match. Plan documented this as a pre-deploy verification item.
 
@@ -180,5 +180,4 @@ These were pruned during the skills-adoption batch. New one-shots accumulate ove
 ## Related
 
 - [[Pipeline Overview]]
-- [[Pipeline Memory]] — CLAUDE.md write-path enforcement (deny + doctrine + audit)
 - [[Pipeline Skills]] — explicit Skill-tool invocation pattern

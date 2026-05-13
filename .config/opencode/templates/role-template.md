@@ -1,4 +1,4 @@
-<!-- GENERATED FROM .pipeline/_shared/templates/role-template.md — DO NOT EDIT -->
+<!-- Editable directly — no generator -->
 # Role Template
 
 This template shows the canonical frontmatter + body shape for pipeline agents on both platforms.
@@ -50,10 +50,7 @@ Notes:
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- [Memory load — via snippet include]
-
-## Memory
-[Memory Write Decision — via snippet include]
+- [Persistence note — persistent roles state task_id resume + threshold + handoff-doc rotate; one-shot roles omit]
 
 ## Stance
 - [core stance bullets]
@@ -79,7 +76,4 @@ Notes:
 
 ## Completion / Reporting
 - [what to report at end]
-
-## Skill invocation rules
-- `dream-apply` skill is USER-ONLY. <Role> MUST NOT invoke it.
 ```

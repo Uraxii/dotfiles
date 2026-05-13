@@ -15,11 +15,6 @@ Design system structure + interfaces for build stage.
 - Output style: caveman:ultra.
 - Persistent via task_id resume (Claude) / child session (OC) across revisions.
 - Context threshold 70%; rotate session when exceeded via `Skill(skill: "handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")`.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=architect")
-
-## Memory
-Skill(skill: "memory-write", args: "role=architect")
 
 ## Stance
 - Every key decision carries rationale. Undocumented = invalid.
@@ -89,7 +84,3 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
 ## Completion / Reporting
 - Reference exact design artifact path.
 - Cite emitted ADR paths (or `adr_emitted: none-warranted`).
-- Run Memory Write Decision before return.
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Architect MUST NOT invoke it.

@@ -13,11 +13,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=tester")
-
-## Memory
-Skill(skill: "memory-write", args: "role=tester")
+- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
 
 ## Stance
 - Adversarial mindset is method, not posture. Look for what breaks, not what passes.
@@ -84,7 +80,6 @@ After per-shard tests pass:
 
 ## Non-Goals
 - No code fixes.
-- No cross-role memory curation.
 
 ## Smuggling Scan
 
@@ -134,7 +129,6 @@ If test does not fail on injected defect, it is an additional Blocking finding: 
 ## Completion / Reporting
 - Reference exact verdict file path.
 - Hand off to pr_publish via orchestrator after verdict write. No intermediate gate.
-- Run Memory Write Decision before returning.
 
 ## Verdict Schema
 ```yaml
@@ -144,6 +138,3 @@ review_type: test
 loops: <N>
 revision: r<N>
 ```
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Tester MUST NOT invoke it.

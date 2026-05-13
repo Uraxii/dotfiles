@@ -76,85 +76,50 @@ section below.
 | `reviewer` | subagent | Two-axis code review (Standards + Spec) |
 | `researcher` | subagent | Pre-plan domain research; webfetch |
 | `ui-ux-designer` | subagent | Frontend handoff |
-| `friction-reviewer` | subagent | End-of-run doctrine audit; dream invocation |
+| `friction-reviewer` | subagent | End-of-run doctrine audit |
 | `progenitor` | primary | Creates / evolves agent role definitions |
 | `content-designer` | subagent | Pre-plan ideation |
 
 ### Runtime / ignored dirs
 
 Stow-ignored (see `.stow-local-ignore`):
-`opencode.json`, `models.local`, `memory/`, `inbox/`, `plans/`,
+`opencode.json`, `models.local`, `inbox/`, `plans/`,
 `projects/`, `messages.md`.
 
-## Pipeline (Claude + OpenCode SSoT)
+## Pipeline (Claude + OpenCode)
 
 ### Purpose
 
-Single-source-of-truth mechanism for the agentic pipeline. Agent bodies are
-authored once in `_shared/`, rendered to both `.claude/` and `.config/opencode/`
-trees by `scripts/pipeline-render.py`. Drift detection via
-`scripts/pipeline-drift.py`.
+Agentic pipeline. Agent and skill files at `.claude/agents/*.md` and `.claude/skills/<name>/SKILL.md` are the editable source of truth. `.config/opencode/agents/` and `.config/opencode/skills/` are symlinks to those Claude trees — both platforms read the same files.
 
-Monitor agent has been retired — its memory-curation duties are handled by
-`dream-generate` skill (read-only analysis) + friction-reviewer end-of-run
-invocation.
+Monitor agent has been retired.
+
+Memory subsystem removed (2026-05-13). Lessons live in project doctrine (`CLAUDE.md`, `.claude/rules/`, ADRs, agent spec edits). No per-role memory files; no curation skill.
 
 ### Key files
 
-- `.pipeline/_shared/agents/` — canonical agent body files (`.body.md`) + per-platform manifests (`.platforms.json`).
-- `.pipeline/_shared/skills/` — canonical skill bodies (SKILL.md) for all classes.
-- `.pipeline/_shared/snippets/memory-read.md` — shared memory startup section.
-- `.pipeline/_shared/snippets/memory-write.md` — shared memory write decision gate.
-- `.pipeline/_shared/templates/role-template.md` — authoring template.
-- `.pipeline/_shared/manifest.json` — agent list, skill classification, render-replacement table.
-- `scripts/pipeline-render.py` — generator script (≤450 LoC). Run after any `_shared/` edit.
-- `scripts/pipeline-drift.py` — drift detector (≤150 LoC). Run to verify no divergence.
-- `.config/opencode/tools/` — custom OC tools (8 TS + 8 PY pairs).
-- `.config/opencode/commands/dream-apply.md` — slash command for USER-ONLY dream apply.
+- `.claude/agents/*.md` — agent definitions.
+- `.claude/skills/<name>/SKILL.md` — skill definitions.
+- `.claude/templates/role-template.md` — authoring template.
+- `.config/opencode/tools/` — custom OC tools paired with Claude skills (see Custom tools table).
+- `.config/opencode/opencode.json` — OC permissions + agent task allow-list. Hand-edited.
+- `.config/opencode/commands/*.md` — slash commands.
 
 ### Custom tools
 
-| Tool | Class | Permission |
-|------|-------|-----------|
-| `artifact-slug` | existing | allow |
-| `verdict-parse` | b | allow |
-| `handoff-doc` | b | allow |
-| `test-path-resolve` | b | allow |
-| `prod-diff-sha` | b | allow |
-| `worktree-lifecycle` | b | allow |
-| `dream-generate` | b | allow (read-only) |
-| `dream-apply` | a/doctrine | ask (USER-ONLY) |
-
-### Usage
-
-```bash
-# Render all agents/skills/templates to both platform trees
-python3 scripts/pipeline-render.py
-
-# Check for drift between _shared/ and rendered outputs
-python3 scripts/pipeline-drift.py
-
-# Optional pre-commit hook (user wires manually):
-# echo 'python3 scripts/pipeline-drift.py' >> .git/hooks/pre-commit
-```
+| Tool | Permission |
+|------|-----------|
+| `artifact-slug` | allow |
+| `verdict-parse` | allow |
+| `handoff-doc` | allow |
+| `test-path-resolve` | allow |
+| `prod-diff-sha` | allow |
+| `worktree-lifecycle` | allow |
 
 ### Skill classification
 
-- **Class (a)**: arg-less SKILL.md shared to both trees: `caveman`, `frontend-design`, `agent-brief-format`, `dream-apply` (doctrine-only).
-- **Class (b)**: Claude SKILL.md + OC custom tool: `verdict-parse`, `handoff-doc`, `test-path-resolve`, `prod-diff-sha`, `worktree-lifecycle`, `dream-generate`.
-- **Class (c)**: inlined into agent bodies via snippets: `memory-read`, `memory-write`.
-- **Retired**: `memory-read`, `memory-write` (inlined), `artifact-slug-resolve` (inline branch).
-
-### dream split rationale (S5/C2)
-
-`dream` was split into `dream-generate` (read-only, allows `allow` permission) and
-`dream-apply` (mutating, `ask` permission, USER-ONLY). Split-by-construction
-eliminates any arg-flip bypass. `dream-apply` has quintuple guard:
-1. `permission.skill.dream-apply: deny` globally
-2. `bash permission: dream-apply.py * : ask`
-3. Slash-command-only user invocation
-4. Agent body prohibition (`MUST NOT invoke`)
-5. Split tool construction (separate binary from dream-generate)
+- **Arg-less SKILL.md** (shared to both trees): `caveman`, `frontend-design`, `agent-brief-format`.
+- **Claude SKILL.md + OC custom tool**: `verdict-parse`, `handoff-doc`, `test-path-resolve`, `prod-diff-sha`, `worktree-lifecycle`, `artifact-slug`.
 
 ### OPENCODE_DISABLE_CLAUDE_CODE=1 requirement
 

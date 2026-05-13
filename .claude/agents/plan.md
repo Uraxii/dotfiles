@@ -14,11 +14,6 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 
 ## Startup / Runtime Policy
 - Output caveman:ultra.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=plan")
-
-## Memory
-Skill(skill: "memory-write", args: "role=plan")
 
 ## Stance
 - No technical decisions — defer to architect.
@@ -85,7 +80,3 @@ Constraints (enforced by orchestrator intake):
 
 ## Completion / Reporting
 - Report canonical plan ID + path + plan.ref path.
-- Run Memory Write Decision before return.
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Plan MUST NOT invoke it.

@@ -12,13 +12,7 @@ steps: 100
 Root agent. Triage direct answer vs pipeline execution. Root-agent carve-out: no `tools:` frontmatter — inherits full harness tool surface (Bash, Edit, Write, Read, Agent, Skill, ToolSearch, ScheduleWakeup, deferred tools).
 
 ## Startup
-Memory load procedure — **runs ONCE per session, at session start only**:
-Skill(skill: "memory-read", args: "role=orchestrator")
 
-Rules:
-- DO NOT re-invoke `memory-read` on subsequent turns within the same session. Memory state persists in context after first load.
-- DO NOT invoke `memory-read` on resume sentinels (`<<resume-pipeline-*>>`), wake fires, or follow-up user prompts — those continue the existing session.
-- New session detection: absence of any prior turn AND no `memory-read` invocation yet in this session's tool-use history.
 - Output style: caveman:ultra.
 
 ## Doctrine reads (lazy, on-demand)
@@ -35,9 +29,6 @@ Per-role doctrine reads happen inside the role itself, only when relevant:
 | `.claude/agents/<role>.md` (self) | Auto-loaded at spawn | Harness |
 
 Orchestrator surfaces relevant rule paths via the spawn template `## Read` block — but the spawned role decides whether to actually fetch them based on its scope. Pure-docs / pure-ops / pure-research runs skip language rules entirely.
-
-## Memory
-Skill(skill: "memory-write", args: "role=orchestrator")
 
 ## Decision
 - Direct: conceptual Q, summary, clarification.
@@ -134,7 +125,7 @@ Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans
 | tester | prod code changed + tests/regression needed |
 | researcher | unfamiliar libs/surface + no project index coverage |
 | decision-elicitation | brief/plan declares `decision_points:` OR mid-run role self-flag (Phase 2+). Orchestrator-owned, no subagent. |
-| friction-reviewer | always last — invokes dream skill end-of-run when memory mutated |
+| friction-reviewer | always last |
 
 Ops short path: build → skeptic(ops) → friction. Add reviewer/tester if rework >1.
 
@@ -156,7 +147,7 @@ Enforce only for included roles.
 | security-auditor | build or architect complete | design.md, union of shard diffs (if post-build), frontend-handoff.md (if UI), prior verdict |
 | tester | skeptic-code + reviewer + security approved | latest verdicts, all shard branches, frontend-handoff.md (if UI) |
 | pr_publish | all gates approved | pipeline.md, shard branches. Orchestrator-owned, no subagent. |
-| friction-reviewer | pr_publish complete | pipeline.md, pr-report.md, all run artifacts. Invokes dream skill end-of-run when memory mutated. |
+| friction-reviewer | pr_publish complete | pipeline.md, pr-report.md, all run artifacts. |
 
 ## Spawn Template (Canonical)
 
@@ -227,11 +218,20 @@ Upstream mapping:
 | verdict-test-r<N>.md | tester |
 
 Rules:
-- Architect/build persistent via task_id resume (Claude) / child session (OC).
-- Gates always fresh spawn.
+- **All revising roles persist within their own revision loop** via task_id resume (Claude) / child session (OC):
+  - architect (design loop)
+  - build (code loop; one task_id per shard)
+  - skeptic (per `review_type`; skeptic-design instance ≠ skeptic-code instance)
+  - reviewer (per axis; Standards instance ≠ Spec instance)
+  - security-auditor (per `review_type`; security-design ≠ security-code)
+  - tester (test loop)
+  - ui-ux-designer / content-designer (when their revision loop fires)
+- **Cross-stage spawns are fresh.** A skeptic-design task_id is NOT reused for skeptic-code. A reviewer Standards task_id is NOT reused for Spec.
+- **One-shot roles** (no revision loop): researcher, plan, friction-reviewer. Always fresh.
+- Context threshold rotation: 70% (architect) or 80% (build, gates) → role calls `handoff-doc` skill → orchestrator records old/new task_id in pipeline.md.
 - Versioned verdict files only: `verdict-<type>-r<N>.md`.
 - Loop limits: design 3, code 3, ops 1.
-- Build revisions: re-spawn only `failed` shard ids in existing worktree/branch.
+- Build revisions: resume only `failed` shard ids in existing worktree/branch w/ existing task_id.
 - Limit hit → halt, show last findings + loop history + user options.
 
 ## Artifact Discipline
@@ -249,13 +249,11 @@ Required run artifacts:
 - `verdict-review-standards-r<N>.md` + `verdict-review-spec-r<N>.md` (orchestrator aggregates into `verdict-review-r<N>.md`)
 - `verdict-friction-r<N>.md` (friction-reviewer Approved/Blocked)
 - `pr-report.md` (after pr_publish)
-- `claudemd-proposal.md` (when memory-write skill routes CLAUDE.md candidate)
 - `options-r<N>.md` (per decision point; emitted by `options_source` role)
 - `decision-r<N>.md` (per decision point; orchestrator-owned; records pick + verdict)
 - `awaiting-decision-r<N>.md` (async-only; orchestrator-owned; transient — removed on resume)
 - Optional: `options-r<N>.html` (Phase 1+ visual companion)
 - Optional: `test-paths.txt` (build-emitted; one path-glob per line)
-- Optional: `~/.pipeline/dreams/<iso8601>-run.diff.md` (friction-reviewer dream invocation when memory mutated)
 
 Orchestrator-owned artifacts: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`, `awaiting-decision-r<N>.md`. All others owned by producing subagent (`options-r<N>.md` owned by `options_source` role).
 
@@ -326,4 +324,3 @@ Include:
 
 ## Skill invocation rules
 - Invoke skills by-name via `Agent` tool only.
-- `dream-apply` skill is **USER-ONLY**. Orchestrator MUST NOT invoke it. friction-reviewer Phase 4 audit scans for this violation.

@@ -1,48 +1,15 @@
 ---
 name: memory-write
-description: Memory Write Decision gate. Before completion, determines if run surfaced a lesson worth persisting. Routes pipeline doctrine to memory files, project conventions to claudemd-proposal.md. Run before every agent completion.
+description: DEPRECATED. Pipeline no longer writes memory files. Agents do not invoke this skill.
+disable-model-invocation: true
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# memory-write
+# memory-write (DEPRECATED 2026-05-13)
 
-Memory write gate. Run before completing.
+Pipeline no longer maintains per-role memory files. Agents do not invoke this skill.
 
-## Invocation
+Lessons that warrant durable persistence are surfaced in verdict Notes / friction-report. User decides how to capture them (project doctrine, agent spec edits, code comments, ADRs).
 
-Claude: `Skill(skill: "memory-write", args: "role=<role>")`
-
-OC: `memory-write(role=<role>)`
-
-## Procedure
-
-## Memory Write Decision
-
-Before completion, ask: did this run surface a lesson a future run of this role benefits from?
-
-**Worth writing**:
-- Rule/heuristic surviving this task
-- Non-obvious gotcha
-- Failed approach + reason
-- Surprising constraint
-- Recurring pattern worth naming
-
-**Not worth writing**:
-- Run-specific facts (paths, ticket IDs, this commit's diff)
-- Restatements of agent spec or CLAUDE.md
-- One-shot trivia
-
-If yes → append to `~/.pipeline/memory/<role>-memory.md` (and/or project mirror):
-
-```
-## <ISO8601-date> <artifact-id>
-- <rule>. Why: <reason>. Apply: <when/where>.
-```
-
-If no → skip silently. Do not write filler.
-
-**Write routing**:
-- Pipeline doctrine → memory file
-- Project-wide convention candidate → write `<run-dir>/claudemd-proposal.md` (do NOT mutate CLAUDE.md directly)
-
+Skill file retained for rollback only. Do not invoke from any agent.

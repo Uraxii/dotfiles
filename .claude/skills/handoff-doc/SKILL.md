@@ -1,6 +1,6 @@
 ---
 name: handoff-doc
-description: Compact persistence-rotation summary template. References existing artifacts by path, never duplicates content. Use when architect (70% context) or build (80% context) rotates fresh session.
+description: Compact persistence-rotation summary template. References existing artifacts by path, never duplicates content. Used by any persistent role at context threshold (architect 70%, all other persistent roles 80%).
 source: mattpocock/skills:skills/productivity/handoff/SKILL.md
 output-style: caveman:ultra
 ---
@@ -9,9 +9,20 @@ output-style: caveman:ultra
 
 Persistence-rotation summary template. Pipeline-internal.
 
-Per role threshold (config in role file, NOT this skill):
-- architect: 70%
-- build: 80%
+## Per-role thresholds (config in role file, NOT this skill)
+
+| Role | Threshold | task_id key |
+|---|---|---|
+| architect | 70% | role |
+| build | 80% | (role, shard_id) |
+| skeptic | 80% | (role, review_type) |
+| reviewer | 80% | (role, axis) |
+| security-auditor | 80% | (role, review_type) |
+| tester | 80% | role |
+| ui-ux-designer | 80% | role |
+| content-designer | 80% | role |
+
+One-shot roles (researcher, plan, friction-reviewer) do not rotate — they complete in a single spawn.
 
 ## Invocation
 
@@ -39,6 +50,5 @@ OC: `handoff-doc` custom tool with `{role, run_dir, next_focus}` args.
 - brief: <run-dir>/brief.md
 
 ## State summary
-Session rotated at context threshold (<role> threshold: build=80%, architect=70%).
-Resume in fresh session using task_id if supported.
+Session rotated at context threshold. Resume in fresh session using task_id if supported by harness; otherwise spawn fresh + read referenced artifacts.
 ```

@@ -24,7 +24,6 @@ A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artif
 ├── options-r<N>.html                        # optional visual companion (Phase 1+)
 ├── awaiting-decision-r<N>.md                # transient async state; removed on resume (orchestrator-owned)
 ├── decision-r<N>.md                         # decision verdict + pick (orchestrator-owned)
-├── claudemd-proposal.md                     # memory-write skill output for CLAUDE.md candidates
 ├── test-paths.txt                           # build-emitted manifest (overrides default test-path globs)
 ├── prebuild-skeptic-code-r<N>-s<K>.md       # per shard, per revision
 ├── build-evidence-r<N>-s<K>.md              # per shard, per revision
@@ -156,13 +155,7 @@ Missing evidence file for a declared shard = `skeptic-code` gate Blocks with the
 
 ## Where else state lives
 
-- **Global memory**: `~/.pipeline/memory/core-memory.md` + `~/.pipeline/memory/<role>-memory.md`
-- **Project-mirror memory**: `<project>/.pipeline/memory/core-memory.md` + per-role mirrors
-- **Memory archive**: `~/.pipeline/memory/.archive/<iso8601>/` (created by `dream-apply`)
-- **Dream diffs**: `~/.pipeline/dreams/<iso8601>-<scope>.diff.md`
 - **Canonical plans**: `~/.pipeline/plans/<project-slug>/<artifact-id>.md`
-
-See [[Pipeline Memory]] for the memory layout and [[Pipeline Skills|dream skill]] for the curation flow.
 
 ## Related
 
