@@ -15,6 +15,16 @@
   # Allow unfree pkgs (claude-code etc.)
   nixpkgs.config.allowUnfree = true;
 
+  # Overlay: pull claude-code from nixos-unstable (faster than stable channel).
+  # Anthropic ships ~weekly; 25.11 stable lags days/weeks.
+  nixpkgs.overlays = [
+    (final: prev: {
+      claude-code = (import (builtins.fetchTarball {
+        url = "https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz";
+      }) { config.allowUnfree = true; }).claude-code;
+    })
+  ];
+
   home.packages = with pkgs; [
     # Wayland / Sway ecosystem
     sway
