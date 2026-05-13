@@ -4,6 +4,13 @@
 # It does NOT manage any configuration files — all configs live in
 # .config/ and are symlinked manually, as with the rest of this dotfiles repo.
 
+let
+  # Pull select pkgs from nixos-unstable (faster cadence than 25.11 channel).
+  # Anthropic ships claude-code ~weekly; stable can lag days/weeks.
+  unstable = import (builtins.fetchTarball {
+    url = "https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz";
+  }) { config.allowUnfree = true; };
+in
 {
   # Do not change this after the first activation.
   home.username = "nikki";
@@ -50,7 +57,7 @@
     stow              # symlink dotfiles into $HOME
     git               # base VCS (required by lazy.nvim)
     gh                # GitHub CLI (PR/issue/repo ops)
-    claude-code       # Anthropic Claude Code CLI
+    unstable.claude-code  # Anthropic Claude Code CLI (from nixos-unstable)
     jq                # JSON parsing in scripts + setup.sh
 
     # Pipeline (Slack listener + pipeline_ask CLI + setup.sh)
