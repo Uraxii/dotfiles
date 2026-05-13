@@ -18,10 +18,10 @@ Each stage is a subagent defined in `.claude/agents/<name>.md`. The orchestrator
 | `security-auditor` | opus | Vulns, threat modeling, dep checks. Design + post-build phases. | `verdict-security-r<N>.md` |
 | `tester` | sonnet | Runs tests + adversarial probe + smuggling scan. Combined-state merge test on K≥2 shards. | `verdict-test-r<N>.md` |
 | `decision-elicitation` | n/a (orchestrator-owned) | Elicits human pick between N options (N ≤ 4). Sync via AskUserQuestion or async via GH issue + 10min poll. See [[Pipeline Decisions]]. | `decision-r<N>.md`, `awaiting-decision-r<N>.md` (transient) |
-| `friction-reviewer` | haiku | Runs last on code-changing runs. Audits doctrine. Invokes [[Pipeline Memory\|dream]] skill on memory mutation. | `friction-report-r<N>.md`, `verdict-friction-r<N>.md` |
+| `friction-reviewer` | haiku | Runs last on code-changing runs. Audits doctrine. | `friction-report-r<N>.md`, `verdict-friction-r<N>.md` |
 | `progenitor` | haiku | Meta-agent. Creates / modifies / retires agent roles + skills. Cannot self-edit. | `.claude/agents/*.md`, `.claude/skills/**/SKILL.md` |
 
-`monitor` was retired — its memory-curation duties moved to the `dream` skill. See [[Pipeline Memory]].
+`monitor` was retired.
 
 ## Root-agent carve-out
 
@@ -65,9 +65,6 @@ ui-ux-designer ──────────────────► build (
                                        │
                                        ▼
                                 friction-reviewer
-                                       │
-                                       ▼
-                              dream skill (if memory mutated)
 ```
 
 Build runs in worktrees; gates read the union of per-shard diffs. See [[Pipeline Shards]].
@@ -102,9 +99,22 @@ Build spawns also include a `## Shard` block — see [[Pipeline Shards]].
 
 ## Persistence (long-running roles)
 
-`architect` and `build` are persistent across revisions via `task_id` resume. They hit a context threshold (70% architect, 80% build) and invoke the [[Pipeline Skills|handoff-doc]] skill to write a rotation summary. The orchestrator records the old + new `task_id` in `pipeline.md`.
+All revising roles are persistent across revisions of a single loop via `task_id` resume:
 
-Gates (`skeptic`, `reviewer`, `security-auditor`, `tester`) always fresh-spawn — no persistence. This is by design: independent review per revision.
+| Role | Threshold | task_id key |
+|---|---|---|
+| `architect` | 70% | role |
+| `build` | 80% | (role, shard_id) |
+| `skeptic` | 80% | (role, review_type) |
+| `reviewer` | 80% | (role, axis) |
+| `security-auditor` | 80% | (role, review_type) |
+| `tester` | 80% | role |
+| `ui-ux-designer` | 80% | role |
+| `content-designer` | 80% | role |
+
+At threshold the role invokes the [[Pipeline Skills|handoff-doc]] skill to write a rotation summary; the orchestrator records old + new `task_id` in `pipeline.md`.
+
+Cross-stage spawns are always fresh — a `skeptic-design` task_id is not reused for `skeptic-code`. One-shot roles (`researcher`, `plan`, `friction-reviewer`) never persist.
 
 ## Related
 

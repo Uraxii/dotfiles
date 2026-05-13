@@ -13,12 +13,8 @@ Gatekeeper. Approve only when blocking risk absent.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Fresh spawn each review for independence.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=skeptic")
-
-## Memory
-Skill(skill: "memory-write", args: "role=skeptic")
+- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=skeptic, run-dir=<path>, next-focus=<text>")`.
+- Cross-`review_type` spawns are fresh (skeptic-design instance ≠ skeptic-code instance).
 
 ## Review Types
 - `design`: assumptions, failure modes, over-engineering, security surface.
@@ -83,7 +79,6 @@ Glob regex for evidence/prebuild discovery: `^build-evidence-r(?P<rev>\d+)(?:-s(
 
 ## Completion / Reporting
 - Cite exact verdict file path.
-- Run Memory Write Decision before return.
 
 ## Verdict Schema
 ```yaml
@@ -99,6 +94,3 @@ prod_diff_sha: <sha>  # required for review_type=code, test-audit; enables orche
 1. Verify prior blockers/conditionals resolved.
 2. Review current artifact for new issues.
 3. Keep remediation actionable, scoped to listed blockers.
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Skeptic MUST NOT invoke it.

@@ -21,12 +21,7 @@ Orchestrator aggregates both into `verdict-review-r<N>.md` w/ `## Standards` + `
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Fresh spawn each review for independence.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=reviewer")
-
-## Memory
-Skill(skill: "memory-write", args: "role=reviewer")
+- Persistent session within one revision loop per axis via task_id resume (Claude) / child session (OC). Standards instance ≠ Spec instance. Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=reviewer, run-dir=<path>, next-focus=<text>")`.
 
 ## Stance
 - Triage: blocking (must fix) / suggestion (should fix) / nit (optional). Mismatched severity = review debt.
@@ -97,12 +92,10 @@ Conditional reads:
 
 ## Non-Goals
 - No security-only deep audits.
-- No memory curation across other roles.
 - No aggregation (orchestrator merges Standards + Spec).
 
 ## Completion / Reporting
 - Reference exact axis-verdict file path.
-- Run Memory Write Decision before return.
 
 ## Verdict Schema (per-axis)
 ```yaml
@@ -113,6 +106,3 @@ axis: standards | spec
 loops: <N>
 revision: r<N>
 ```
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Reviewer MUST NOT invoke it.

@@ -33,7 +33,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 - Loop-limit escape hatch.
 - Multi-stakeholder workflows.
 - LLM free-form comment parse.
-- Cross-run decision memory.
+- Cross-run decision archive.
 - Architect code-direction option panels.
 
 ## Phase 1 — HTML render layer
@@ -124,21 +124,19 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 
 - Phase 0, Phase 2.
 
-## Phase 5 — Cross-run decision memory
+## Phase 5 — Cross-run decision archive
 
-**Goal:** make past decisions discoverable, reusable, and pattern-analyzable.
+**Goal:** make past decisions discoverable and reusable.
 
 **Scope**
 
 - Persist `decision-r<N>.md` copies to `~/.pipeline/decisions/<project-slug>/<artifact-id>-d<N>.md` at run complete.
 - New intake step: parse `as decided in <artifact-id>` (or topic-keyword search) → orchestrator includes the prior `decision-r<N>.md` in the new run's brief/Read set.
-- [[Pipeline Skills|dream]] skill extension: when curating memory, detect repeated picks ("you keep picking async for UI handoff") and surface as candidate memory entries via `claudemd-proposal.md`.
 
 **Acceptance criteria**
 
 - [ ] Decisions copied to global decision archive on run-complete.
 - [ ] Intake recognizes prior-decision references and pre-loads them.
-- [ ] Dream surfaces ≥1 pattern after 3+ runs with similar decision shape.
 
 **Dependencies**
 
@@ -178,7 +176,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 | Free-form parse misroutes user intent | Phase 4 confirmation comment + STOP override window. |
 | Issue spam in a chatty repo | Labels `pipeline-decision` + `pipeline-<artifact-id>` give clean filter; friction-reviewer closes orphans. |
 | HTML companion bloats run dirs | Phase 1 keeps HTML optional + scoped to `<run-dir>/decisions/`. Cleaned at run-complete (Phase 4). |
-| Cross-run memory drift | Phase 5 archive immutable; dream proposes, user merges via `claudemd-proposal.md`. |
+| Cross-run archive drift | Phase 5 archive is immutable per artifact-id; user grooms via direct file edit. |
 
 ## Related
 

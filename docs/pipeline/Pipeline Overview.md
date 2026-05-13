@@ -36,8 +36,8 @@ The pipeline is heavyweight. Don't run it for two-line patches.
 - **Gate verdicts** — every reviewer/skeptic/tester writes `verdict-<type>-r<N>.md`. Orchestrator routes on `verdict: Approved | Blocked | Conditional`. See [[Pipeline Gates]].
 - **Revision loops** — Blocked verdicts re-spawn the upstream role with the new findings; loop caps prevent runaway.
 - **Two-axis review** — `reviewer` runs twice in parallel: one against documented standards (CLAUDE.md, ADRs), one against the spec (brief, plan, design). Orchestrator aggregates.
-- **Skill-based procedure extraction** — mechanical algorithms (memory I/O, verdict parsing, prod-diff SHA, worktree primitives, etc.) live in `.claude/skills/`, invoked via the `Skill` tool. See [[Pipeline Skills]].
-- **Memory + dream** — persistent rules per role at `~/.pipeline/memory/`, curated end-of-run by the `dream` skill. See [[Pipeline Memory]].
+- **Skill-based procedure extraction** — mechanical algorithms (verdict parsing, prod-diff SHA, worktree primitives, etc.) live in `.claude/skills/`, invoked via the `Skill` tool. See [[Pipeline Skills]].
+- **Persistent revising roles** — `architect`, `build`, `skeptic`, `reviewer` (per axis), `security-auditor`, `tester`, `ui-ux-designer`, `content-designer` resume the same task_id across revisions within one loop. See [[Pipeline Stages]] § Persistence.
 - **Immediate auto-merge** — gates already gated; after PR creation, the orchestrator runs `gh pr merge --squash --delete-branch` directly. No CI wait, no manual review pause.
 - **Friction audit closes every run** — `friction-reviewer` runs last, audits doctrine adherence, writes `verdict-friction-r<N>.md` Approved/Blocked.
 
@@ -45,7 +45,7 @@ The pipeline is heavyweight. Don't run it for two-line patches.
 
 - No environment provisioning. Pipeline assumes a working repo + a working test runner.
 - No CI integration. Auto-merge bypasses GitHub Actions; gates are pipeline-internal.
-- No prompt-injection defense beyond doctrine. The `dream` skill includes injection-resistance rules but the model still reads memory as text.
+- No cross-run memory. Durable lessons graduate to project doctrine (CLAUDE.md, rules, ADRs) via user edits, not automated curation.
 - No retry on infrastructure failures. Network/git/gh errors surface to the user.
 
 ## Related pages
@@ -54,6 +54,5 @@ The pipeline is heavyweight. Don't run it for two-line patches.
 - [[Pipeline Artifacts]] — what gets written where during a run
 - [[Pipeline Gates]] — verdict files, routing, revision loops
 - [[Pipeline Shards]] — parallel worktrees + PR publishing
-- [[Pipeline Memory]] — memory tiers, dream curation, CLAUDE.md protocol
 - [[Pipeline Skills]] — skill inventory + invocation pattern
 - [[Pipeline Permissions]] — settings.json model + deny rules

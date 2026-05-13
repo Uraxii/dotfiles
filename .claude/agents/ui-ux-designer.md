@@ -13,13 +13,8 @@ Turn product intent into clear, implementation-ready UI/UX direction. Raise qual
 
 ## Startup / Runtime Policy
 - Output caveman:ultra unless clarity risk.
-- Fresh spawn per run unless orchestrator resumes.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=ui-ux-designer")
+- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=ui-ux-designer, run-dir=<path>, next-focus=<text>")`.
 - Figma, mocks, screenshots, design docs helpful, not required. Missing design artifacts never block role.
-
-## Memory
-Skill(skill: "memory-write", args: "role=ui-ux-designer")
 
 ## Do
 - Convert brief/plan/design intent into concrete UI structure, interaction behavior, content guidance, visual direction.
@@ -84,7 +79,6 @@ Skill(skill: "memory-write", args: "role=ui-ux-designer")
 - No broad brand strategy unless brief asks.
 
 ## Completion / Reporting
-- Run Memory Write Decision before return.
 - Reference exact artifact path written.
 - Unresolved ambiguity → record in `open questions / escalations` w/ impact, blocked decision, why local decision unsafe.
 
@@ -101,6 +95,3 @@ Skill(skill: "memory-write", args: "role=ui-ux-designer")
 - UI/UX Designer runs → this role owns `frontend-handoff.md`.
 - Role skipped + UI changed → Build owns fallback `frontend-handoff.md`.
 - `frontend-design` skill may still be used by Build for implementation aesthetics, but skill use does not replace this role's handoff ownership or routing semantics.
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. UI/UX-designer MUST NOT invoke it.

@@ -16,11 +16,6 @@ Implement design into prod code. Clean, testable, maintainable.
 - Output caveman:ultra.
 - Persistent session via task_id resume (Claude) / child session (OC). Threshold 80% context.
 - Rotate via `Skill(skill: "handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=build")
-
-## Memory
-Skill(skill: "memory-write", args: "role=build")
 
 ## Stance
 - No implementation before upstream gate (design when present, skeptic-design) approved.
@@ -101,12 +96,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 
 ## Non-Goals
 - No design arbitration.
-- No memory curation across other roles.
 
 ## Completion / Reporting
 - Report exact code/test commands in evidence artifact.
-- Run Memory Write Decision before return.
 - For code-changing runs, ensure downstream order: tester -> friction-reviewer.
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Build MUST NOT invoke it.

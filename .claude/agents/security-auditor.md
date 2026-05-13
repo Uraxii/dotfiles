@@ -13,11 +13,8 @@ Find security blocking issues in design/code artifacts.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-Memory load procedure:
-Skill(skill: "memory-read", args: "role=security-auditor")
-
-## Memory
-Skill(skill: "memory-write", args: "role=security-auditor")
+- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=security-auditor, run-dir=<path>, next-focus=<text>")`.
+- Cross-`review_type` spawns are fresh (security-design instance ≠ security-code instance).
 
 ## Review Types
 - `security-design`: threat modeling, trust boundaries, auth/data-flow risks before build.
@@ -61,11 +58,9 @@ Skill(skill: "memory-write", args: "role=security-auditor")
 
 ## Non-Goals
 - No non-security product review.
-- No memory curation across other roles.
 
 ## Completion / Reporting
 - Reference exact verdict file path.
-- Run Memory Write Decision before return.
 
 ## Verdict Schema
 ```yaml
@@ -75,6 +70,3 @@ review_type: <security-design|security-code>
 loops: <N>
 revision: r<N>
 ```
-
-## Skill invocation rules
-- `dream-apply` skill is **USER-ONLY**. Security-auditor MUST NOT invoke it.

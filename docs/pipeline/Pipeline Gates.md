@@ -53,7 +53,13 @@ Blocked or Conditional verdicts re-spawn the upstream role with the verdict find
 | `verdict-test-audit-r<N>.md` | `build` (test-only revision; see below) |
 | `verdict-friction-r<N>.md` Blocked | USER decision: fix-forward via new revision OR rollback batch |
 
-`architect` and `build` resume the persistent session via stored `task_id`. Gates always fresh-spawn for independence.
+All revising roles resume their persistent session via stored `task_id` within a single revision loop:
+- `architect`, `build` (per shard), `tester`, `ui-ux-designer`, `content-designer` — one task_id per role.
+- `skeptic` — task_id keyed by `review_type` (skeptic-design and skeptic-code are distinct persistent instances).
+- `reviewer` — task_id keyed by `axis` (Standards and Spec are distinct persistent instances).
+- `security-auditor` — task_id keyed by `review_type` (security-design and security-code are distinct persistent instances).
+
+Cross-stage spawns are always fresh. One-shot roles (`researcher`, `plan`, `friction-reviewer`) never persist.
 
 ## Loop limits
 
@@ -95,8 +101,7 @@ The friction audit checklist is in `.claude/agents/friction-reviewer.md` under `
 - Reviewer emitted both axes
 - Build evidence shows red-green sequence or eco-fallback note
 - Architect verdict contains `adr_emitted:` assertion
-- No agent invocation of `dream-apply` (USER-only skill)
-- No direct CLAUDE.md mutation
+- Persistent roles honored task_id continuity across revisions
 - Monitor agent file absent
 
 ## Related
