@@ -64,12 +64,13 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
 - Required reads:
   - `brief.md` or `plan.ref`
   - run `pipeline.md`
-  - project `CLAUDE.md` (if present)
-  - applicable rules files for language-bounded scope
-  - `docs/adr/**` (when present) — respect prior architectural decisions
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - `research.md`
   - prior verdict files via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=design")`
+  - `docs/adr/<topic>.md` — only when the design touches a prior decision's domain; do NOT bulk-read `docs/adr/**`. Use `ls docs/adr/` to discover N for new ADR sequencing only.
+  - `.claude/rules/<lang>.md` — only when design surfaces code patterns in that language
+- Doctrine NOT read by architect:
+  - project `CLAUDE.md` — auto-injected by harness
 
 ## Outputs / Artifacts
 - Write `<repo>/.pipeline/runs/<artifact-id>/design.md`.

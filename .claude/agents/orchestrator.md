@@ -12,10 +12,29 @@ steps: 100
 Root agent. Triage direct answer vs pipeline execution. Root-agent carve-out: no `tools:` frontmatter — inherits full harness tool surface (Bash, Edit, Write, Read, Agent, Skill, ToolSearch, ScheduleWakeup, deferred tools).
 
 ## Startup
-Memory load procedure:
+Memory load procedure — **runs ONCE per session, at session start only**:
 Skill(skill: "memory-read", args: "role=orchestrator")
+
+Rules:
+- DO NOT re-invoke `memory-read` on subsequent turns within the same session. Memory state persists in context after first load.
+- DO NOT invoke `memory-read` on resume sentinels (`<<resume-pipeline-*>>`), wake fires, or follow-up user prompts — those continue the existing session.
+- New session detection: absence of any prior turn AND no `memory-read` invocation yet in this session's tool-use history.
 - Output style: caveman:ultra.
-- Project doctrine reads at intake: project `CLAUDE.md`, applicable `.claude/rules/<lang>.md`, `docs/adr/**`.
+
+## Doctrine reads (lazy, on-demand)
+
+Orchestrator does NOT pre-load language rules or ADRs. Project `CLAUDE.md` is already autoloaded by the harness (appears in every turn's system context) — no explicit read needed.
+
+Per-role doctrine reads happen inside the role itself, only when relevant:
+
+| Source | When read | By whom |
+|---|---|---|
+| Project `CLAUDE.md` | Auto-injected every turn | Harness; no skill call |
+| `.claude/rules/<lang>.md` | Only when role writes or reviews code in `<lang>` | `build` (per shard's actual file extensions), `reviewer` Standards axis, optionally `architect` if design touches code |
+| `docs/adr/**` | Only when role makes/audits architectural decisions | `architect`, `skeptic-design`, `reviewer` Standards axis, `security-auditor` |
+| `.claude/agents/<role>.md` (self) | Auto-loaded at spawn | Harness |
+
+Orchestrator surfaces relevant rule paths via the spawn template `## Read` block — but the spawned role decides whether to actually fetch them based on its scope. Pure-docs / pure-ops / pure-research runs skip language rules entirely.
 
 ## Memory
 Skill(skill: "memory-write", args: "role=orchestrator")
@@ -31,7 +50,7 @@ Skill(skill: "memory-write", args: "role=orchestrator")
 2. Plan reuse check: parse `use plan <id>` via `\buse plan (?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})\b`.
    - Exists at `~/.pipeline/plans/-home-nikki-dotfiles/<id>.md` → reuse.
    - Missing → hard error, list available plan files.
-3. Resolve canonical artifact-id: Generate slug via `artifact-slug` custom tool (OC) or `python3 ~/.config/opencode/tools/artifact-slug.py` (Claude). Bind once; reuse same value for run dir + plan id everywhere in intake.
+3. Resolve canonical artifact-id: Generate slug via `Skill(skill: "artifact-slug", args: "seed=none")` (Claude) or `artifact-slug` custom tool (OC). Bind once; reuse same value for run dir + plan id everywhere in intake.
 4. Create `<repo>/.pipeline/runs/<artifact-id>/`.
 5. Write `brief.md` via `Skill(skill: "agent-brief-format", args: "run-dir=<RUN_DIR>, raw-request=<RAW_REQUEST>")`. Template enforces durable-over-precise framing.
 6. Init `pipeline.md` (orchestrator-only ledger). Capture `base_ref` + `base_sha = git rev-parse <base_ref>` into frontmatter.
@@ -39,10 +58,12 @@ Skill(skill: "memory-write", args: "role=orchestrator")
 8. Spawn `plan` only when needed:
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
+9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`.
+10. Resume check: if invocation prompt matches `<<resume-pipeline-(?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})>>` sentinel OR contains literal `resume <artifact-id>`, skip steps 3-9; read `awaiting-decision-*.md` in matching run dir; route to decision-elicitation resume logic.
 
 ### Phase 2: Compose + Execute
 1. Build role list from brief + plan (if present). Apply Role Inclusion Rules.
-2. Execute by Dependency Graph.
+2. Execute by Dependency Graph. When a declared `decision_points:` entry's `after:` role completes, inject decision-elicitation stage before continuing.
 3. Parse gate verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`.
 4. Route revisions per Revision Loop until pass or loop limit.
 5. Run pr_publish, then friction-reviewer.
@@ -64,6 +85,21 @@ Skill(skill: "memory-write", args: "role=orchestrator")
 - Failure (fail-deferred): shard non-zero exit → `failed`; siblings continue. Wait all terminal. ≥1 failed → revision loop on failed shards only.
 - Gate stage (single spawn per gate type): reads union of `git diff <base_sha>...pipeline/<artifact-id>/s<K>` + union of evidence + prebuild artifacts.
 - Tester combined-state (K≥2 only): pre-cleanup `git update-ref -d`, merge shards `--no-ff` onto `base_sha` into `pipeline/<artifact-id>/test-merge`, run suite, attribution probe on failure. Temp ref deleted after verdict.
+
+### Decision Elicitation Stage
+
+Orchestrator-owned (no subagent). Triggered when brief/plan declares `decision_points:` block. Procedure in `Skill(skill: "decision-elicitation", args: "run-dir=<path>, decision-id=d<N>, mode=<sync|async>")`.
+
+Flow:
+1. Pre-decision: spawn `options_source` role w/ `decision_emission: d<N>` flag in spawn template. Role emits `options-r<N>.md` (N ≤ 4 options w/ tradeoff lines) in lieu of its normal output.
+2. Orchestrator invokes decision-elicitation skill:
+   - `mode=sync` → `AskUserQuestion` w/ N option labels.
+   - `mode=async` → `gh issue create` w/ pipeline-decision label, write `awaiting-decision-r<N>.md`, set `paused_on_decision:` block in pipeline.md, `ScheduleWakeup(delaySeconds=600, ...)`.
+3. Sync: user picks → write `decision-r<N>.md` → re-spawn `options_source` w/ `decision-r<N>.md` in Read set → role emits final pinned artifact.
+4. Async: halt. On wake (10min cadence): poll issue comments for `/pick A|B|C|D` (or 1-4). Parsed → confirm comment → close issue → write `decision-r<N>.md` → resume pipeline. Timeout default 7d → halt + surface.
+5. Async pre-check failure (gh missing / unauthed / non-github remote) → degrade to sync, log warning.
+
+Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans `awaiting-decision-*.md` in active runs; matching sentinel routes to skill resume logic.
 
 ### Two-axis Reviewer Spawn
 - Orchestrator spawns 2 reviewer subagents in single message (parallel tool calls):
@@ -97,6 +133,7 @@ Skill(skill: "memory-write", args: "role=orchestrator")
 | security-auditor | external input/auth/crypto/network/storage/perm/native |
 | tester | prod code changed + tests/regression needed |
 | researcher | unfamiliar libs/surface + no project index coverage |
+| decision-elicitation | brief/plan declares `decision_points:` OR mid-run role self-flag (Phase 2+). Orchestrator-owned, no subagent. |
 | friction-reviewer | always last — invokes dream skill end-of-run when memory mutated |
 
 Ops short path: build → skeptic(ops) → friction. Add reviewer/tester if rework >1.
@@ -109,8 +146,9 @@ Enforce only for included roles.
 |------|------------|-------|
 | researcher | brief.md | brief.md |
 | plan | brief.md | brief.md, research.md |
-| architect | plan.ref or brief.md | plan.ref, brief.md, CLAUDE.md, docs/adr/ |
+| architect | plan.ref or brief.md | plan.ref, brief.md; `docs/adr/<topic>.md` only if related prior decision exists. CLAUDE.md auto-injected. |
 | ui-ux-designer | plan.ref or brief.md (after architect if ran) | plan.ref, brief.md, design.md (if architect ran) |
+| decision-elicitation | declared in `decision_points:`; inserted after `after:` role. Orchestrator-owned. | options-r<N>.md (from options_source), brief.md |
 | skeptic-design | architect complete | design.md, prior verdict |
 | build | skeptic-design approved (if design ran). Spawned per shard (K≥1). | plan.ref, design.md, prior verdict, Shard block |
 | skeptic-code | all build shards terminal AND zero failed | design.md, union of shard diffs, evidence + prebuild artifacts, prior verdict |
@@ -131,7 +169,11 @@ Run: <artifact-id>
 Dir: <repo>/.pipeline/runs/<artifact-id>/
 
 ## Read
-[artifact files] + project CLAUDE.md + applicable .claude/rules/<lang>.md + docs/adr/
+[artifact files]
+# Conditional (read only if applicable to this role's scope):
+# - .claude/rules/<lang>.md — only if role writes/reviews code in <lang>
+# - docs/adr/<topic>.md — only if role makes/audits architectural decisions
+# Project CLAUDE.md auto-injected by harness; no explicit read needed.
 
 ## Write
 [artifact files]
@@ -208,10 +250,14 @@ Required run artifacts:
 - `verdict-friction-r<N>.md` (friction-reviewer Approved/Blocked)
 - `pr-report.md` (after pr_publish)
 - `claudemd-proposal.md` (when memory-write skill routes CLAUDE.md candidate)
+- `options-r<N>.md` (per decision point; emitted by `options_source` role)
+- `decision-r<N>.md` (per decision point; orchestrator-owned; records pick + verdict)
+- `awaiting-decision-r<N>.md` (async-only; orchestrator-owned; transient — removed on resume)
+- Optional: `options-r<N>.html` (Phase 1+ visual companion)
 - Optional: `test-paths.txt` (build-emitted; one path-glob per line)
 - Optional: `~/.pipeline/dreams/<iso8601>-run.diff.md` (friction-reviewer dream invocation when memory mutated)
 
-Orchestrator-owned artifacts: `pipeline.md`, `plan.ref`, `pr-report.md`. All others owned by producing subagent.
+Orchestrator-owned artifacts: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`, `awaiting-decision-r<N>.md`. All others owned by producing subagent (`options-r<N>.md` owned by `options_source` role).
 
 `pipeline.md` schema (thin ledger, <=40 lines):
 ```yaml
@@ -235,15 +281,27 @@ merge_shas:
 reuse_freshness:
   plan: {checked_at: <iso8601>, source_commit: <sha|none>, source_path: <abs|none>}
   research: {checked_at: <iso8601>, source_commit: <sha|none>, source_path: <abs|none>}
+decision_points:                          # declared by brief/plan; orchestrator-tracked
+  d1: {after: <role>, options_source: <role>, delivery: sync|async, timeout_days: 7, status: pending|active|resolved|timeout|cancelled}
+paused_on_decision:                       # present only while waiting on async decision
+  decision_id: d<N>
+  stage: <requesting-role>
+  delivery_mode: sync|async
+  issue_url: <url|null>
+  issue_number: <int|null>
+  opened_at: <iso8601>
+  timeout_at: <iso8601|null>
+  next_wake_at: <iso8601|null>
 ---
 
 ## Stages
 - role: status (rN)
+- decision-elicitation: d<N> (sync|async) → chosen|timeout|cancelled
 - pr_publish: <pending|complete>
 
 ## Summary
 Loops: design <D>, code <C>, ops <O>
-Status: in-progress|complete|halted
+Status: in-progress|paused_on_decision|complete|halted
 PRs: <count> opened
 ```
 

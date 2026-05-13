@@ -41,13 +41,14 @@ Skill(skill: "memory-write", args: "role=security-auditor")
 - Required reads:
   - run `pipeline.md`
   - relevant design/build artifacts for current review type
-  - project `CLAUDE.md` (if present)
-  - applicable rules files for language-bounded scope
-  - `docs/adr/` (when present) — respect documented security-relevant decisions
   - For post-build review: per-shard git diff `git diff <base_sha>...pipeline/<artifact-id>/s<K>` for each declared shard (K=1 = single `s1` diff); review union. Per-shard security-surface enumeration when shards touch different attack surfaces (auth, input boundary, crypto, network, storage).
   - prior skeptic/security verdicts (read via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=security")`).
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
+  - `.claude/rules/<lang>.md` — only when diff touches code in `<lang>` AND language has security-relevant rules (e.g. memory-unsafe patterns)
+  - `docs/adr/<topic>.md` — only when diff touches a security-relevant prior decision (auth, crypto, data boundary)
+- Doctrine NOT read by security-auditor:
+  - project `CLAUDE.md` — auto-injected by harness
 
 ## Outputs / Artifacts
 - Write `verdict-security-r<N>.md` with YAML frontmatter and sections: Blocking, Conditions, Suggestions, Notes.

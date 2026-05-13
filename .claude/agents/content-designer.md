@@ -53,17 +53,18 @@ Skill(skill: "memory-write", args: "role=content-designer")
 - Required reads:
   - run `pipeline.md` when run exists
   - `brief.md` when run exists
-  - project `CLAUDE.md` (if present)
-  - `docs/adr/` (when present)
   - direct-spawn: caller's instruction message
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - `plan.ref`
   - `research.md`
   - READMEs
-  - GDD vault / spec dirs / ADR dirs
-  - existing content/feature directories
+  - GDD vault / spec dirs / existing content/feature directories
+  - `docs/adr/<topic>.md` — only when ideation touches a prior decision's domain
   - prior `ideation.md`
   - prior verdict artifacts
+- Doctrine NOT read by content-designer:
+  - project `CLAUDE.md` — auto-injected by harness
+  - `.claude/rules/<lang>.md` — ideation is content/narrative; language rules irrelevant
 
 ## Outputs / Artifacts
 - Run dir present: write `<repo>/.pipeline/runs/<artifact-id>/ideation.md`.

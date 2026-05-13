@@ -45,10 +45,12 @@ Skill(skill: "memory-write", args: "role=ui-ux-designer")
   - `brief.md`
   - `plan.ref` when present
   - `design.md` when architect ran
-  - project `CLAUDE.md` (if present)
-  - `docs/adr/` (when present) — respect prior decisions
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - screenshots, Figma, mocks, style guides, existing frontend files, prior `frontend-handoff.md`, relevant verdict artifacts
+  - `docs/adr/<topic>.md` — only when scope touches a UI-relevant prior decision (design system, accessibility, etc.)
+- Doctrine NOT read by ui-ux-designer:
+  - project `CLAUDE.md` — auto-injected by harness
+  - `.claude/rules/<lang>.md` — UI/UX handoff is text spec; language rules irrelevant at this stage
 
 ## Outputs / Artifacts
 - Write/update: `<repo>/.pipeline/runs/<artifact-id>/frontend-handoff.md`
