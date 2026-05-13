@@ -25,21 +25,50 @@ One listener per pipeline run that uses async-mode decisions. Each listener:
 
 No systemd. No always-on daemon. Portable to any POSIX host with Python ≥3.11 and `uv`.
 
+## Fast path (new machine)
+
+```bash
+git clone <this-repo> ~/dotfiles
+cd ~/dotfiles && stow -t ~ .
+
+# Pre-flight: verify all deps, paths, and Slack scopes:
+bash ~/.claude/pipeline/setup.sh
+```
+
+`setup.sh` checks: external commands (`python3 ≥3.11`, `uv`, `stow`, `jq`,
+`curl`, `git`, `uvx`), stowed symlinks, `slack.env.local` file mode, and
+probes Slack live for `auth.test` + scope coverage. Prints a checklist with
+fix hints; exits 0 only when everything is ready. Run it again after each
+configuration change. The rest of this doc is the underlying procedure each
+check exercises.
+
 ## One-time setup
 
 ### 1. Create the Slack app
 
-1. Visit https://api.slack.com/apps → **Create New App** → **From scratch**.
-2. Name (e.g. `pipeline-decisions`) and workspace → **Create**.
+Fastest: import the included manifest.
+
+1. Visit https://api.slack.com/apps → **Create New App** → **From a manifest**.
+2. Pick your workspace → paste contents of
+   `~/.claude/pipeline/slack-app-manifest.yaml` into the **YAML** tab → **Next** → **Create**.
+
+Manual alternative: **Create New App** → **From scratch** → name + workspace → **Create**.
 
 ### 2. Bot token scopes
 
-**OAuth & Permissions** → **Bot Token Scopes**:
+**OAuth & Permissions** → **Bot Token Scopes** (already declared by the manifest):
 
-- `chat:write`
-- `chat:write.public`
+- `chat:write` — post messages
+- `chat:write.public` — post in public channels without being a member
+- `channels:history` — Phase 2 (free-text thread replies; optional today)
+- `groups:history` — Phase 2 (free-text thread replies; optional today)
+- `files:read` — required for `pipeline_ask.py --attach`
+- `files:write` — required for `pipeline_ask.py --attach`
 
 Click **Install to Workspace** → authorize. Copy the **Bot User OAuth Token** (starts `xoxb-`).
+
+After any scope change Slack will prompt **Reinstall to Workspace** — do it; tokens
+do not pick up new scopes until reinstall.
 
 ### 3. Enable Socket Mode
 
@@ -198,8 +227,12 @@ To stop one: `kill $(cat <run-dir>/slack-listener.pid)`. The listener removes it
 | Symptom | Check |
 |---|---|
 | Log shows `not_authed` | Tokens missing or wrong scope. Re-paste from app config. |
-| `not_in_channel` errors | Bot needs `/invite` in the channel. |
+| `not_in_channel` errors | Bot needs `/invite` in the channel. File uploads require channel membership (chat:write.public covers posting but not uploads). |
 | `channel_not_found` | `channel` in `pipeline.toml` is the channel name not the ID. Use `C...` ID. |
+| `missing_scope` on file upload | `files:write` not on the token. Add scope in OAuth & Permissions, click **Reinstall to Workspace**, refresh `slack.env.local`. |
+| Bash tool kills `pipeline_ask` at 10min | `BASH_MAX_TIMEOUT_MS` not raised. Verify via `setup.sh` → "Claude Code settings" check. |
+| Long Bash command blocked by hook | `cap_bash_timeout.py` allowlists `pipeline_ask.py` only. Other long-running commands need entry added to `LONG_TIMEOUT_ALLOWLIST` in that hook. |
+| HTML attachment shows raw source instead of PDF | uvx/weasyprint missing or system pango libs absent. `setup.sh` warns; install distro pango pkg + retry. |
 | Buttons appear but click does nothing | Interactivity toggle off, or Socket Mode disabled. Re-check Slack app config. |
 | Listener exits immediately | Run in foreground: `uv run --script ~/.claude/pipeline/slack_listener.py <project> <run-id>` to see the traceback. |
 | `uv` cannot resolve deps | First run populates `~/.cache/uv`; needs network. After that, offline-capable. |

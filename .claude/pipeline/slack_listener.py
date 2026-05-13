@@ -248,17 +248,39 @@ def parse_awaiting(awaiting_md: Path) -> dict[str, Any]:
 
 def parse_question_file(question_md: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
     """Parse question-r<N>.md → (frontmatter, [{key,title}]). Body uses same
-    `## Option <K>: <label>` shape as options-r<N>.md, so OPTIONS_RE is reused."""
+    `## Option <K>: <label>` shape as options-r<N>.md, so OPTIONS_RE is reused.
+
+    Frontmatter `attachments:` may be a YAML block list (two-space indent,
+    each line starting with `- <path>`). Those paths are returned under the
+    `attachments` key as `list[str]`; everything else is a flat key/value
+    string map.
+    """
     text = question_md.read_text()
     fm: dict[str, Any] = {}
     body = text
     if text.startswith("---\n"):
         end = text.find("\n---\n", 4)
         if end > 0:
-            for line in text[4:end].splitlines():
-                if ":" in line:
-                    k, _, v = line.partition(":")
-                    fm[k.strip()] = v.strip()
+            fm_text = text[4:end]
+            current_list_key: str | None = None
+            for line in fm_text.splitlines():
+                stripped = line.lstrip(" ")
+                # Continuation of a block-list value.
+                if current_list_key is not None and line.startswith("  - "):
+                    fm[current_list_key].append(line[4:].strip())
+                    continue
+                current_list_key = None
+                if ":" not in stripped or line.startswith(" "):
+                    continue
+                k, _, v = stripped.partition(":")
+                k = k.strip()
+                v = v.strip()
+                if v == "":
+                    # Empty scalar → block list candidate; init container.
+                    fm[k] = []
+                    current_list_key = k
+                else:
+                    fm[k] = v
             body = text[end + 5 :]
     options: list[dict[str, str]] = []
     for line in body.splitlines():
@@ -368,6 +390,101 @@ class SlackPoster:
         log.info("posted decision %s ts=%s", decision_key, ts)
         return ts
 
+    def upload_attachment(
+        self,
+        run_id: str,
+        question_id: str,
+        attachment_path: str,
+        thread_ts: str,
+    ) -> tuple[str, str, str]:
+        """Upload a single file into the run's thread, silently.
+
+        Returns (file_id, permalink, filename). Empty tuple on failure
+        (logs, doesn't raise — surrounding question post must still go out).
+
+        `initial_comment` is intentionally omitted so the file message has no
+        accompanying text post. The caller threads `permalink` into the
+        question's button-message blocks as a markdown link, producing the
+        compact "link-only in button msg" layout: a small file card in the
+        thread + the question msg with a clickable link to it.
+
+        Idempotency: state map key `attach:<run>:<qid>:<path>` records both
+        file_id and permalink as a single CSV value (ts column reused) so a
+        listener restart can short-circuit without re-uploading AND still
+        recover the permalink for the question block.
+        """
+        key = f"attach:{run_id}:{question_id}:{attachment_path}"
+        prior = self._get_attachment_link(key)
+        if prior is not None:
+            log.info("attachment already uploaded %s, reusing permalink", key)
+            file_id, permalink, filename = prior
+            return file_id, permalink, filename
+        path = Path(attachment_path).expanduser()
+        if not path.is_file():
+            log.warning("attachment missing on disk: %s", path)
+            return "", "", ""
+        # files_upload_v2 occasionally times out on slow networks even for
+        # small files (multipart upload + getUploadURLExternal + complete are
+        # three round-trips). One automatic retry recovers most transient
+        # failures without forcing the caller to re-run the whole CLI.
+        resp = None
+        last_err: Exception | None = None
+        for attempt in (1, 2):
+            try:
+                resp = self.app.client.files_upload_v2(
+                    channel=self.channel,
+                    thread_ts=thread_ts,
+                    file=str(path),
+                    filename=path.name,
+                    title=path.name,
+                    # initial_comment intentionally omitted; link surfaces in
+                    # question button message instead.
+                )
+                break
+            except Exception as e:
+                last_err = e
+                log.warning("file upload attempt %d failed for %s: %s",
+                            attempt, path, e)
+        if resp is None:
+            log.error("file upload gave up after retries for %s: %s",
+                      path, last_err)
+            return "", "", ""
+        file_info: dict[str, Any] = {}
+        try:
+            file_info = resp.get("file", {}) or {}
+        except AttributeError:
+            file_info = {}
+        file_id = file_info.get("id", "") or ""
+        permalink = file_info.get("permalink", "") or ""
+        # Encode (file_id, permalink, filename) into the state value channel
+        # field so a restart can rehydrate without re-calling Slack.
+        composite = f"{file_id}|{permalink}|{path.name}"
+        self.state.mark_posted(key, file_id, composite)
+        log.info("uploaded attachment %s (file=%s permalink=%s)",
+                 key, path.name, permalink)
+        return file_id, permalink, path.name
+
+    def _get_attachment_link(
+        self, key: str,
+    ) -> tuple[str, str, str] | None:
+        """Recover (file_id, permalink, filename) from state if already uploaded.
+
+        Returns None if not previously posted, or if the stored entry lacks
+        the composite channel value (e.g. written by an older listener
+        version that didn't pack permalink). In the latter case caller should
+        treat as "posted but no link recoverable" and skip relinking.
+        """
+        with self.state._lock:  # type: ignore[attr-defined]
+            entry = self.state._data["decisions"].get(key)  # type: ignore[attr-defined]
+        if not entry:
+            return None
+        composite = entry.get("channel", "") or ""
+        if composite.count("|") != 2:
+            # Old-format entry; nothing to relink against.
+            return "", "", ""
+        file_id, permalink, filename = composite.split("|", 2)
+        return file_id, permalink, filename
+
     def post_question(
         self,
         run_id: str,
@@ -376,6 +493,7 @@ class SlackPoster:
         prompt: str,
         options: list[dict[str, str]],
         thread_ts: str,
+        attachment_links: list[tuple[str, str]] | None = None,
     ) -> str:
         """Post a free-form question with N button options to the run thread.
 
@@ -383,6 +501,10 @@ class SlackPoster:
         action_id (`question_pick_<K>`). Button value carries
         `<run-id>|<question-id>|<choice>`; the question_pick action handler
         parses and writes answer-r<N>.md.
+
+        attachment_links is `[(permalink, filename), ...]`. When non-empty,
+        a markdown section block listing the files as Slack-formatted links
+        (`<URL|name>`) is inserted between the prompt and the option blocks.
         """
         key = f"q:{run_id}:{question_id}"
         if self.state.has_posted(key):
@@ -398,6 +520,20 @@ class SlackPoster:
                 },
             },
         ]
+        if attachment_links:
+            link_lines = [
+                f"• <{pl}|{nm}>" for pl, nm in attachment_links if pl and nm
+            ]
+            if link_lines:
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "*Attachments:*\n" + "\n".join(link_lines),
+                        },
+                    }
+                )
         for opt in options:
             blocks.append(
                 {
@@ -676,7 +812,12 @@ class AwaitingHandler(FileSystemEventHandler):
             log.exception("failed to handle %s", awaiting_path)
 
     def _handle_question(self, question_path: Path, n: str) -> None:
-        """Post a question-r<N>.md as a threaded Slack message with buttons."""
+        """Post a question-r<N>.md as a threaded Slack message with buttons.
+
+        If the frontmatter declares `attachments:` (block list of paths), each
+        file is uploaded into the thread *before* the button message so the
+        viewer reads context first and then sees the buttons last.
+        """
         try:
             run_dir = question_path.parent
             run_id = run_dir.name
@@ -690,10 +831,22 @@ class AwaitingHandler(FileSystemEventHandler):
                 return
             header = fm.get("header", "")
             prompt = fm.get("prompt", f"Question {question_id}")
+            attachments = fm.get("attachments") or []
             brief = _read_brief(run_dir)
             thread_ts = self.poster.ensure_thread(run_id, brief)
+            # Upload attachments first; collect permalinks for the link block
+            # that goes inside the question button message.
+            attachment_links: list[tuple[str, str]] = []
+            if isinstance(attachments, list):
+                for ap in attachments:
+                    _, permalink, filename = self.poster.upload_attachment(
+                        run_id, question_id, ap, thread_ts
+                    )
+                    if permalink and filename:
+                        attachment_links.append((permalink, filename))
             self.poster.post_question(
-                run_id, question_id, header, prompt, options, thread_ts
+                run_id, question_id, header, prompt, options, thread_ts,
+                attachment_links=attachment_links,
             )
         except Exception:
             log.exception("failed to handle %s", question_path)

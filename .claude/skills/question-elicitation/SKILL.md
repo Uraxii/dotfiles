@@ -34,6 +34,40 @@ Bash(
 
 `timeout` is the Bash tool's per-call ceiling (ms). Set to match `--hard-timeout` (s × 1000) or shorter. Default `BASH_MAX_TIMEOUT_MS=86400000` (24h) in `~/.claude/settings.json` permits long blocks.
 
+## Attachments (optional)
+
+When option text alone is not enough to explain the choices, attach one or
+more files (HTML report, diff, image, design doc) to the question post.
+The listener uploads each file to the run's thread *before* posting the
+button message, so the reviewer reads context first and sees buttons last.
+
+```
+--attach /abs/path/options-report.html
+--attach /abs/path/design-diff.png
+```
+
+- `--attach` is repeatable; one path per flag
+- Paths must be absolute (or resolvable from CLI cwd)
+- File must exist when CLI runs; missing file → CLI exits 4
+- Slack file size cap: 1GB upload, 50MB inline preview
+- HTML renders as a text file viewer in Slack (no live web rendering); use
+  PNG/markdown for visual reports
+- Idempotent on listener restart: state map keyed by
+  `attach:<run>:<qid>:<path>` skips re-upload
+
+Example — design review w/ HTML report:
+
+```
+Bash(
+  command="python3 ~/.claude/pipeline/pipeline_ask.py "
+          "--run <id> --header 'Design' "
+          "--prompt 'Approve the design in the attached report?' "
+          "--opt A:approve --opt B:revise "
+          "--attach /tmp/design-options-r1.html",
+  timeout=86400000,
+)
+```
+
 ## Output contract
 
 | Exit | Stdout | Meaning |

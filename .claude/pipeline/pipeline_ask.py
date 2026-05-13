@@ -87,6 +87,48 @@ def ensure_listener(project_path: Path, run_id: str, run_dir: Path) -> None:
         sys.stderr.write(f"listener spawn failed: {e}\n")
 
 
+def html_to_pdf(html_path: Path) -> Path:
+    """Render an HTML file to a sibling PDF via `uvx weasyprint`.
+
+    Slack previews PDFs inline (multi-page viewer) but renders HTML uploads
+    as raw source. Converting first gives the human a readable preview
+    without needing an external proxy or gist hosting. The PDF is written
+    next to the source as `<stem>.pdf`; if it already exists and is newer
+    than the HTML, conversion is skipped.
+
+    Returns the PDF path on success, or the original HTML path on failure
+    (caller still uploads something usable).
+    """
+    pdf_path = html_path.with_suffix(".pdf")
+    try:
+        if (
+            pdf_path.is_file()
+            and pdf_path.stat().st_mtime >= html_path.stat().st_mtime
+        ):
+            return pdf_path
+    except OSError:
+        pass
+    try:
+        result = subprocess.run(
+            ["uvx", "--from", "weasyprint", "weasyprint",
+             str(html_path), str(pdf_path)],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as e:
+        sys.stderr.write(f"html->pdf conversion failed ({e}); uploading raw html\n")
+        return html_path
+    if result.returncode != 0 or not pdf_path.is_file():
+        sys.stderr.write(
+            f"weasyprint failed (rc={result.returncode}); uploading raw html\n"
+            f"  stderr: {result.stderr.strip()[:200]}\n"
+        )
+        return html_path
+    return pdf_path
+
+
 def alloc_question_id(run_dir: Path, requested: str | None) -> str:
     if requested:
         return requested if requested.startswith("q") else f"q{requested}"
@@ -104,6 +146,7 @@ def write_question(
     options: list[tuple[str, str]],
     role: str,
     timeout_at: datetime,
+    attachments: list[Path] | None = None,
 ) -> Path:
     n = qid.lstrip("q")
     qfile = run_dir / f"question-r{n}.md"
@@ -118,9 +161,15 @@ def write_question(
         "delivery_mode: async",
         f"opened_at: {now_iso()}",
         f"timeout_at: {timeout_at.isoformat()}",
-        "---",
-        "",
     ]
+    if attachments:
+        # Multi-value YAML list. Listener parses by reading lines that start
+        # with two-space indent + "- " until the closing frontmatter delimiter.
+        lines.append("attachments:")
+        for ap in attachments:
+            lines.append(f"  - {ap}")
+    lines.append("---")
+    lines.append("")
     for k, label in options:
         lines.append(f"## Option {k}: {label}")
     qfile.write_text("\n".join(lines) + "\n")
@@ -178,6 +227,10 @@ def main() -> int:
     p.add_argument("--role", default="unknown", help="requesting role name")
     p.add_argument("--hard-timeout", type=int, default=86400,
                    help="seconds until verdict=timeout (default 86400 = 24h)")
+    p.add_argument("--attach", action="append", default=[],
+                   help="absolute path to attach to question post (repeatable; "
+                        "HTML/MD/PNG/PDF/etc); listener uploads to thread "
+                        "before posting buttons")
     args = p.parse_args()
 
     project_path = Path(args.project).expanduser().resolve()
@@ -223,9 +276,19 @@ def main() -> int:
         except ValueError as e:
             sys.stderr.write(f"{e}\n")
             return 4
+        attachments: list[Path] = []
+        for ap in args.attach:
+            apath = Path(ap).expanduser().resolve()
+            if not apath.is_file():
+                sys.stderr.write(f"--attach not a file: {apath}\n")
+                return 4
+            # Auto-convert HTML to PDF for inline Slack preview.
+            if apath.suffix.lower() == ".html":
+                apath = html_to_pdf(apath)
+            attachments.append(apath)
         deadline = datetime.now(timezone.utc) + timedelta(seconds=args.hard_timeout)
         write_question(run_dir, qid, args.header, args.prompt, options,
-                       args.role, deadline)
+                       args.role, deadline, attachments=attachments)
 
     # Ensure listener alive (idempotent).
     ensure_listener(project_path, args.run, run_dir)
