@@ -49,6 +49,9 @@ export NVM_DIR="$HOME/.nvm"
 # opencode
 export PATH=/home/nikki/.opencode/bin:$PATH
 
+# npm user-global bin
+export PATH="$HOME/.npm-global/bin:$PATH"
+
 ## Zoxide
 
 # --cmd cd allows you to use cd instead of z/zi

@@ -65,5 +65,8 @@
     cairo
     gdk-pixbuf
     libffi
+
+    # Node.js (for npm-installed CLIs e.g. @anthropic-ai/claude-code)
+    nodejs_22
   ];
 }
