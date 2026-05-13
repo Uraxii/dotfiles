@@ -20,6 +20,15 @@ messages.md
 
 .claude/plans
 .claude/projects
+# claude-code runtime state (written into ~/.claude/ at runtime; never tracked)
+.claude/.credentials.json
+.claude/cache/
+.claude/debug/
+.claude/history.jsonl
+.claude/plugins/
+.claude/session-env/
+.claude/statsig/
+.claude/todos/
 # Ignore .pipeline/ runtime dirs but keep _shared/ SSoT source tracked
 .pipeline/runs/
 .pipeline/dreams/
