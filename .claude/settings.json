@@ -1,4 +1,8 @@
 {
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "120000",
+    "BASH_MAX_TIMEOUT_MS": "86400000"
+  },
   "permissions": {
     "allow": [
       "Read(~/.pipeline/**)",
@@ -81,10 +85,7 @@
       "Bash(rm -rf:*)"
     ]
   },
-  "env": {
-    "BASH_DEFAULT_TIMEOUT_MS": "120000",
-    "BASH_MAX_TIMEOUT_MS": "86400000"
-  },
+  "model": "claude-opus-4-6[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -98,7 +99,6 @@
       }
     ]
   },
-  "model": "claude-opus-4-6[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -115,9 +115,10 @@
       }
     }
   },
-  "effortLevel": "high",
+  "effortLevel": "low",
   "agent": "orchestrator",
   "skipDangerousModePermissionPrompt": true,
+  "theme": "dark-ansi",
   "skipAutoPermissionPrompt": true,
   "effort": "high"
 }
