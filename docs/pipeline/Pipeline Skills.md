@@ -73,7 +73,7 @@ Returns the canonical artifact-id `<slug>-<hex6>`. Wraps the runtime helper at `
 Returns the test-path glob set. Reads `<run-dir>/test-paths.txt` if the build emitted one; otherwise returns the default regex set covering Python, JS/TS, C#, Java, Kotlin, Swift, Go, Ruby, Godot, Elixir, PHP, Rust. Used by `prod-diff-sha`, skeptic test-audit, and tester smuggling scan.
 
 ### `decision-elicitation`
-Orchestrator-owned decision-point flow. Elicits human pick between N options (N ≤ 4). Sync delivery via `AskUserQuestion`; async via `gh issue create` + 10-minute `ScheduleWakeup` poll. Records pick in `decision-r<N>.md`. Triggers when brief/plan declares `decision_points:` or a role flags ambiguity.
+Orchestrator-owned decision-point flow. Elicits human pick between N options (N ≤ 4). Sync delivery via `AskUserQuestion`; async via Slack Socket Mode listener (`.claude/pipeline/slack_listener.py`, per-project systemd unit) + 10-minute `ScheduleWakeup` poll. Records pick in `decision-r<N>.md`. Triggers when brief/plan declares `decision_points:` or a role flags ambiguity. Setup: [[Pipeline Slack Setup]].
 
 ### `frontend-design`
 Optional build-time aesthetics guidance for UI implementation. Distinct from `ui-ux-designer` agent — this is a stylistic helper for build, not a role.

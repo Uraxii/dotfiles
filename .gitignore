@@ -1,5 +1,6 @@
-
+*.local
 .claude/*local*
+.claude/**/*local*
 .config/opencode/projects/*
 !.config/opencode/projects/.gitkeep
 .config/configstore
@@ -29,3 +30,8 @@ messages.md
 !/.pipeline/_shared/**
 # OpenCode pipeline-aware config tracked; runtime overrides still in .local variants
 !/.config/opencode/opencode.json
+
+# Slack listener: per-run runtime state never tracked.
+# State, pid, and log files live under <run-dir>, which is already covered by
+# .pipeline/runs/ above. Tokens at ~/.claude/pipeline/slack.env.local are
+# handled by the .claude/**/*local* rule above.

@@ -1,0 +1,220 @@
+# Pipeline Slack Setup
+
+End-to-end install for the async-decision Slack listener. Per-run process, spawned on demand by the orchestrator. Outbound-only (Socket Mode WebSocket; no inbound port, no public URL).
+
+## Architecture recap
+
+```
+                       WSS (outbound)
+[per-run listener] ─────────────────► Slack
+       │                                  │
+       │  inotify on <run-dir>/           │  button click
+       ▼                                  ▼
+   awaiting-decision-r<N>.md      listener writes decision-r<N>.md
+```
+
+One listener per pipeline run that uses async-mode decisions. Each listener:
+
+- Spawned by the orchestrator at async-mode entry via `subprocess.Popen` (detached, `start_new_session=True`).
+- Loads `~/.claude/pipeline/slack.env.local` (shared tokens).
+- Reads `<project>/.pipeline/pipeline.toml` (per-project channel).
+- Watches its `<run-dir>/awaiting-decision-r*.md` only (inotify, non-recursive).
+- Posts threaded message per run; one thread = one run.
+- On button click → writes `<run-dir>/decision-r<N>.md`, deletes awaiting file.
+- Self-exits 30 seconds after the run's awaiting set has been empty. Orchestrator re-spawns idempotently if a later decision lands in the same run.
+
+No systemd. No always-on daemon. Portable to any POSIX host with Python ≥3.11 and `uv`.
+
+## One-time setup
+
+### 1. Create the Slack app
+
+1. Visit https://api.slack.com/apps → **Create New App** → **From scratch**.
+2. Name (e.g. `pipeline-decisions`) and workspace → **Create**.
+
+### 2. Bot token scopes
+
+**OAuth & Permissions** → **Bot Token Scopes**:
+
+- `chat:write`
+- `chat:write.public`
+
+Click **Install to Workspace** → authorize. Copy the **Bot User OAuth Token** (starts `xoxb-`).
+
+### 3. Enable Socket Mode
+
+1. **Settings → Socket Mode** → toggle **Enable Socket Mode**.
+2. Generate App-Level Token (it prompts when you enable Socket Mode):
+   - Name: `pipeline-socket`
+   - Scope: `connections:write`
+   - Copy the token (starts `xapp-`).
+
+### 4. Enable Interactivity
+
+**Features → Interactivity & Shortcuts** → toggle **Interactivity** on. No Request URL required (Socket Mode handles it).
+
+### 5. Reinstall (if Slack prompts)
+
+Whenever scopes change, Slack will prompt **Reinstall to Workspace**. Do it.
+
+### 6. Save tokens locally
+
+```bash
+mkdir -p ~/.claude/pipeline
+cp ~/.claude/pipeline/slack.env.example ~/.claude/pipeline/slack.env.local
+chmod 600 ~/.claude/pipeline/slack.env.local
+$EDITOR ~/.claude/pipeline/slack.env.local   # paste xoxb- and xapp- tokens
+```
+
+Optional: restrict button clicks to specific users by setting `SLACK_ALLOWED_USERS` to a comma-separated list of Slack user IDs (find via profile → ⋮ → Copy member ID).
+
+### 7. Python deps (uv-managed)
+
+The listener uses [PEP 723 inline script metadata](https://peps.python.org/pep-0723/) — deps declared in the script header. `uv run --script` resolves and caches them on first run.
+
+Requires `uv` ≥ 0.10 + system Python ≥ 3.11 (repo uses 3.14):
+
+```bash
+command -v uv || pacman -S uv      # or your distro's pkg
+```
+
+First run populates cache (`~/.cache/uv`):
+
+```bash
+uv run --script ~/.claude/pipeline/slack_listener.py ~/dotfiles
+```
+
+(It will exit with "missing pipeline.toml" — that's expected at this stage and confirms the env resolves.)
+
+`tomllib` is stdlib on Python 3.11+.
+
+## Channel setup
+
+### 1. Create the channel + invite the bot
+
+- Create one channel for pipeline decisions. Runs from every project post threaded messages here; each thread is one run, the parent message shows the project name.
+- `/invite @your-bot-name` in that channel (once, ever).
+- Grab the channel ID: right-click channel → **View details** → bottom shows **Channel ID** (`C...`).
+
+### 2. Set the channel as global default
+
+Add `SLACK_CHANNEL=C0123ABC456` to `~/.claude/pipeline/slack.env.local`. All projects pick this up automatically — no per-project setup needed.
+
+### 3. Optional per-project override
+
+Only needed if a specific project should post to a different channel (e.g. private client channel). Create `<project>/.pipeline/pipeline.toml`:
+
+```toml
+[slack]
+channel = "C9999ZZZZ"     # override; overrides SLACK_CHANNEL env var for this project only
+project_name = "myproject" # optional; shown in parent thread message (defaults to dir basename)
+```
+
+The file is gitignored via `.pipeline/*` blanket. Per-machine, per-project.
+
+### 4. Lifecycle (orchestrator-managed)
+
+No systemd unit. No always-on daemon. The orchestrator spawns one listener per pipeline run when that run enters the decision-elicitation stage in async mode. The listener self-exits when its run's awaiting set has been empty for 30 seconds.
+
+Per-run files (all under `<project>/.pipeline/runs/<run-id>/`):
+
+| File | Owner | Purpose |
+|---|---|---|
+| `slack-listener.pid` | listener | Liveness check; removed at clean exit. |
+| `slack-state.json`   | listener | Thread + posted-decision cache. |
+| `awaiting-decision-r<N>.md` | orchestrator | Listener posts to Slack on appearance. |
+| `decision-r<N>.md` | listener | Written on button click; orchestrator polls. |
+
+Spawn command (orchestrator does this internally; useful for debugging):
+
+```bash
+uv run --script ~/.claude/pipeline/slack_listener.py "$PROJECT_PATH" "$RUN_ID"
+```
+
+Idempotent: if a listener PID file is found and the process is alive, the orchestrator skips re-spawn.
+
+Portability: no systemd dependency. Works on any POSIX host with Python ≥3.11 and `uv`.
+
+### 5. Smoke test
+
+```bash
+PROJECT_PATH=~/path/to/your/project
+RUN=test-run-$(date +%s)
+mkdir -p "$PROJECT_PATH/.pipeline/runs/$RUN"
+
+cat > "$PROJECT_PATH/.pipeline/runs/$RUN/options-r1.md" <<'EOF'
+---
+decision_id: d1
+topic: Smoke test
+requesting_role: tester
+count: 2
+delivery_default: async
+---
+
+## Option A: Yes
+- **Tradeoff:** confirm setup works
+
+## Option B: No
+- **Tradeoff:** roll back
+EOF
+
+cat > "$PROJECT_PATH/.pipeline/runs/$RUN/awaiting-decision-r1.md" <<EOF
+---
+decision_id: d1
+delivery_mode: async
+opened_at: $(date -u +%FT%TZ)
+timeout_at: $(date -u -d '+1 hour' +%FT%TZ)
+requesting_role: tester
+options_source: tester
+topic: Smoke test
+---
+EOF
+
+# Spawn the listener in foreground for visible logging:
+uv run --script ~/.claude/pipeline/slack_listener.py "$PROJECT_PATH" "$RUN"
+```
+
+A threaded decision message should appear in the channel within ~1s. Click a button → `decision-r1.md` written + awaiting file deleted + listener exits after the 30s grace window.
+
+## Multiple projects / multiple concurrent runs
+
+No per-project setup beyond `pipeline.toml`. Each pipeline run gets its own listener process spawned by the orchestrator on demand. Concurrent runs across multiple projects = multiple listener processes, each scoped to one run dir. They share the same Slack app + tokens but post to different (or the same) channel based on each project's `pipeline.toml`.
+
+Slack Socket Mode connections per active run; each lives only while that run has open decisions. Practical concurrency limit = Slack's per-app Socket Mode cap (10 on free tier).
+
+## Listing live listeners
+
+```bash
+# Across all projects:
+for pid in $(find ~ -name slack-listener.pid 2>/dev/null); do
+  kill -0 "$(cat "$pid")" 2>/dev/null && echo "alive: $pid"
+done
+```
+
+To stop one: `kill $(cat <run-dir>/slack-listener.pid)`. The listener removes its PID file on exit.
+
+## Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| Log shows `not_authed` | Tokens missing or wrong scope. Re-paste from app config. |
+| `not_in_channel` errors | Bot needs `/invite` in the channel. |
+| `channel_not_found` | `channel` in `pipeline.toml` is the channel name not the ID. Use `C...` ID. |
+| Buttons appear but click does nothing | Interactivity toggle off, or Socket Mode disabled. Re-check Slack app config. |
+| Listener exits immediately | Run in foreground: `uv run --script ~/.claude/pipeline/slack_listener.py <project> <run-id>` to see the traceback. |
+| `uv` cannot resolve deps | First run populates `~/.cache/uv`; needs network. After that, offline-capable. |
+| Listener eats CPU | inotify storm on shared FS. Move `.pipeline/runs/` off network mount. |
+| Stale PID file blocks respawn | `kill $(cat <run-dir>/slack-listener.pid)` if process is dead but file remains; orchestrator's next spawn cycle handles it via `os.kill(pid, 0)` liveness check. |
+
+## Security notes
+
+- Tokens live in `~/.claude/pipeline/slack.env.local`, mode 600, never in the repo. The `.local` suffix matches `.gitignore` (`.claude/**/*local*`) and `.stow-local-ignore` (`\.claude/.*local.*`) so the real file is never tracked and never symlinked by stow.
+- Listener runs as your user with no extra sandboxing (no systemd unit). Filesystem access is whatever your shell has. If you need sandbox hardening, wrap the spawn in your preferred mechanism (firejail, systemd-run, etc.) — the script accepts standard process management.
+- Outbound TCP 443 only (Socket Mode WebSocket). Verify with `ss -tlnp` — no new listening port should appear after starting a listener.
+- Optional allowlist (`SLACK_ALLOWED_USERS`) gates button clicks; everyone else gets an ephemeral "not authorized" message.
+
+## Related
+
+- [[Pipeline Decisions]] — full decision-elicitation stage doc.
+- [[Pipeline Skills|decision-elicitation skill]] — orchestrator-side contract.
+- [[Pipeline Artifacts]] — `awaiting-decision-r<N>.md`, `decision-r<N>.md` schemas.

@@ -73,8 +73,7 @@ decision_points:                                      # if brief/plan declared a
 paused_on_decision:                                   # present only while waiting on async decision
   decision_id: d<N>
   delivery_mode: async
-  issue_url: <url>
-  issue_number: <int>
+  slack_channel: <channel-id>
   opened_at: <iso8601>
   timeout_at: <iso8601>
   next_wake_at: <iso8601>

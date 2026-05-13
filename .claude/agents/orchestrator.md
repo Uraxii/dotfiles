@@ -85,10 +85,10 @@ Flow:
 1. Pre-decision: spawn `options_source` role w/ `decision_emission: d<N>` flag in spawn template. Role emits `options-r<N>.md` (N ≤ 4 options w/ tradeoff lines) in lieu of its normal output.
 2. Orchestrator invokes decision-elicitation skill:
    - `mode=sync` → `AskUserQuestion` w/ N option labels.
-   - `mode=async` → `gh issue create` w/ pipeline-decision label, write `awaiting-decision-r<N>.md`, set `paused_on_decision:` block in pipeline.md, `ScheduleWakeup(delaySeconds=600, ...)`.
+   - `mode=async` → write `awaiting-decision-r<N>.md` (sole trigger for Slack listener daemon), set `paused_on_decision:` block in pipeline.md, `ScheduleWakeup(delaySeconds=600, ...)`. Orchestrator never calls Slack API directly.
 3. Sync: user picks → write `decision-r<N>.md` → re-spawn `options_source` w/ `decision-r<N>.md` in Read set → role emits final pinned artifact.
-4. Async: halt. On wake (10min cadence): poll issue comments for `/pick A|B|C|D` (or 1-4). Parsed → confirm comment → close issue → write `decision-r<N>.md` → resume pipeline. Timeout default 7d → halt + surface.
-5. Async pre-check failure (gh missing / unauthed / non-github remote) → degrade to sync, log warning.
+4. Async: halt. On wake (10min cadence): check `<run-dir>/decision-r<N>.md` existence. Present (listener wrote it after button click) → resume pipeline. Absent + listener active + within timeout → re-wake. Timeout default 7d → halt + surface.
+5. Async pre-check failure (no `pipeline.toml` [slack].channel / listener daemon inactive / tokens missing) → degrade to sync, log warning.
 
 Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans `awaiting-decision-*.md` in active runs; matching sentinel routes to skill resume logic.
 
@@ -285,8 +285,7 @@ paused_on_decision:                       # present only while waiting on async 
   decision_id: d<N>
   stage: <requesting-role>
   delivery_mode: sync|async
-  issue_url: <url|null>
-  issue_number: <int|null>
+  slack_channel: <channel-id|null>        # async only
   opened_at: <iso8601>
   timeout_at: <iso8601|null>
   next_wake_at: <iso8601|null>
