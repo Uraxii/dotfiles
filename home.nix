@@ -6,6 +6,8 @@
 
 {
   # Do not change this after the first activation.
+  home.username = "nikki";
+  home.homeDirectory = "/home/nikki";
   home.stateVersion = "24.11";
 
   programs.home-manager.enable = true;
@@ -20,17 +22,30 @@
     # Status bar & launcher
     waybar
     wofi
-    networkmanager-dmenu
+    networkmanager_dmenu
     pavucontrol
 
     # Applications
     ghostty
+    neovim
+    gcc               # treesitter compile + native LSPs
+    gnumake           # plugin builds (telescope-fzf-native etc.)
+    unzip             # Mason package extraction
+    ripgrep           # telescope live_grep
+    fd                # telescope find_files
+    wl-clipboard      # Wayland clipboard bridge for nvim
+    nodejs_22         # Mason-installed JS/TS LSPs (tsserver, vtsls)
 
     # Fonts
     nerd-fonts._0xproto
 
     # Dotfiles tooling
+    zsh
+    oh-my-posh
+
+    zoxide            # smart cd (used by .zshrc)
     stow              # symlink dotfiles into $HOME
+    git               # base VCS (required by lazy.nvim)
     gh                # GitHub CLI (PR/issue/repo ops)
     jq                # JSON parsing in scripts + setup.sh
 
