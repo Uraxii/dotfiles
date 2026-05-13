@@ -75,6 +75,7 @@ except ImportError:
 log = logging.getLogger("slack_listener")
 
 AWAITING_RE = re.compile(r"^awaiting-decision-r(\d+)\.md$")
+QUESTION_RE = re.compile(r"^question-r(\d+)\.md$")
 OPTIONS_RE = re.compile(r"^## Option ([A-D]): (.+)$")
 TRADEOFF_RE = re.compile(r"^- \*\*Tradeoff:\*\* (.+)$")
 
@@ -103,7 +104,15 @@ class IdleMonitor:
         self._timer: threading.Timer | None = None
 
     def _count_awaiting(self) -> int:
-        return sum(1 for _ in self.run_dir.glob("awaiting-decision-r*.md"))
+        n = sum(1 for _ in self.run_dir.glob("awaiting-decision-r*.md"))
+        # Open questions = question-r<N>.md without matching answer-r<N>.md
+        for q in self.run_dir.glob("question-r*.md"):
+            m = QUESTION_RE.match(q.name)
+            if not m:
+                continue
+            if not (self.run_dir / f"answer-r{m.group(1)}.md").exists():
+                n += 1
+        return n
 
     def tick(self) -> None:
         """Re-evaluate idle state. Call after any awaiting-file lifecycle event."""
@@ -237,6 +246,28 @@ def parse_awaiting(awaiting_md: Path) -> dict[str, Any]:
     return fm
 
 
+def parse_question_file(question_md: Path) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    """Parse question-r<N>.md → (frontmatter, [{key,title}]). Body uses same
+    `## Option <K>: <label>` shape as options-r<N>.md, so OPTIONS_RE is reused."""
+    text = question_md.read_text()
+    fm: dict[str, Any] = {}
+    body = text
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end > 0:
+            for line in text[4:end].splitlines():
+                if ":" in line:
+                    k, _, v = line.partition(":")
+                    fm[k.strip()] = v.strip()
+            body = text[end + 5 :]
+    options: list[dict[str, str]] = []
+    for line in body.splitlines():
+        m = OPTIONS_RE.match(line)
+        if m:
+            options.append({"key": m.group(1), "title": m.group(2).strip()})
+    return fm, options
+
+
 # ----------------------------------------------------------------------------
 # Slack post + handlers
 # ----------------------------------------------------------------------------
@@ -337,6 +368,74 @@ class SlackPoster:
         log.info("posted decision %s ts=%s", decision_key, ts)
         return ts
 
+    def post_question(
+        self,
+        run_id: str,
+        question_id: str,
+        header: str,
+        prompt: str,
+        options: list[dict[str, str]],
+        thread_ts: str,
+    ) -> str:
+        """Post a free-form question with N button options to the run thread.
+
+        Differs from post_decision by namespace key (`q:` prefix) and Slack
+        action_id (`question_pick_<K>`). Button value carries
+        `<run-id>|<question-id>|<choice>`; the question_pick action handler
+        parses and writes answer-r<N>.md.
+        """
+        key = f"q:{run_id}:{question_id}"
+        if self.state.has_posted(key):
+            log.info("already posted %s, skipping", key)
+            return ""
+        header_text = f"[{header}] " if header else ""
+        blocks: list[dict[str, Any]] = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*{header_text}{question_id}*\n{prompt}",
+                },
+            },
+        ]
+        for opt in options:
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*{opt['key']}*: {opt['title']}",
+                    },
+                }
+            )
+        blocks.append(
+            {
+                "type": "actions",
+                "block_id": f"qpick_{question_id}",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": opt["key"]},
+                        "value": f"{run_id}|{question_id}|{opt['key']}",
+                        "action_id": f"question_pick_{opt['key']}",
+                    }
+                    for opt in options
+                ],
+            }
+        )
+        resp = self.app.client.chat_postMessage(
+            channel=self.channel,
+            thread_ts=thread_ts,
+            text=f"Question {question_id}: {prompt[:80]}",
+            blocks=blocks,
+            unfurl_links=False,
+            unfurl_media=False,
+        )
+        ts = resp["ts"]
+        self.state.mark_posted(key, ts, self.channel)
+        log.info("posted question %s ts=%s", key, ts)
+        return ts
+
     def confirm_pick(
         self,
         run_id: str,
@@ -370,10 +469,85 @@ class SlackPoster:
             unfurl_media=False,
         )
 
+    def confirm_question_pick(
+        self,
+        run_id: str,
+        question_id: str,
+        choice: str,
+        user: str,
+        message_ts: str,
+        thread_ts: str,
+    ) -> None:
+        """Lock the question message + post thread confirmation."""
+        self.app.client.chat_update(
+            channel=self.channel,
+            ts=message_ts,
+            text=f"Question {question_id}: locked",
+            blocks=[
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f":white_check_mark: *Question {question_id}* — `{choice}` chosen by <@{user}>",
+                    },
+                },
+            ],
+        )
+        self.app.client.chat_postMessage(
+            channel=self.channel,
+            thread_ts=thread_ts,
+            text=f"Recorded *{choice}* for `{run_id}` / `{question_id}`. Caller resuming.",
+            unfurl_links=False,
+            unfurl_media=False,
+        )
+
 
 # ----------------------------------------------------------------------------
 # Decision file writer
 # ----------------------------------------------------------------------------
+
+
+def write_answer_file(
+    run_dir: Path,
+    question_id: str,
+    choice: str,
+    chosen_label: str,
+    user_id: str,
+    rationale: str = "",
+) -> Path:
+    """Write answer-r<N>.md after question button click.
+
+    Unlike write_decision_file, the source question-r<N>.md is NOT removed —
+    the answer file's existence is the satisfied-signal for both the CLI poll
+    (pipeline_ask.py) and the listener's IdleMonitor.
+    """
+    n = question_id.lstrip("q")
+    out = run_dir / f"answer-r{n}.md"
+    now = datetime.now(timezone.utc).isoformat()
+    qfile = run_dir / f"question-r{n}.md"
+    qfm: dict[str, Any] = {}
+    if qfile.exists():
+        qfm, _ = parse_question_file(qfile)
+    body = (
+        "---\n"
+        f"question_id: {question_id}\n"
+        "verdict: answered\n"
+        f"chosen_key: {choice}\n"
+        f"chosen_label: {chosen_label}\n"
+        "delivery_mode: slack\n"
+        f"opened_at: {qfm.get('opened_at', 'null')}\n"
+        f"answered_at: {now}\n"
+        f"answered_by_slack_user: {user_id}\n"
+        f"requesting_role: {qfm.get('requesting_role', 'unknown')}\n"
+        "---\n\n"
+        "## Notes\n"
+        f"{rationale or '(no notes; chose via Slack button)'}\n\n"
+        "## Source question\n"
+        f"- Path: question-r{n}.md\n"
+    )
+    out.write_text(body)
+    log.info("wrote answer file: %s", out)
+    return out
 
 
 def write_decision_file(
@@ -442,32 +616,42 @@ class AwaitingHandler(FileSystemEventHandler):
         if event.is_directory:
             return
         path = Path(event.src_path)
-        m = AWAITING_RE.match(path.name)
-        if not m:
-            return
-        # New awaiting file landed → cancel any scheduled idle exit.
-        self.idle.tick()
-        self._handle(path, m.group(1))
+        self._dispatch(path)
 
     def on_modified(self, event: Any) -> None:
         # Handle atomic-write rename-into-place
         if event.is_directory:
             return
         path = Path(event.src_path)
-        m = AWAITING_RE.match(path.name)
-        if not m:
-            return
-        self.idle.tick()
-        self._handle(path, m.group(1))
+        self._dispatch(path)
 
     def on_deleted(self, event: Any) -> None:
-        # Awaiting file removed (decision resolved); re-evaluate idle state.
+        # Any tracked file removed/resolved → re-evaluate idle state.
         if event.is_directory:
             return
-        path = Path(event.src_path)
-        if not AWAITING_RE.match(path.name):
+        name = Path(event.src_path).name
+        if (
+            AWAITING_RE.match(name)
+            or QUESTION_RE.match(name)
+            or name.startswith("answer-r")
+        ):
+            self.idle.tick()
+
+    def _dispatch(self, path: Path) -> None:
+        """Route inotify events by filename to decision or question handler."""
+        m_aw = AWAITING_RE.match(path.name)
+        if m_aw:
+            self.idle.tick()
+            self._handle(path, m_aw.group(1))
             return
-        self.idle.tick()
+        m_q = QUESTION_RE.match(path.name)
+        if m_q:
+            self.idle.tick()
+            self._handle_question(path, m_q.group(1))
+            return
+        # answer-r<N>.md write satisfies a question; just re-tick idle.
+        if path.name.startswith("answer-r"):
+            self.idle.tick()
 
     def _handle(self, awaiting_path: Path, n: str) -> None:
         try:
@@ -490,6 +674,29 @@ class AwaitingHandler(FileSystemEventHandler):
             self.poster.post_decision(run_id, decision_id, topic, options, thread_ts)
         except Exception:
             log.exception("failed to handle %s", awaiting_path)
+
+    def _handle_question(self, question_path: Path, n: str) -> None:
+        """Post a question-r<N>.md as a threaded Slack message with buttons."""
+        try:
+            run_dir = question_path.parent
+            run_id = run_dir.name
+            question_id = f"q{n}"
+            # Skip if already answered (e.g. listener restarted after resolution).
+            if (run_dir / f"answer-r{n}.md").exists():
+                return
+            fm, options = parse_question_file(question_path)
+            if not options:
+                log.warning("no options parsed from %s", question_path)
+                return
+            header = fm.get("header", "")
+            prompt = fm.get("prompt", f"Question {question_id}")
+            brief = _read_brief(run_dir)
+            thread_ts = self.poster.ensure_thread(run_id, brief)
+            self.poster.post_question(
+                run_id, question_id, header, prompt, options, thread_ts
+            )
+        except Exception:
+            log.exception("failed to handle %s", question_path)
 
 
 def _read_brief(run_dir: Path) -> str:
@@ -655,6 +862,51 @@ def main() -> None:
     for letter in "ABCD":
         app.action(f"decision_pick_{letter}")(on_pick)
 
+    def on_pick_question(ack: Any, body: dict[str, Any], client: Any) -> None:
+        """Handle question button click; writes answer-r<N>.md."""
+        ack()
+        try:
+            user_id = body["user"]["id"]
+            if allowed_users and user_id not in allowed_users:
+                client.chat_postEphemeral(
+                    channel=body["channel"]["id"],
+                    user=user_id,
+                    text="You are not authorized to answer for this pipeline.",
+                )
+                return
+            value = body["actions"][0]["value"]
+            run_id, question_id, choice = value.split("|")
+            run_dir_q = runs_root / run_id
+            if not run_dir_q.is_dir():
+                client.chat_postEphemeral(
+                    channel=body["channel"]["id"],
+                    user=user_id,
+                    text=f"Run dir missing: {run_id}",
+                )
+                return
+            # Resolve chosen label by re-reading question file.
+            n = question_id.lstrip("q")
+            qfile = run_dir_q / f"question-r{n}.md"
+            chosen_label = choice
+            if qfile.exists():
+                _, options = parse_question_file(qfile)
+                for opt in options:
+                    if opt["key"] == choice:
+                        chosen_label = opt["title"]
+                        break
+            write_answer_file(run_dir_q, question_id, choice, chosen_label, user_id)
+            message_ts = body["message"]["ts"]
+            thread_ts = body["message"].get("thread_ts", message_ts)
+            poster.confirm_question_pick(
+                run_id, question_id, choice, user_id, message_ts, thread_ts
+            )
+            idle_monitor.tick()
+        except Exception:
+            log.exception("question pick handler failed")
+
+    for letter in "ABCD":
+        app.action(f"question_pick_{letter}")(on_pick_question)
+
     # Filesystem watch — scoped to this run only.
     handler = AwaitingHandler(poster, run_dir, idle_monitor)
     observer = Observer()
@@ -671,6 +923,12 @@ def main() -> None:
         m = AWAITING_RE.match(p.name)
         if m:
             handler._handle(p, m.group(1))
+    # Sweep existing question files at startup (CLI may have written the
+    # question file before spawning us; same race window as decisions).
+    for p in run_dir.glob("question-r*.md"):
+        m = QUESTION_RE.match(p.name)
+        if m:
+            handler._handle_question(p, m.group(1))
 
     # Initial idle evaluation: if orchestrator's spawn raced with awaiting-file
     # writes such that nothing is present, we exit after the grace window.
