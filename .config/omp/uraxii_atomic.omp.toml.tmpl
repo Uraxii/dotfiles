@@ -26,6 +26,15 @@ version = 3
     style = 'diamond'
 
   [[blocks.segments]]
+    leading_diamond = ''
+    trailing_diamond = ''
+    template = '{{ if .SSHSession }} {{ .UserName }}@{{ .HostName }} {{ end }}'
+    foreground = '##FG##'
+    background = '##MUTED##'
+    type = 'session'
+    style = 'diamond'
+
+  [[blocks.segments]]
     leading_diamond = ''
     trailing_diamond = ''
     template = '  '
