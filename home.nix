@@ -12,6 +12,9 @@
 
   programs.home-manager.enable = true;
 
+  # Allow unfree pkgs (claude-code etc.)
+  nixpkgs.config.allowUnfree = true;
+
   home.packages = with pkgs; [
     # Wayland / Sway ecosystem
     sway
@@ -47,6 +50,7 @@
     stow              # symlink dotfiles into $HOME
     git               # base VCS (required by lazy.nvim)
     gh                # GitHub CLI (PR/issue/repo ops)
+    claude-code       # Anthropic Claude Code CLI
     jq                # JSON parsing in scripts + setup.sh
 
     # Pipeline (Slack listener + pipeline_ask CLI + setup.sh)
