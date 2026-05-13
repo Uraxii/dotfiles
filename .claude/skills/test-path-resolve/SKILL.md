@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/test-path-resolve/SKILL.md — DO NOT EDIT -->
 ---
 name: test-path-resolve
 description: Canonical test-path regex set. Reads optional test-paths.txt manifest in run-dir; falls back to default regex set. Use by skeptic + tester for prod-vs-test partitioning + prod-diff-sha.

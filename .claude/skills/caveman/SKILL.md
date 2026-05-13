@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/caveman/SKILL.md — DO NOT EDIT -->
 ---
 name: caveman
 description: >

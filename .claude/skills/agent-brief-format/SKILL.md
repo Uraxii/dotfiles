@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/agent-brief-format/SKILL.md — DO NOT EDIT -->
 ---
 name: agent-brief-format
 description: Pipeline brief.md template. Durable-over-precise (no file paths, no line numbers). Behavioral not procedural. Complete acceptance criteria. Explicit out-of-scope. Use by orchestrator at intake.

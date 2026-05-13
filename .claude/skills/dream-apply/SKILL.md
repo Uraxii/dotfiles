@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/dream-apply/SKILL.md — DO NOT EDIT -->
 ---
 name: dream-apply
 description: USER-ONLY. Apply dream diff to memory files. Mutates memory; archives removed entries; writes apply-receipt. Never invoked by pipeline agents; agent invocation is forbidden + audited.

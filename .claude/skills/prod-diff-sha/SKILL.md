@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/prod-diff-sha/SKILL.md — DO NOT EDIT -->
 ---
 name: prod-diff-sha
 description: Compute SHA1 of production-code diff vs base_sha, excluding test paths. Used by orchestrator for test-only revision pin validation on skeptic-code/reviewer/security verdicts.

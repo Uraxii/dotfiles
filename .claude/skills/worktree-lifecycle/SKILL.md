@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/worktree-lifecycle/SKILL.md — DO NOT EDIT -->
 ---
 name: worktree-lifecycle
 description: Pipeline shard worktree primitives — create, stale-probe, cleanup, scope-check. Wraps git worktree commands. Use by orchestrator for shard management + build for self-verify scope check.

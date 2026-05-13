@@ -1,4 +1,3 @@
-<!-- GENERATED FROM .pipeline/_shared/skills/dream-generate/SKILL.md — DO NOT EDIT -->
 ---
 name: dream-generate
 description: Memory curation generator. READ-ONLY — never mutates memory files. Analyzes pipeline memory, writes diff artifact only. Used by friction-reviewer end-of-run when memory mutated.

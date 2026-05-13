@@ -33,17 +33,11 @@ stow -n -v -t ~ .    # dry run
 ## Stow Ignore
 
 `.stow-local-ignore` controls what stow skips (regex). Currently ignores git files, README/LICENSE, `scripts`, `.claude/settings.local.json`. Overrides stow defaults — must re-add defaults manually.
-## Pipeline SSoT
+## Agent & Skill Files
 
-Agent bodies and skills are managed via a single-source-of-truth generator:
-
-- **Source**: `.pipeline/_shared/` (agents, skills, templates, snippets)
-- **Generator**: `scripts/pipeline-render.py` — renders to both `.claude/` and `.config/opencode/` trees
-- **Drift check**: `scripts/pipeline-drift.py` — verifies rendered outputs match `_shared/` sources
-
-**Do NOT hand-edit** `.claude/agents/*.md` or `.config/opencode/agents/*.md`. Edit `_shared/agents/<role>.body.md` and re-render.
-
-**`OPENCODE_DISABLE_CLAUDE_CODE=1`** — set this in your shell rc to prevent OC from double-loading CLAUDE.md and skills via its Claude-compat fallback. The explicit `opencode.json` `instructions:` array is the sole load path. See `docs/tooling.md` for rationale and E8 empirical findings.
+`.claude/agents/` and `.claude/skills/` are the editable source of truth.
+`.config/opencode/agents/` and `.config/opencode/skills/` are symlinks to these.
+Edit files directly — no generator.
 
 
 
