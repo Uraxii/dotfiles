@@ -20,6 +20,10 @@ A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artif
 ├── ideation.md                              # content-designer output
 ├── design.md                                # architect output
 ├── frontend-handoff.md                      # ui-ux-designer OR build fallback
+├── options-r<N>.md                          # decision-point options (per d<N>; owned by options_source role)
+├── options-r<N>.html                        # optional visual companion (Phase 1+)
+├── awaiting-decision-r<N>.md                # transient async state; removed on resume (orchestrator-owned)
+├── decision-r<N>.md                         # decision verdict + pick (orchestrator-owned)
 ├── claudemd-proposal.md                     # memory-write skill output for CLAUDE.md candidates
 ├── test-paths.txt                           # build-emitted manifest (overrides default test-path globs)
 ├── prebuild-skeptic-code-r<N>-s<K>.md       # per shard, per revision
@@ -65,15 +69,26 @@ pr_urls:
   s1: <url>
 merge_shas:
   s1: <sha|null>
+decision_points:                                      # if brief/plan declared any
+  d1: {after: <role>, options_source: <role>, delivery: sync|async, timeout_days: 7, status: pending|active|resolved|timeout|cancelled}
+paused_on_decision:                                   # present only while waiting on async decision
+  decision_id: d<N>
+  delivery_mode: async
+  issue_url: <url>
+  issue_number: <int>
+  opened_at: <iso8601>
+  timeout_at: <iso8601>
+  next_wake_at: <iso8601>
 ---
 
 ## Stages
 - role: status (rN)
+- decision-elicitation: d<N> (sync|async) → chosen|timeout|cancelled
 - pr_publish: <pending|complete>
 
 ## Summary
 Loops: design <D>, code <C>, ops <O>
-Status: in-progress|complete|halted
+Status: in-progress|paused_on_decision|complete|halted
 PRs: <count> opened
 ```
 

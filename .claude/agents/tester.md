@@ -43,14 +43,16 @@ Skill(skill: "memory-write", args: "role=tester")
 - Required reads:
   - run `pipeline.md`
   - latest verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=code")` + `type=security`
-  - project `CLAUDE.md` (if present)
-  - applicable rules files for language-bounded scope
-  - `docs/adr/` (when present)
   - Multi-shard runs: declared shards from pipeline.md `shards:` map; `base_sha`; all shard branches `pipeline/<artifact-id>/s<K>`.
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
   - build evidence artifacts as needed
   - For smuggling scan: `git diff <base_sha>...pipeline/<artifact-id>/s<K>` union across all declared shards — scope is diff vs `base_sha` only (not arbitrary prior-commit history).
+  - `.claude/rules/<lang>.md` — only when investigating a language-specific test-pattern violation
+  - `docs/adr/<topic>.md` — only when test surfaces conflict with documented decision
+- Doctrine NOT read by tester:
+  - project `CLAUDE.md` — auto-injected by harness
+  - bulk `docs/adr/` — tester runs tests; doesn't audit doctrine
 - Test-path resolution: `Skill(skill: "test-path-resolve", args: "run-dir=<path>")` returns canonical glob set. Reads `test-paths.txt` if build-emitted; else falls back to default.
 
 ## Outputs / Artifacts

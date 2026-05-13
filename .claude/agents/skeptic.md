@@ -48,10 +48,10 @@ Skill(skill: "memory-write", args: "role=skeptic")
   - run `pipeline.md`
   - current artifact(s) for review type
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<review-type>")`
-  - project `CLAUDE.md` (if present)
-  - applicable rules files for language-bounded scope
-  - `docs/adr/` (when present)
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
+  - `.claude/rules/<lang>.md` — only when reviewing code in `<lang>` (`review_type: code` w/ language-specific concerns)
+  - `docs/adr/<topic>.md` — only for `review_type: design` when current artifact touches a prior decision; OR for `review_type: code` when diff conflicts with documented decision
+- Additional review-type-specific conditional reads:
   - `frontend-handoff.md` when UI changed
   - For `review_type: code`:
     - All matching `prebuild-skeptic-code-r<N>-s*.md` and `build-evidence-r<N>-s*.md` for current revision; enumerate declared shards from pipeline.md `shards:` map (K=1 synthesized `s1` included).

@@ -46,12 +46,13 @@ Skill(skill: "memory-write", args: "role=plan")
 - Required reads:
   - `brief.md`
   - run `pipeline.md`
-  - project `CLAUDE.md` (if present) — respect documented conventions
-  - applicable rules files for any language-bounded task
-  - `docs/adr/` (when present) — respect prior architectural decisions
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - `research.md`
   - reused plan references
+  - `docs/adr/<topic>.md` — only when scope explicitly touches a prior architectural decision (don't bulk-read the directory)
+- Doctrine NOT read by plan:
+  - project `CLAUDE.md` — auto-injected by harness; no explicit Read needed
+  - `.claude/rules/<lang>.md` — plan composes tasks, doesn't write code; language rules irrelevant at this stage
 
 ## Outputs / Artifacts
 - Canonical plan: `~/.pipeline/plans/-home-nikki-dotfiles/<artifact-id>.md` w/ Scope, Tasks, Dependencies, Dev parallelism, Effort estimates, Notes, optional `parallel_shards:` block.

@@ -17,6 +17,7 @@ Each stage is a subagent defined in `.claude/agents/<name>.md`. The orchestrator
 | `reviewer` | haiku | Two-axis review: Standards + Spec. Spawned twice in parallel by orchestrator. | `verdict-review-<axis>-r<N>.md` |
 | `security-auditor` | opus | Vulns, threat modeling, dep checks. Design + post-build phases. | `verdict-security-r<N>.md` |
 | `tester` | sonnet | Runs tests + adversarial probe + smuggling scan. Combined-state merge test on K≥2 shards. | `verdict-test-r<N>.md` |
+| `decision-elicitation` | n/a (orchestrator-owned) | Elicits human pick between N options (N ≤ 4). Sync via AskUserQuestion or async via GH issue + 10min poll. See [[Pipeline Decisions]]. | `decision-r<N>.md`, `awaiting-decision-r<N>.md` (transient) |
 | `friction-reviewer` | haiku | Runs last on code-changing runs. Audits doctrine. Invokes [[Pipeline Memory\|dream]] skill on memory mutation. | `friction-report-r<N>.md`, `verdict-friction-r<N>.md` |
 | `progenitor` | haiku | Meta-agent. Creates / modifies / retires agent roles + skills. Cannot self-edit. | `.claude/agents/*.md`, `.claude/skills/**/SKILL.md` |
 
@@ -40,6 +41,7 @@ This is documented in `.claude/agents/progenitor.md` under `## Do` ("Root-agent 
 | `security-auditor` | external input, auth, crypto, network, storage, perm, native code |
 | `tester` | prod code changed + tests or regression needed |
 | `researcher` | unfamiliar lib or surface + no project index coverage |
+| `decision-elicitation` | brief or plan declares `decision_points:` block |
 | `friction-reviewer` | always last on code-changing runs |
 
 Ops short path (no design, no test): `build → skeptic(ops) → friction-reviewer`. Add reviewer or tester if more than one rework cycle.

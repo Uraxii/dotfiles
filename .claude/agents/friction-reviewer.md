@@ -68,11 +68,12 @@ friction-reviewer Phase 4 audit checks:
   - latest `verdict-test-r<N>.md` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=test")`
   - latest gate verdicts (all types)
   - latest `build-evidence-r<N>-s<K>.md` (all shards, K≥1)
-  - project `CLAUDE.md` (if present)
-  - applicable rules files for language-bounded scope
-  - `docs/adr/` (when present)
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
+  - `docs/adr/<topic>.md` — only when auditing ADR-assertion correctness on a specific decision (rare)
+- Doctrine NOT read by friction-reviewer:
+  - project `CLAUDE.md` — auto-injected by harness; doctrine audit reads pipeline ledger + verdicts, not project rules
+  - `.claude/rules/<lang>.md` — friction audits process/doctrine adherence, not code-style lints (reviewer Standards axis owns that)
 
 ## Outputs / Artifacts
 - Write `<repo>/.pipeline/runs/<artifact-id>/friction-report-r<N>.md`.

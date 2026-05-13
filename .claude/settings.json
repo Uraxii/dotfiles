@@ -98,7 +98,7 @@
       }
     }
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "agent": "orchestrator",
   "skipDangerousModePermissionPrompt": true,
   "skipAutoPermissionPrompt": true,

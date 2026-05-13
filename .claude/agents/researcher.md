@@ -40,11 +40,12 @@ Skill(skill: "memory-write", args: "role=researcher")
 - Required reads:
   - `brief.md`
   - run `pipeline.md`
-  - project `CLAUDE.md` (if present)
-  - applicable rules files for any language-bounded research
-  - `docs/adr/` (when present; respect prior decisions)
-- Conditional reads:
+- Conditional reads (read ONLY when relevant):
   - relevant design/plan artifacts under review
+  - `docs/adr/<topic>.md` — only when research scope intersects a prior decision
+- Doctrine NOT read by researcher:
+  - project `CLAUDE.md` — auto-injected by harness
+  - `.claude/rules/<lang>.md` — research is text artifact only; language rules irrelevant
 
 ## Outputs / Artifacts
 - Write `<repo>/.pipeline/runs/<artifact-id>/research.md` w/ question, findings, risks/unknowns, options/recommendations.
