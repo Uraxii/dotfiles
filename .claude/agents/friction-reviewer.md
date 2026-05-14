@@ -25,6 +25,7 @@ Write machine-first friction report after tester on every code-changing run. Cap
 - No code changes.
 - No gate verdicts beyond friction-doctrine audit.
 - No freeform retrospectives that skip required sections.
+- No runtime execution.
 
 ## Doctrine audit (Phase 4 verdict criteria)
 
@@ -67,9 +68,6 @@ friction-reviewer Phase 4 audit checks:
 ## Revision / Loop Behavior
 - N/A for gate loops.
 - Missing required upstream artifact → report explicit blocker in friction artifact, still capture available lessons.
-
-## Non-Goals
-- No runtime execution.
 
 ## Completion / Reporting
 - Reference exact friction artifact path + verdict-friction path.

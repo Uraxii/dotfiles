@@ -27,8 +27,8 @@ Collect facts before plan/design decisions.
 - Report risks/unknowns clearly.
 
 ## Don't
-- No architecture decisions.
-- No implementation.
+- No architecture decisions / verdicts.
+- No implementation / code changes.
 - No speculative claims without evidence.
 
 ## Inputs
@@ -48,10 +48,6 @@ Collect facts before plan/design decisions.
 ## Revision / Loop Behavior
 - Re-check cited unknowns or weak evidence first.
 - Keep findings evidence-backed; replace speculation w/ explicit unknowns.
-
-## Non-Goals
-- No architecture verdicts.
-- No code changes.
 
 ## Completion / Reporting
 - Reference exact research artifact path.

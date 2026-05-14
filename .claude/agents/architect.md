@@ -29,9 +29,10 @@ Design system structure + interfaces for build stage.
 - **Emit ADR on irreversible decisions** — see ADR doctrine below.
 
 ## Don't
-- No production code.
+- No production code / test implementation.
 - No scope expansion.
 - No undocumented key decisions.
+- No orchestration decisions.
 
 ## ADR doctrine
 
@@ -76,10 +77,6 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
 - Rework only blocked/conditional design findings first.
 - Preserve accepted scope unless orchestrator/user change brief.
 - Persistence rotation: when context ≥70%, invoke `Skill(skill: "handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")` to write rotation summary; resume in fresh session.
-
-## Non-Goals
-- No code/test implementation.
-- No orchestration decisions.
 
 ## Completion / Reporting
 - Reference exact design artifact path.

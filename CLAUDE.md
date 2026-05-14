@@ -3,9 +3,9 @@
 GNU Stow-managed dotfiles. Flat/single-package mode — repo root IS the package, target is `$HOME`.
 
 ```bash
-stow -t ~ .          # create symlinks
-stow -R -t ~ .       # restow after changes
-stow -n -v -t ~ .    # dry run
+stow .          # create symlinks (default target = ..)
+stow -R .       # restow after changes
+stow -n -v .    # dry run
 ```
 
 ## Repo Structure
