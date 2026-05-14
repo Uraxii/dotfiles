@@ -120,6 +120,10 @@ Router behavior (informative; not orchestrator's concern):
 - On button click → validates `phash8` matches run-index entry; writes `decision-r<N>.md` +
   deletes `awaiting-decision-r<N>.md`; confirms in thread via `chat_update` + reply.
 - Single router process serves all sessions; idle-exits at 30 min empty binding set.
+- Router enforces strict `<adj>-<mid>-<noun>-<hex6>` artifact-slug format for
+  `<run-id>` in the button payload (regex). Mismatched ids → ephemeral toast
+  naming the rejection reason; no decision file written. Use the
+  `artifact-slug` tool to generate run-ids.
 
 ## Resume (async only)
 

@@ -269,39 +269,68 @@ def _gc_run_index() -> int:
     return pruned
 
 
-def _resolve_route_dir_from_value(value: str) -> tuple[Path, str] | None:
-    """Parse <phash8>|<run-id>|<qd-id>|<choice>, validate, return (run_dir, qd_id)."""
+def _resolve_route_dir_from_value(
+    value: str,
+) -> tuple[Path, str] | tuple[None, str]:
+    """Parse <phash8>|<run-id>|<qd-id>|<choice>, validate, return (run_dir, qd_id).
+
+    On failure returns ``(None, reason)`` where ``reason`` is a short
+    human-readable string the caller can surface to the clicking user via
+    ``chat_postEphemeral``. Reasons:
+
+    - ``malformed``      — value did not split into 4 fields
+    - ``run_id_format``  — run-id didn't match artifact-slug regex
+    - ``qd_id_format``   — qd-id didn't match q/d-prefix regex
+    - ``index_missing``  — no run-index entry for this run-id
+    - ``index_unreadable`` — run-index entry present but unreadable
+    - ``project_mismatch`` — phash8 didn't match the run-index entry
+    - ``run_dir_gone``   — run-dir recorded in the index no longer exists
+    """
     parts = value.split("|", 3)
     if len(parts) != 4:
         log.warning("malformed button value: %r", value)
-        return None
+        return (None, "malformed")
     phash8, run_id, qd_id, _ = parts
     if not _RUN_ID_RE.match(run_id):
         log.warning("run_id failed validation: %r", run_id)
-        return None
+        return (None, "run_id_format")
     if not _QD_ID_RE.match(qd_id):
         log.warning("qd_id failed validation: %r", qd_id)
-        return None
+        return (None, "qd_id_format")
     entry_path = RUN_INDEX_DIR / f"{run_id}.json"
     if not entry_path.is_file():
         log.warning("run-index missing for run_id=%s", run_id)
-        return None
+        return (None, "index_missing")
     try:
         data = json.loads(entry_path.read_text())
     except (OSError, json.JSONDecodeError) as exc:
         log.warning("run-index read error for %s: %s", run_id, exc)
-        return None
+        return (None, "index_unreadable")
     if data.get("project_path_hash") != phash8:
         log.warning(
             "project_path_hash mismatch for run_id=%s: button=%s index=%s",
             run_id, phash8, data.get("project_path_hash"),
         )
-        return None
+        return (None, "project_mismatch")
     run_dir = Path(data["run_dir"])
     if not run_dir.is_dir():
         log.warning("run_dir gone for run_id=%s: %s", run_id, run_dir)
-        return None
+        return (None, "run_dir_gone")
     return run_dir, qd_id
+
+
+_RESOLVE_REASON_TEXT: dict[str, str] = {
+    "malformed": "Button payload malformed; reposting may help.",
+    "run_id_format": (
+        "Run id rejected by router (expected artifact-slug format "
+        "`<adj>-<mid>-<noun>-<hex6>`). Regenerate the question."
+    ),
+    "qd_id_format": "Question/decision id rejected by router.",
+    "index_missing": "This click is stale (router has no record of the run).",
+    "index_unreadable": "Router run-index entry is corrupt.",
+    "project_mismatch": "Cross-project click rejected by router.",
+    "run_dir_gone": "Run directory was deleted; click cannot resolve.",
+}
 
 
 def _load_slack_context(run_dir: Path) -> SlackContext | None:
@@ -676,19 +705,30 @@ class RouterApp:
         parts = value.split("|", 3)
         if len(parts) != 4:
             log.warning("malformed button value: %r", value)
-            return
-        _phash8, run_id, qd_id, choice = parts
-
-        resolved = _resolve_route_dir_from_value(value)
-        if resolved is None:
             channel_id = (body.get("channel") or {}).get("id", "")
             client.chat_postEphemeral(
                 channel=channel_id,
                 user=user_id,
-                text=f"Stale or cross-project click: run {run_id}",
+                text=_RESOLVE_REASON_TEXT["malformed"],
             )
             return
-        run_dir, qd_id = resolved
+        _phash8, run_id, qd_id, choice = parts
+
+        resolved = _resolve_route_dir_from_value(value)
+        first, second = resolved
+        if first is None:
+            reason: str = second  # type: ignore[assignment]  # narrowed by first is None
+            channel_id = (body.get("channel") or {}).get("id", "")
+            client.chat_postEphemeral(
+                channel=channel_id,
+                user=user_id,
+                text=_RESOLVE_REASON_TEXT.get(
+                    reason, f"Click could not be routed ({reason}).",
+                ),
+            )
+            return
+        run_dir = first
+        qd_id = second
 
         if kind == "decision":
             _write_decision_file(run_dir, qd_id, choice, user_id)

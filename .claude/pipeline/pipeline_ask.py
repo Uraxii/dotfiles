@@ -24,11 +24,17 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# Strict artifact-slug format: `<adj>-<mid>-<noun>-<hex6>`.
+# Must match `_RUN_ID_RE` in slack_router.py — router rejects button clicks
+# carrying any other shape, so the ask side fails fast w/ a clear error.
+_RUN_ID_RE = re.compile(r"^[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6}$")
 
 _PIPELINE_DIR = Path(__file__).parent
 if str(_PIPELINE_DIR) not in sys.path:
@@ -286,6 +292,14 @@ def main() -> int:
     project_path = Path(args.project).expanduser().resolve()
     if not project_path.is_dir():
         sys.stderr.write(f"project path not a directory: {project_path}\n")
+        return 4
+    if not _RUN_ID_RE.match(args.run):
+        sys.stderr.write(
+            f"run id {args.run!r} does not match artifact-slug format "
+            "(<adj>-<mid>-<noun>-<hex6>); the router will reject button "
+            "clicks carrying this id. Generate one with:\n"
+            "  python3 ~/.config/opencode/tools/artifact-slug.py\n"
+        )
         return 4
     run_dir = project_path / ".pipeline" / "runs" / args.run
     if not run_dir.is_dir():

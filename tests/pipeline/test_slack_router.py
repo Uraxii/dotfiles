@@ -283,6 +283,11 @@ class TestButtonPayloadParsing(unittest.TestCase):
 
     Because that function also does filesystem lookups, we patch the fs calls
     and test only the parse + validate path.
+
+    The function returns ``(run_dir, qd_id)`` on success or ``(None, reason)``
+    on failure where ``reason`` is one of: malformed, run_id_format,
+    qd_id_format, index_missing, index_unreadable, project_mismatch,
+    run_dir_gone.
     """
 
     def _call(self, value: str) -> Any:
@@ -292,53 +297,56 @@ class TestButtonPayloadParsing(unittest.TestCase):
         ):
             return slack_router._resolve_route_dir_from_value(value)
 
+    def _assert_failed(self, result: Any, expected_reason: str) -> None:
+        """Failure tuple has first=None and second=<reason>."""
+        first, second = result
+        self.assertIsNone(first)
+        self.assertEqual(second, expected_reason)
+
     def test_valid_payload_passes_regex_gates(self) -> None:
-        """Well-formed payload passes regex checks; returns None only on missing index file."""
+        """Well-formed payload passes regex gates; index file missing → index_missing."""
         value = "abcd1234|clever-finding-canyon-113225|q1|A"
-        result = self._call(value)
-        # is_file returns False → no index entry → None (but regex gates passed)
-        self.assertIsNone(result)
+        self._assert_failed(self._call(value), "index_missing")
 
     def test_wrong_delimiter_count_two_pipes(self) -> None:
-        """Two pipes (3 fields) → rejected."""
-        value = "abcd1234|run-id-here|q1"
-        result = self._call(value)
-        self.assertIsNone(result)
+        """Two pipes (3 fields) → malformed."""
+        self._assert_failed(self._call("abcd1234|run-id-here|q1"), "malformed")
 
     def test_wrong_delimiter_count_zero_pipes(self) -> None:
-        self.assertIsNone(self._call("nodelvimiters"))
+        self._assert_failed(self._call("nodelvimiters"), "malformed")
 
     def test_extra_pipe_becomes_choice_field(self) -> None:
         """split(|, 3) means 5th | stays in choice field — 4 parts still valid split."""
         value = "abcd1234|clever-finding-canyon-113225|q1|A|extra"
-        # split("|", 3) yields 4 parts; choice = "A|extra". regex gates may still pass.
-        result = self._call(value)
-        # run_id regex PASS, qd_id regex PASS, is_file False → None
-        self.assertIsNone(result)
+        # run_id regex PASS, qd_id regex PASS, is_file False → index_missing.
+        self._assert_failed(self._call(value), "index_missing")
 
     def test_invalid_run_id_path_traversal_rejected(self) -> None:
         """Path-traversal run_id rejected by regex."""
-        value = "abcd1234|../../etc/passwd|q1|A"
-        self.assertIsNone(self._call(value))
+        self._assert_failed(
+            self._call("abcd1234|../../etc/passwd|q1|A"), "run_id_format"
+        )
 
     def test_invalid_qd_id_rejected(self) -> None:
         """Bad qd_id (Q1 uppercase) rejected."""
-        value = "abcd1234|clever-finding-canyon-113225|Q1|A"
-        self.assertIsNone(self._call(value))
+        self._assert_failed(
+            self._call("abcd1234|clever-finding-canyon-113225|Q1|A"), "qd_id_format"
+        )
 
     def test_empty_run_id_rejected(self) -> None:
-        value = "abcd1234||q1|A"
-        self.assertIsNone(self._call(value))
+        self._assert_failed(self._call("abcd1234||q1|A"), "run_id_format")
 
     def test_empty_qd_id_rejected(self) -> None:
-        value = "abcd1234|clever-finding-canyon-113225||A"
-        self.assertIsNone(self._call(value))
+        self._assert_failed(
+            self._call("abcd1234|clever-finding-canyon-113225||A"), "qd_id_format"
+        )
 
     def test_empty_phash_accepted_by_split_then_fails_hash_check(self) -> None:
-        """Empty phash field splits OK; phash mismatch check catches it later."""
-        value = "|clever-finding-canyon-113225|q1|A"
-        # Will fail at phash mismatch step IF index file existed; here is_file=False → None
-        self.assertIsNone(self._call(value))
+        """Empty phash field splits OK; phash mismatch check catches it later (here: index missing first)."""
+        # is_file False → index_missing wins over phash check.
+        self._assert_failed(
+            self._call("|clever-finding-canyon-113225|q1|A"), "index_missing"
+        )
 
     def test_full_valid_payload_with_index_returns_run_dir(self) -> None:
         """With a live index entry, valid payload returns (run_dir, qd_id)."""
@@ -363,10 +371,8 @@ class TestButtonPayloadParsing(unittest.TestCase):
 
             value = f"{phash}|clever-finding-canyon-113225|q1|A"
             with patch.object(slack_router, "RUN_INDEX_DIR", index_dir):
-                result = slack_router._resolve_route_dir_from_value(value)
+                got_run_dir, got_qd_id = slack_router._resolve_route_dir_from_value(value)
 
-            self.assertIsNotNone(result)
-            got_run_dir, got_qd_id = result  # type: ignore[misc]
             self.assertEqual(got_run_dir, run_dir)
             self.assertEqual(got_qd_id, "q1")
 
