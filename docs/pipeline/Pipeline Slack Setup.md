@@ -93,7 +93,7 @@ do not pick up new scopes until reinstall.
 
 ### 5. Reinstall (if Slack prompts)
 
-Whenever scopes change, Slack will prompt **Reinstall to Workspace**. Do it.
+Whenever **scopes** OR **Event Subscriptions** change, Slack will prompt **Reinstall to Workspace**. Do it. Subscription changes are dormant until reinstall — the app stays connected, posts succeed, buttons work, but `message.channels` / `message.groups` events are never delivered. Symptom: router log shows Bolt connected + `hello` only, zero `event_callback`s after thread replies. Fix: reinstall to workspace from the app config page.
 
 ### 6. Save tokens locally
 
@@ -243,6 +243,7 @@ To stop one: `kill $(cat <run-dir>/slack-listener.pid)`. The listener removes it
 | Long Bash command blocked by hook | `cap_bash_timeout.py` allowlists `pipeline_ask.py` only. Other long-running commands need entry added to `LONG_TIMEOUT_ALLOWLIST` in that hook. |
 | HTML attachment shows raw source instead of PDF | uvx/weasyprint missing or system pango libs absent. `setup.sh` warns; install distro pango pkg + retry. |
 | Buttons appear but click does nothing | Interactivity toggle off, or Socket Mode disabled. Re-check Slack app config. |
+| Bind posts root message but thread replies never reach router | Event Subscriptions changed without reinstall, OR app not reinstalled after first enabling events. Router log shows `hello` only, no `event_callback`. Fix: api.slack.com/apps → app → top of page → **Reinstall to Workspace**. Restart router. |
 | Listener exits immediately | Run in foreground: `uv run --script ~/.claude/pipeline/slack_listener.py <project> <run-id>` to see the traceback. |
 | `uv` cannot resolve deps | First run populates `~/.cache/uv`; needs network. After that, offline-capable. |
 | Listener eats CPU | inotify storm on shared FS. Move `.pipeline/runs/` off network mount. |
