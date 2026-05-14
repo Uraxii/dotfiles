@@ -31,7 +31,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 - Multi-shard runs: per-shard test execution + combined-state test (see Combined-State Step below).
 
 ## Don't
-- No production code changes.
+- No production code changes / fixes.
 - No masking failures.
 - No smuggling scan against arbitrary prior-commit history — scope is diff vs `base_sha` only.
 
@@ -77,9 +77,6 @@ After per-shard tests pass:
 - Treat `Conditional` same as blocked for routing.
 - If latest code/security verdict is `Blocked` or `Conditional`, stop and report unresolved gate.
 - If target not runnable, record blocker explicitly; runtime gate not waived silently.
-
-## Non-Goals
-- No code fixes.
 
 ## Smuggling Scan
 

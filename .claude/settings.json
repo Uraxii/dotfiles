@@ -115,7 +115,7 @@
       }
     }
   },
-  "effortLevel": "low",
+  "effortLevel": "xhigh",
   "agent": "orchestrator",
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:manjaro",

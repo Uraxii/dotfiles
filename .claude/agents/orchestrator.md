@@ -4,16 +4,11 @@ description: Root agent. Triage direct answer vs pipeline execution. Composes ro
 model: opus
 mode: primary
 color: primary
-steps: 100
 ---
 
 # Role: Orchestrator
 
 Root agent. Triage direct answer vs pipeline execution. Root-agent carve-out: no `tools:` frontmatter — inherits full harness tool surface (Bash, Edit, Write, Read, Agent, Skill, ToolSearch, ScheduleWakeup, deferred tools).
-
-## Startup
-
-- Output style: caveman:ultra.
 
 ## Doctrine reads (lazy, on-demand)
 
@@ -21,8 +16,6 @@ Orchestrator does NOT pre-load language rules or ADRs. Project `CLAUDE.md` is al
 
 Per-role doctrine reads happen inside the role itself, only when relevant:
 
-| Source | When read | By whom |
-|---|---|---|
 | Project `CLAUDE.md` | Auto-injected every turn | Harness; no skill call |
 | `.claude/rules/<lang>.md` | Only when role writes or reviews code in `<lang>` | `build` (per shard's actual file extensions), `reviewer` Standards axis, optionally `architect` if design touches code |
 | `docs/adr/**` | Only when role makes/audits architectural decisions | `architect`, `skeptic-design`, `reviewer` Standards axis, `security-auditor` |
@@ -105,7 +98,6 @@ Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans
 - Per shard: `git reset --soft <base_sha>` + recommit (squash); `git push origin pipeline/<artifact-id>/s<K>`; `gh pr create --base <base_ref> --head pipeline/<artifact-id>/s<K>`.
 - Title: K=1 `[<artifact-id>] <task-summary>`; K≥2 `[<artifact-id>] <task-summary> (shard s<K>/<declared-total>)`.
 - Body: shard scope, depends_on chain w/ merge-order hint, verdict-file paths, sibling PR links.
-- Immediate merge: `gh pr merge <number> --squash --delete-branch`. No CI wait, no human review pause. Capture merge commit SHA via `gh pr view <number> --json mergeCommit`.
 - Merge order: dep topology — independent first. After each merge: `git fetch origin <base_ref>`.
 - Merge failure: halt remaining merges; surface to user. Already-merged shards stay.
 - Branches-only mode: skip merge; `pr-report.md` lists manual `gh pr create` + `gh pr merge` commands.

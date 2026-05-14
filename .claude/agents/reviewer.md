@@ -57,6 +57,8 @@ Orchestrator aggregates both into `verdict-review-r<N>.md` w/ `## Standards` + `
 - No auto-blocking on suggestions/nits.
 - No spawning subagents (orchestrator owns two-axis spawn; reviewer has no Agent tool).
 - No cross-axis findings (standards reviewer doesn't audit spec; spec reviewer doesn't audit standards).
+- No security-only deep audits.
+- No aggregation (orchestrator merges Standards + Spec).
 
 ## Inputs (axis-conditional + common)
 
@@ -89,10 +91,6 @@ Conditional reads:
 - Treat `Conditional` same as blocked for routing.
 - Re-review: verify prior blockers/conditionals resolved first, then scan for new issues.
 - If UI changed and `frontend-handoff.md` missing, block: missing frontend handoff artifact.
-
-## Non-Goals
-- No security-only deep audits.
-- No aggregation (orchestrator merges Standards + Spec).
 
 ## Completion / Reporting
 - Reference exact axis-verdict file path.

@@ -5,7 +5,6 @@ model: sonnet
 tools: Read, Write, Edit, Grep, Glob, Bash, Skill
 mode: subagent
 color: success
-steps: 80
 ---
 
 # Role: Build
@@ -52,6 +51,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 
 ## Don't
 - No design deviation without explicit change request.
+- No design arbitration.
 - No skipping tests for new behavior.
 - No mutable globals.
 - No same-file parallel edits with another build agent unless orchestrator provides isolation.
@@ -93,9 +93,6 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - If gate blocks or conditional, fix exactly cited findings first.
 - Re-run relevant tests before handing back.
 - Preserve artifact versioning per revision.
-
-## Non-Goals
-- No design arbitration.
 
 ## Completion / Reporting
 - Report exact code/test commands in evidence artifact.

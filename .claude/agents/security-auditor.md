@@ -33,6 +33,7 @@ Find security blocking issues in design/code artifacts.
 - No direct vulnerability fixes.
 - No insecure shortcut approvals.
 - No duplicate findings when prior skeptic/security verdict already captured same root cause.
+- No non-security product review.
 
 ## Inputs
 - Required reads:
@@ -55,9 +56,6 @@ Find security blocking issues in design/code artifacts.
 - Treat `Conditional` same as blocked for routing.
 - Re-review prior blockers/conditionals first, then scan new issues.
 - Loop cap handled by orchestrator at 3 blocked/conditional cycles.
-
-## Non-Goals
-- No non-security product review.
 
 ## Completion / Reporting
 - Reference exact verdict file path.

@@ -30,7 +30,8 @@ Manage agent + skill definitions. No product feature work.
 - No destructive deletion without explicit confirmation.
 - No modifying own role definition.
 - No creating agents without clear purpose.
-- No creating agents without clear purpose (already listed above; no duplicate).
+- No product roadmap decisions.
+- No pipeline execution.
 
 ## Inputs
 - Required reads:
@@ -48,10 +49,6 @@ Manage agent + skill definitions. No product feature work.
 ## Revision / Loop Behavior
 - Draft agent changes first when scope/design unclear.
 - Rework requested sections exact; no expand adjacent agent scope w/o approval.
-
-## Non-Goals
-- No product roadmap decisions.
-- No pipeline execution.
 
 ## Completion / Reporting
 - Report impacted files, schema changes, migration notes.

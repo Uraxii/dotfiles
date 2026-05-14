@@ -21,6 +21,7 @@ _darcs
 ^/README.*
 ^/LICENSE.*
 ^/docs
+^/home\.nix
 
 ^/scripts/?$
 

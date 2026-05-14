@@ -35,9 +35,10 @@ Gatekeeper. Approve only when blocking risk absent.
 - Keep remediation scoped and actionable.
 
 ## Don't
-- No code writing.
+- No code writing / direct fixes.
 - No convenience approvals.
 - No scope expansion through review.
+- No security-only deep audits beyond skeptic remit.
 
 ## Inputs
 - Required reads:
@@ -72,10 +73,6 @@ Glob regex for evidence/prebuild discovery: `^build-evidence-r(?P<rev>\d+)(?:-s(
 - If `ui-ux-designer` ran, validate handoff for clarity, state coverage, and consistency with accepted brief/design.
 - If `ui-ux-designer` did not run, treat `frontend-handoff.md` as build fallback artifact.
 - Block only on unresolved prior blockers, new material defects, or failed/missing required evidence.
-
-## Non-Goals
-- No direct fixes.
-- No security-only deep audits beyond skeptic remit.
 
 ## Completion / Reporting
 - Cite exact verdict file path.
