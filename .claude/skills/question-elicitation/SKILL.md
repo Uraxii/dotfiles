@@ -99,15 +99,22 @@ On exit 3 (`TIMEOUT q<N>`): treat as cancelled; do not retry. Answer file has `v
 
 ## How it works
 
-1. CLI validates active session binding. Exits 4 if absent.
-2. Writes `question-r<N>.md` + initial `.slack-context.json` to run dir.
-3. Calls `pipeline_notify.py --kind question --run-dir <path> --qid <qid>` as subprocess.
+1. CLI validates `--run` matches strict artifact-slug format
+   `<adj>-<mid>-<noun>-<hex6>` (e.g. `clever-finding-canyon-113225`).
+   Router rejects button clicks carrying any other shape, so ask exits 4
+   with a clear error if the id is malformed. Generate one with
+   `python3 ~/.config/opencode/tools/artifact-slug.py`.
+2. CLI validates active session binding. Exits 4 if absent.
+3. Writes `question-r<N>.md` + initial `.slack-context.json` to run dir.
+4. Calls `pipeline_notify.py --kind question --run-dir <path> --qid <qid>` as subprocess.
    - notify posts button-block message into bound session thread.
    - Button `value` format: `<phash8>|<run-id>|<qid>|<choice>`.
-4. Router daemon (`slack_router.py`) handles `question_pick_<A..D>` button clicks.
+5. Router daemon (`slack_router.py`) handles `question_pick_<A..D>` button clicks.
    - Router writes `answer-r<N>.md` in run dir.
-5. CLI polls for `answer-r<N>.md` existence (1s interval).
-6. On file found: reads `chosen_key`, prints to stdout, exits 0.
+   - Failed validation (bad run-id format, stale index, cross-project)
+     posts an ephemeral toast in the channel naming the specific reason.
+6. CLI polls for `answer-r<N>.md` existence (1s interval).
+7. On file found: reads `chosen_key`, prints to stdout, exits 0.
 
 CLI does not spawn any Slack daemon. All Slack I/O goes through the host-bound router.
 
