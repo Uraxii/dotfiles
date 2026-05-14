@@ -1,9 +1,7 @@
 """Shared env-file loader + atomic write helper for pipeline Slack scripts.
 
-Extracted from slack_listener.py so session_bind.py, session_inbox.py,
-pipeline_notify.py, and the listener all share one canonical implementation.
-
-Stdlib-only. No third-party deps.
+Shared by session_bind.py, pipeline_notify.py, slack_router.py, and
+pipeline_ask.py. Stdlib-only. No third-party deps.
 """
 
 from __future__ import annotations

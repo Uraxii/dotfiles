@@ -1,7 +1,7 @@
 """session_slack — stdlib-only session binding helper.
 
 Reads ~/.claude/sessions/<sid>/slack.json and exposes the public surface
-used by pipeline_ask.py, slack_listener.py, and the orchestrator intake step.
+used by pipeline_ask.py, slack_router.py, and the orchestrator intake step.
 
 No slack-bolt, no PyYAML, no requests. Pure stdlib.
 
@@ -11,7 +11,6 @@ Public surface:
     inbox_dir(session_id)                -> Path
     is_bound(session_id)                 -> bool
     all_active_bindings()                -> dict[str, dict]
-    spawn_listener(project_path, run_id) -> subprocess.Popen
 """
 
 from __future__ import annotations
@@ -19,8 +18,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -30,13 +27,11 @@ __all__ = [
     "inbox_dir",
     "is_bound",
     "all_active_bindings",
-    "spawn_listener",
 ]
 
 log = logging.getLogger(__name__)
 
 SESSIONS_ROOT = Path("~/.claude/sessions").expanduser()
-LISTENER_SCRIPT = Path("~/.claude/pipeline/slack_listener.py").expanduser()
 SCHEMA_VERSION_SUPPORTED = 1
 
 
@@ -127,7 +122,7 @@ def is_bound(session_id: str | None = None) -> bool:
 def all_active_bindings() -> dict[str, dict[str, Any]]:
     """Glob ~/.claude/sessions/*/slack.json; return {sid: parsed_json} for all active.
 
-    Used by listener and inbox-daemon to build the thread_ts -> sid index.
+    Used by slack_router.py to build the thread_ts -> sid routing index.
     """
     result: dict[str, dict[str, Any]] = {}
     if not SESSIONS_ROOT.is_dir():
@@ -141,45 +136,3 @@ def all_active_bindings() -> dict[str, dict[str, Any]]:
         sid = data.get("session_id") or json_path.parent.name
         result[sid] = data
     return result
-
-
-def spawn_listener(project_path: Path, run_id: str) -> subprocess.Popen:  # type: ignore[type-arg]
-    """Spawn the per-run Slack listener as a detached subprocess.
-
-    Constructs the ``--session-thread CHANNEL:TS`` flag when a binding is
-    active for the current session. Stdlib-only beyond subprocess.Popen.
-
-    Used by pipeline_ask.py and the decision-elicitation async branch so both
-    callers stay in lockstep on flag construction.
-    """
-    if not LISTENER_SCRIPT.is_file():
-        raise FileNotFoundError(f"listener script missing: {LISTENER_SCRIPT}")
-
-    run_dir = project_path / ".pipeline" / "runs" / run_id
-    log_path = run_dir / "slack-listener.log"
-
-    cmd = ["uv", "run", "--script", str(LISTENER_SCRIPT), str(project_path), run_id]
-
-    binding = resolve_session_binding()
-    if binding is not None:
-        channel, thread_ts = binding
-        cmd += ["--session-thread", f"{channel}:{thread_ts}"]
-        log.debug("spawn_listener: session-bound channel=%s thread_ts=%s", channel, thread_ts)
-    else:
-        log.debug("spawn_listener: no active binding; legacy per-run thread")
-
-    try:
-        log_fh = open(log_path, "a")  # noqa: SIM115 — lifetime must outlast call
-    except OSError as exc:
-        raise OSError(f"cannot open listener log {log_path}: {exc}") from exc
-
-    proc = subprocess.Popen(
-        cmd,
-        start_new_session=True,
-        stdin=subprocess.DEVNULL,
-        stdout=log_fh,
-        stderr=subprocess.STDOUT,
-        close_fds=True,
-    )
-    log.info("spawned listener pid=%d run=%s", proc.pid, run_id)
-    return proc
