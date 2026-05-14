@@ -27,14 +27,18 @@ oauth_config:
     bot:
       - chat:write          # post messages
       - chat:write.public   # post to public channels w/o being member
-      - channels:history    # read public-channel msgs (Phase 2: free-text replies)
-      - groups:history      # read private-channel msgs (Phase 2: free-text replies)
+      - channels:history    # read public-channel msgs (session-bound inbox capture)
+      - groups:history      # read private-channel msgs (session-bound inbox capture)
       - files:read          # read file metadata (permalink etc) after upload
       - files:write         # upload question attachments to thread
 
 settings:
   interactivity:
     is_enabled: true
+  event_subscriptions:
+    bot_events:
+      - message.channels     # required for session-bound inbox capture (public channels)
+      - message.groups       # required for session-bound inbox capture (private channels)
   org_deploy_enabled: false
   socket_mode_enabled: true
   is_hosted: false

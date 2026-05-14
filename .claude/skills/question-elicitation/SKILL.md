@@ -113,13 +113,30 @@ On exit 3 (`TIMEOUT q<N>`): treat as cancelled; do not retry. Answer file has `v
 
 Missing preconditions → CLI exits 4 OR listener fails to spawn → no answer ever lands → hard-timeout → exit 3. Caller should validate setup before first use per run.
 
+## Session binding (r1)
+
+`pipeline_ask.py` uses `session_slack.spawn_listener()` to spawn the listener.
+When `CLAUDE_CODE_SESSION_ID` is set and a session binding is active, the
+listener is automatically started with `--session-thread CHANNEL:TS`. The
+question post lands in the bound session thread rather than a new per-run
+thread; the message is prefixed with `[<run-id>]`.
+
+Unrelated inbox messages arriving in the session thread during the wait do
+**not** trigger resumption. Resumption is keyed on `answer-r<N>.md` existence
+only; the inbox is a separate write-only sink.
+
+No code change required in the CLI caller — `pipeline_ask.py` calls the helper
+and the helper constructs the correct spawn command transparently.
+
 ## Guardrails
 
 - 2-4 options. CLI rejects outside range.
 - Keys typically A/B/C/D (listener registers `question_pick_<A..D>` action handlers).
 - One `--header` ≤12 chars (Slack truncates beyond).
-- Listener idle-exits 30s after all questions answered AND all decisions resolved.
-- Concurrent questions in same run: listener handles fine; multiple `question-r<N>.md` files coexist; each gets own Slack message.
+- Listener idle-exits after `SLACK_LISTENER_IDLE_TIMEOUT` seconds (default 86400 = 24h)
+  once all questions answered and all decisions resolved.
+- Concurrent questions in same run: listener handles fine; multiple `question-r<N>.md`
+  files coexist; each gets own Slack message.
 
 ## Sync fallback
 
@@ -129,3 +146,4 @@ Not supported in this CLI. Sync path = orchestrator uses `AskUserQuestion` tool 
 
 - `decision-elicitation` — pre-declared orchestrator-owned variant w/ artifact pause/resume
 - `~/.claude/pipeline/slack_listener.py` — shared listener daemon (also serves decisions)
+- `~/.claude/pipeline/session_slack.py` — session binding helper (stdlib-only)
