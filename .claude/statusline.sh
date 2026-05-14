@@ -26,6 +26,11 @@ make_bar() {
 }
 
 warn=$'\033[33m'   # yellow
+dim=$'\033[2;36m'  # dim cyan
+reset=$'\033[0m'
+
+# --- (0) user@host ---
+user_part="${dim}$(whoami)@$(hostname -s)${reset}"
 
 # --- (1) 5h usage limit ---
 five_pct=$(jq -r '.rate_limits.five_hour.used_percentage // empty' <<<"$input")
@@ -75,7 +80,6 @@ if [ -n "$in_tok" ] && [ -n "$out_tok" ] && [ -n "$dur_ms" ]; then
       [ "$minutes_left" -lt 60 ] && tpm_color="$warn"
     fi
     if [ -n "$tpm_color" ]; then
-      reset=$'\033[0m'
       tpm_part="${tpm_color}⚡${tpm} (⛃/min)${reset}"
     else
       tpm_part="${tpm} (⛃/min)"
@@ -83,44 +87,64 @@ if [ -n "$in_tok" ] && [ -n "$out_tok" ] && [ -n "$dur_ms" ]; then
   fi
 fi
 
-# --- (5) Battery ---
+# --- (5) Battery (waybar nerd-font icons) ---
 bat_part=""
 bat_dir="/sys/class/power_supply/BAT0"
 if [ -r "$bat_dir/capacity" ]; then
   bat_cap=$(cat "$bat_dir/capacity" 2>/dev/null)
   bat_status=$(cat "$bat_dir/status" 2>/dev/null)
   if [ -n "$bat_cap" ]; then
+    # Discharging icon set: index = floor(capacity/10), clamped 0..9
+    # Order matches waybar config "format-icons": 10%..100%
+    bat_icons=(󰁺 󰁻 󰁼 󰁽 󰁾 󰁿 󰂀 󰂁 󰂂 󰁹)
     case "$bat_status" in
-      Charging|Full) icon="⚡" ;;
-      *) icon="🔋" ;;
+      Charging) icon="󰂄" ;;
+      Full)     icon="󰁹" ;;
+      *)
+        idx=$((bat_cap / 10))
+        [ "$idx" -lt 0 ] && idx=0
+        [ "$idx" -gt 9 ] && idx=9
+        icon="${bat_icons[$idx]}"
+        ;;
     esac
     bat_color=""
     if [ "$bat_cap" -le 20 ] && [ "$bat_status" != "Charging" ] && [ "$bat_status" != "Full" ]; then
       bat_color="$warn"
     fi
     if [ -n "$bat_color" ]; then
-      reset=$'\033[0m'
-      bat_part="${bat_color}${icon}${bat_cap}%${reset}"
+      bat_part="${bat_color}${icon} ${bat_cap}%${reset}"
     else
-      bat_part="${icon}${bat_cap}%"
+      bat_part="${icon} ${bat_cap}%"
     fi
   fi
 fi
 
-# --- Assemble ---
-out=""
-[ -n "$limit_parts" ] && out="$limit_parts"
-if [ -n "$ctx_part" ]; then
-  [ -n "$out" ] && out="${out}  "
-  out="${out}${ctx_part}"
+# --- Assemble: 2 lines ---
+# Line 1: identity (user@host) + battery + token velocity
+# Line 2: usage bars (5h, 7d, ctx)
+
+line1=""
+[ -n "$user_part" ] && line1="$user_part"
+if [ -n "$bat_part" ]; then
+  [ -n "$line1" ] && line1="${line1}  "
+  line1="${line1}${bat_part}"
 fi
 if [ -n "$tpm_part" ]; then
-  [ -n "$out" ] && out="${out}  "
-  out="${out}${tpm_part}"
-fi
-if [ -n "$bat_part" ]; then
-  [ -n "$out" ] && out="${out}  "
-  out="${out}${bat_part}"
+  [ -n "$line1" ] && line1="${line1}  "
+  line1="${line1}${tpm_part}"
 fi
 
-printf '%s' "$out"
+line2=""
+[ -n "$limit_parts" ] && line2="$limit_parts"
+if [ -n "$ctx_part" ]; then
+  [ -n "$line2" ] && line2="${line2}  "
+  line2="${line2}${ctx_part}"
+fi
+
+if [ -n "$line1" ] && [ -n "$line2" ]; then
+  printf '%s\n%s' "$line1" "$line2"
+elif [ -n "$line1" ]; then
+  printf '%s' "$line1"
+else
+  printf '%s' "$line2"
+fi
