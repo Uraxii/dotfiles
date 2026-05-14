@@ -68,6 +68,17 @@ SCHEMA_VERSION = 1
 
 _ROUTER_SCRIPT_NAME = "slack_router.py"
 
+# Scopes required for end-to-end session-bound threading:
+# - chat:write           post root + thread replies
+# - channels:history     receive message events in public channels
+# - groups:history       receive message events in private channels
+# A missing scope means Slack will not deliver `message.channels` /
+# `message.groups` events even though Bolt connects. Symptom = posts
+# work, replies never reach the router. Fix is reinstall-to-workspace.
+_REQUIRED_BOT_SCOPES: frozenset[str] = frozenset(
+    {"chat:write", "channels:history", "groups:history"}
+)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -255,6 +266,40 @@ def _ensure_router_alive() -> int | None:
         return None
 
 
+def _preflight_bot_scopes(bot_token: str) -> tuple[bool, str]:
+    """Verify bot token has all _REQUIRED_BOT_SCOPES.
+
+    Returns (ok, message). On ok=False, message is a human-readable
+    error describing the missing scopes and the reinstall fix.
+
+    Uses slack_sdk's SlackResponse, which exposes the
+    `x-oauth-scopes` header carrying the granted scope list.
+    """
+    try:
+        app = App(token=bot_token)
+        resp = app.client.auth_test()
+    except Exception as exc:  # noqa: BLE001 — surface network/auth errors verbatim
+        return False, f"auth.test failed: {exc}"
+
+    headers = getattr(resp, "headers", {}) or {}
+    raw = headers.get("x-oauth-scopes") or headers.get("X-OAuth-Scopes") or ""
+    granted: set[str] = {s.strip() for s in raw.split(",") if s.strip()}
+    missing = sorted(_REQUIRED_BOT_SCOPES - granted)
+    if not missing:
+        return True, ""
+
+    return False, (
+        f"Slack bot token is missing required scopes: {', '.join(missing)}.\n"
+        f"Granted scopes: {sorted(granted) or '<none>'}\n"
+        "Fix: api.slack.com/apps → your app → OAuth & Permissions → add the "
+        "missing scope(s) → click *Reinstall to Workspace* at the top of the "
+        "page → paste the refreshed xoxb- token into "
+        f"{default_env_path()}.\n"
+        "Without these scopes Slack will not deliver message events to the "
+        "router even though posts succeed."
+    )
+
+
 def _reap_legacy_listeners() -> None:
     """SIGTERM any surviving slack_listener.py processes (one-shot migration)."""
     try:
@@ -330,6 +375,11 @@ def cmd_activate(args: argparse.Namespace) -> int:
             f"Set SLACK_CHANNEL in {default_env_path()} or "
             "[slack].channel in <project>/.pipeline/pipeline.toml\n"
         )
+        return 1
+
+    ok, msg = _preflight_bot_scopes(bot_token)
+    if not ok:
+        sys.stderr.write(msg + "\n")
         return 1
 
     session_d = _session_dir(sid)
