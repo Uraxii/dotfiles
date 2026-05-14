@@ -5,7 +5,7 @@
 #
 #   bash ~/.claude/pipeline/setup.sh
 #
-# Verifies every external dependency the listener + pipeline_ask CLI rely on,
+# Verifies every external dependency the router + pipeline_ask CLI rely on,
 # walks through Slack token + manifest setup, and probes the bot's live
 # OAuth scopes + channel membership. Does NOT install system packages
 # (distro-dependent — script just tells you what's missing and how to get it).
@@ -64,7 +64,8 @@ header "Symlinks (stow)"
 
 for path in \
   ~/.claude/pipeline/pipeline_ask.py \
-  ~/.claude/pipeline/slack_listener.py \
+  ~/.claude/pipeline/slack_router.py \
+  ~/.claude/pipeline/session_bind.py \
   ~/.claude/hooks/cap_bash_timeout.py \
   ~/.claude/settings.json
 do
@@ -75,6 +76,13 @@ do
     note "Run: cd ~/dotfiles && stow -R -t ~ ."
   fi
 done
+
+# Confirm old listener is gone.
+if [[ -f ~/.claude/pipeline/slack_listener.py ]]; then
+  fail "slack_listener.py still present — remove manually or re-stow"
+else
+  ok "slack_listener.py absent (expected)"
+fi
 
 # ─── 3. Slack env file ───────────────────────────────────────────────────────
 header "Slack tokens"
@@ -146,21 +154,64 @@ if [[ -f "$ENV_FILE" ]]; then
   fi
 fi
 
-# ─── 5. Optional: HTML→PDF converter probe ───────────────────────────────────
+# ─── 5. Router state dir ─────────────────────────────────────────────────────
+header "Router state"
+
+ROUTER_DIR="$HOME/.claude/slack-router"
+if [[ -d "$ROUTER_DIR" ]]; then
+  r_perms=$(stat -c '%a' "$ROUTER_DIR" 2>/dev/null || stat -f '%A' "$ROUTER_DIR" 2>/dev/null)
+  if [[ "$r_perms" == "700" ]]; then
+    ok "$ROUTER_DIR (mode 700)"
+  else
+    warn "$ROUTER_DIR exists but mode is $r_perms; tighten: chmod 700 $ROUTER_DIR"
+  fi
+  if [[ -f "$ROUTER_DIR/router.pid" ]]; then
+    r_pid=$(cat "$ROUTER_DIR/router.pid" 2>/dev/null || echo "")
+    if [[ -n "$r_pid" ]] && kill -0 "$r_pid" 2>/dev/null; then
+      ok "router alive: pid=$r_pid"
+    else
+      note "router.pid present but process not alive (OK if not yet started)"
+    fi
+  else
+    note "router not running (started on first slack-bind activate)"
+  fi
+else
+  note "$ROUTER_DIR absent — created lazily by router on first activate"
+fi
+
+# ─── 6. Migration: reap orphan listeners ─────────────────────────────────────
+header "Migration (orphan listener reap)"
+
+orphan_count=$(pgrep -fc "slack_listener.py" 2>/dev/null || echo "0")
+if [[ "$orphan_count" -gt 0 ]]; then
+  warn "$orphan_count orphan slack_listener.py process(es) found"
+  note "Reaping: pgrep -f slack_listener.py | xargs -r kill -TERM"
+  pgrep -f "slack_listener.py" | xargs -r kill -TERM 2>/dev/null || true
+  sleep 2
+  remaining=$(pgrep -fc "slack_listener.py" 2>/dev/null || echo "0")
+  if [[ "$remaining" -gt 0 ]]; then
+    warn "$remaining still alive; sending SIGKILL"
+    pgrep -f "slack_listener.py" | xargs -r kill -KILL 2>/dev/null || true
+  else
+    ok "all orphan listeners reaped"
+  fi
+else
+  ok "no orphan slack_listener.py processes"
+fi
+
+# ─── 7. Optional: HTML→PDF converter probe ───────────────────────────────────
 header "HTML→PDF (optional; only for pipeline_ask.py --attach foo.html)"
 
 if command -v uvx >/dev/null 2>&1; then
   ok "uvx ($(command -v uvx)) — weasyprint will be fetched on first --attach .html"
   note "Linux system libs may be required by weasyprint: pango cairo gdk-pixbuf."
-  note "  Debian/Ubuntu: sudo apt install libpango-1.0-0 libpangoft2-1.0-0"
-  note "  Arch:           sudo pacman -S pango"
-  note "  NixOS:          home.nix lists pango + cairo + gdk-pixbuf + libffi"
-  note "  macOS:          brew install pango"
+  note "  Arch:    sudo pacman -S pango"
+  note "  NixOS:   home.nix lists pango + cairo + gdk-pixbuf + libffi"
 else
   warn "uvx missing — HTML auto-PDF disabled. Install: ships with uv."
 fi
 
-# ─── 6. Claude Code env (timeout cap) ────────────────────────────────────────
+# ─── 8. Claude Code env (timeout cap) ────────────────────────────────────────
 header "Claude Code settings"
 
 if [[ -f ~/.claude/settings.json ]]; then
@@ -180,7 +231,8 @@ fi
 # ─── Verdict ─────────────────────────────────────────────────────────────────
 printf "\n"
 if [[ "$FAIL" -eq 0 ]]; then
-  printf "%sAll checks passed.%s Run a smoke test:\n" "$GRN" "$RST"
+  printf "%sAll checks passed.%s Smoke test:\n" "$GRN" "$RST"
+  printf "  uv run --script ~/.claude/pipeline/session_bind.py activate\n"
   printf "  mkdir -p ~/dotfiles/.pipeline/runs/smoke-aaaaaa\n"
   printf "  python3 ~/.claude/pipeline/pipeline_ask.py \\\\\n"
   printf "    --run smoke-aaaaaa --project ~/dotfiles \\\\\n"

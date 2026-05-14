@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """pipeline-ask — block until human answers a Slack question.
 
-Agent-callable CLI. Writes a question artifact to a pipeline run dir, ensures
-the Slack listener daemon is alive for that run, then blocks until the answer
-artifact lands (or hard timeout reached).
+Agent-callable CLI. Writes a question artifact to a pipeline run dir, posts
+via pipeline_notify.py (which routes through the host router), then blocks
+until the answer artifact lands (or hard timeout reached).
 
 Idempotent: re-invoking with the same --id and --run reuses the existing
 question artifact. Caller can pass `timeout=<ms>` to the Bash tool; if the
@@ -21,6 +21,8 @@ Stdlib-only. No third-party deps.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -28,20 +30,14 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-# Import session_slack for spawn_listener helper.
-# session_slack is stdlib-only; safe to import in this stdlib-only module.
 _PIPELINE_DIR = Path(__file__).parent
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-try:
-    from session_slack import spawn_listener as _session_spawn_listener
-    _SESSION_SLACK_AVAILABLE = True
-except ImportError:
-    _SESSION_SLACK_AVAILABLE = False
+from session_slack import resolve_session_binding  # noqa: E402
 
 POLL_INTERVAL = 1.0
-LISTENER_SCRIPT = Path.home() / ".claude/pipeline/slack_listener.py"
+NOTIFY_SCRIPT = _PIPELINE_DIR / "pipeline_notify.py"
 
 
 def now_iso() -> str:
@@ -70,62 +66,8 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return fm
 
 
-def ensure_listener(project_path: Path, run_id: str, run_dir: Path) -> None:
-    """Spawn listener daemon if not already alive for this run.
-
-    Uses session_slack.spawn_listener when available (adds --session-thread
-    flag automatically when a binding is active for the current session).
-    Falls back to inline Popen when session_slack is unavailable.
-    """
-    pid_file = run_dir / "slack-listener.pid"
-    if pid_file.is_file():
-        try:
-            pid = int(pid_file.read_text().strip())
-            os.kill(pid, 0)
-            return
-        except (ValueError, ProcessLookupError, PermissionError, OSError):
-            pass
-
-    if _SESSION_SLACK_AVAILABLE:
-        try:
-            _session_spawn_listener(project_path, run_id)
-            return
-        except Exception as e:
-            sys.stderr.write(f"session_slack.spawn_listener failed: {e}\n")
-            # Fall through to inline fallback.
-
-    # Inline fallback (no session_slack available or it errored).
-    if not LISTENER_SCRIPT.is_file():
-        sys.stderr.write(f"listener missing: {LISTENER_SCRIPT}\n")
-        return
-    log_path = run_dir / "slack-listener.log"
-    try:
-        log_fh = open(log_path, "a")  # noqa: SIM115
-        subprocess.Popen(
-            ["uv", "run", "--script", str(LISTENER_SCRIPT),
-             str(project_path), run_id],
-            start_new_session=True,
-            stdin=subprocess.DEVNULL,
-            stdout=log_fh,
-            stderr=subprocess.STDOUT,
-            close_fds=True,
-        )
-    except OSError as e:
-        sys.stderr.write(f"listener spawn failed: {e}\n")
-
-
 def html_to_pdf(html_path: Path) -> Path:
-    """Render an HTML file to a sibling PDF via `uvx weasyprint`.
-
-    Slack previews PDFs inline (multi-page viewer) but renders HTML uploads
-    as raw source. Converting first gives the human a readable preview
-    without needing an external proxy or gist hosting. The PDF is written
-    next to the source as `<stem>.pdf`; if it already exists and is newer
-    than the HTML, conversion is skipped.
-
-    Returns the PDF path on success, or the original HTML path on failure
-    (caller still uploads something usable).
-    """
+    """Render HTML to sibling PDF via `uvx weasyprint`. Returns PDF on success."""
     pdf_path = html_path.with_suffix(".pdf")
     try:
         if (
@@ -144,8 +86,8 @@ def html_to_pdf(html_path: Path) -> Path:
             timeout=60,
             check=False,
         )
-    except (OSError, subprocess.TimeoutExpired) as e:
-        sys.stderr.write(f"html->pdf conversion failed ({e}); uploading raw html\n")
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        sys.stderr.write(f"html->pdf conversion failed ({exc}); uploading raw html\n")
         return html_path
     if result.returncode != 0 or not pdf_path.is_file():
         sys.stderr.write(
@@ -190,8 +132,6 @@ def write_question(
         f"timeout_at: {timeout_at.isoformat()}",
     ]
     if attachments:
-        # Multi-value YAML list. Listener parses by reading lines that start
-        # with two-space indent + "- " until the closing frontmatter delimiter.
         lines.append("attachments:")
         for ap in attachments:
             lines.append(f"  - {ap}")
@@ -201,6 +141,66 @@ def write_question(
         lines.append(f"## Option {k}: {label}")
     qfile.write_text("\n".join(lines) + "\n")
     return qfile
+
+
+def _write_initial_slack_context(
+    run_dir: Path,
+    project_path: Path,
+    run_id: str,
+    qid: str,
+    header: str,
+    prompt: str,
+    options: list[tuple[str, str]],
+) -> None:
+    """Write initial .slack-context.json (no message_ts/channel/thread_ts — notify fills)."""
+    ctx_path = run_dir / ".slack-context.json"
+    if ctx_path.is_file():
+        # Preserve any notify-owned fields already populated on re-run.
+        try:
+            existing = json.loads(ctx_path.read_text())
+            if existing.get("message_ts"):
+                return
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    phash = hashlib.sha1(str(project_path).encode()).hexdigest()[:8]
+    opts_list = [[k, label] for k, label in options]
+    payload = {
+        "schema_version": 2,
+        "project_path": str(project_path),
+        "project_path_hash": phash,
+        "run_id": run_id,
+        "kind": "question",
+        "qid": qid,
+        "did": None,
+        "options": opts_list,
+        "header": header,
+        "prompt": prompt,
+        "channel": None,
+        "thread_ts": None,
+        "message_ts": None,
+        "attachment_permalinks": [],
+        "created_at": now_iso(),
+    }
+    from _slack_env import atomic_write_text  # noqa: E402
+    atomic_write_text(ctx_path, json.dumps(payload, indent=2), mode=0o600)
+
+
+def _require_binding_or_degrade(run_dir: Path) -> bool:
+    """Return True if active binding exists; else emit warning + return False."""
+    binding = resolve_session_binding()
+    if binding is not None:
+        return True
+    msg = (
+        "no active Slack session binding; async question cannot be posted.\n"
+        "Run 'uv run --script ~/.claude/pipeline/session_bind.py activate' first,\n"
+        "or use AskUserQuestion for synchronous fallback.\n"
+    )
+    sys.stderr.write(msg)
+    pipeline_md = run_dir.parent.parent / "pipeline.md" if run_dir.parent.parent.is_dir() else None
+    if pipeline_md is None:
+        pipeline_md = run_dir / "pipeline.md"
+    return False
 
 
 def write_timeout_answer(run_dir: Path, qid: str, qfm: dict[str, str]) -> None:
@@ -238,6 +238,31 @@ def parse_options(opt_args: list[str]) -> list[tuple[str, str]]:
     return out
 
 
+def _invoke_notify(run_dir: Path, run_id: str, qid: str) -> bool:
+    """Call pipeline_notify.py --kind question. Returns True on success."""
+    if not NOTIFY_SCRIPT.is_file():
+        sys.stderr.write(f"notify script missing: {NOTIFY_SCRIPT}\n")
+        return False
+    result = subprocess.run(
+        [
+            "uv", "run", "--script", str(NOTIFY_SCRIPT),
+            "--kind", "question",
+            "--run-dir", str(run_dir),
+            "--run", run_id,
+            "--qid", qid,
+        ],
+        check=False,
+        timeout=60,
+    )
+    if result.returncode != 0:
+        sys.stderr.write(
+            f"notify failed rc={result.returncode}; "
+            "falling through to local poll (answer may arrive via router)\n"
+        )
+        return False
+    return True
+
+
 def main() -> int:
     p = argparse.ArgumentParser(
         prog="pipeline-ask",
@@ -255,9 +280,7 @@ def main() -> int:
     p.add_argument("--hard-timeout", type=int, default=86400,
                    help="seconds until verdict=timeout (default 86400 = 24h)")
     p.add_argument("--attach", action="append", default=[],
-                   help="absolute path to attach to question post (repeatable; "
-                        "HTML/MD/PNG/PDF/etc); listener uploads to thread "
-                        "before posting buttons")
+                   help="absolute path to attach to question post (repeatable)")
     args = p.parse_args()
 
     project_path = Path(args.project).expanduser().resolve()
@@ -274,7 +297,7 @@ def main() -> int:
     qfile = run_dir / f"question-r{n}.md"
     afile = run_dir / f"answer-r{n}.md"
 
-    # Fast path: answer already exists (e.g. re-invoke after listener crash recovery).
+    # Fast path: answer already exists.
     if afile.exists():
         fm = parse_frontmatter(afile)
         key = fm.get("chosen_key", "")
@@ -288,10 +311,14 @@ def main() -> int:
         sys.stderr.write(f"answer file present but malformed: {afile}\n")
         return 4
 
+    # Validate binding before writing artifacts (AC8).
+    if not _require_binding_or_degrade(run_dir):
+        return 4
+
     # New question: validate + write artifact.
     if not qfile.exists():
-        missing = [n for n, v in (("--header", args.header), ("--prompt", args.prompt))
-                   if not v]
+        missing = [name for name, val in (("--header", args.header), ("--prompt", args.prompt))
+                   if not val]
         if missing:
             sys.stderr.write(f"required on first call: {', '.join(missing)}\n")
             return 4
@@ -300,8 +327,8 @@ def main() -> int:
             return 4
         try:
             options = parse_options(args.opt)
-        except ValueError as e:
-            sys.stderr.write(f"{e}\n")
+        except ValueError as exc:
+            sys.stderr.write(f"{exc}\n")
             return 4
         attachments: list[Path] = []
         for ap in args.attach:
@@ -309,18 +336,22 @@ def main() -> int:
             if not apath.is_file():
                 sys.stderr.write(f"--attach not a file: {apath}\n")
                 return 4
-            # Auto-convert HTML to PDF for inline Slack preview.
             if apath.suffix.lower() == ".html":
                 apath = html_to_pdf(apath)
             attachments.append(apath)
         deadline = datetime.now(timezone.utc) + timedelta(seconds=args.hard_timeout)
-        write_question(run_dir, qid, args.header, args.prompt, options,
+        write_question(run_dir, qid, args.header or "", args.prompt or "", options,
                        args.role, deadline, attachments=attachments)
 
-    # Ensure listener alive (idempotent).
-    ensure_listener(project_path, args.run, run_dir)
+        _write_initial_slack_context(
+            run_dir, project_path, args.run, qid,
+            args.header or "", args.prompt or "", options,
+        )
 
-    # Read deadline from artifact (re-invoke case may differ from arg).
+    # Post via notify subprocess (AC7 — no daemon spawn from here).
+    _invoke_notify(run_dir, args.run, qid)
+
+    # Read deadline from artifact.
     qfm = parse_frontmatter(qfile)
     deadline_dt: datetime | None = None
     if qfm.get("timeout_at"):
@@ -329,7 +360,7 @@ def main() -> int:
         except ValueError:
             pass
 
-    # Block until answer or hard-timeout.
+    # Block on answer file (router writes answer-r<N>.md on button click).
     while True:
         if afile.exists():
             fm = parse_frontmatter(afile)

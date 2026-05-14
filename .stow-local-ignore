@@ -35,3 +35,4 @@ messages\.md
 \.config/opencode/plans
 \.config/opencode/projects
 \.config/opencode/models\.local
+^tests

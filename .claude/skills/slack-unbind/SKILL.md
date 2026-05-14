@@ -1,6 +1,6 @@
 ---
 name: slack-unbind
-description: Release current Claude Code session's binding to its Slack thread. Stops the session inbox daemon. Preserves the inbox subtree on disk for audit. Trigger on user intent like "stop slack", "unbind slack", "close slack thread", "stop posting to slack", "release slack binding", "/slack-unbind". Idempotent: re-running on an already-inactive binding is a no-op.
+description: Release current Claude Code session's binding to its Slack thread. Removes binding entry; host router drops the route on next poll. Preserves the inbox subtree on disk for audit. Trigger on user intent like "stop slack", "unbind slack", "close slack thread", "stop posting to slack", "release slack binding", "/slack-unbind". Idempotent: re-running on an already-inactive binding is a no-op.
 source: pipeline-native
 output-style: caveman:ultra
 ---
@@ -24,11 +24,15 @@ uv run --script ~/.claude/pipeline/session_bind.py deactivate
 1. Reads `CLAUDE_CODE_SESSION_ID`. Refuses if missing.
 2. flock `.lock` (mutex w/ activate).
 3. Reads state file. If missing → exit non-zero "not bound".
-4. If `active=false` already → idempotent print "already inactive". Still SIGTERMs stale daemon pid if present (ESRCH ignored).
+4. If `active=false` already → idempotent print "already inactive".
 5. Posts `:checkered_flag: *Session ended at <iso>*` reply to bound thread.
-6. Flips `active=false`, sets `ended_at`, clears `inbox_daemon_pid`.
-7. SIGTERM the inbox daemon (gated on `/proc/<pid>/cmdline` match for safety).
-8. Prints `ok`.
+6. Flips `active=false`, sets `ended_at`.
+7. Prints `ok`.
+
+Router behavior: removes binding entry from state file. Host router (`slack_router.py`)
+drops this session's route on its next 3s poll. Router stays alive to serve other
+bound sessions. For immediate router shutdown: `pkill -f slack_router.py`.
+Router idle-exits automatically after 30 min if no other sessions remain bound.
 
 ## Preserved on disk
 

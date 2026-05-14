@@ -34,14 +34,12 @@ import os
 import signal
 import subprocess
 import sys
+import time
 import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-# --- stdlib shim for _slack_env ------------------------------------------------
-# session_bind.py may be run directly from ~/.claude/pipeline/; add that dir
-# to the import path so _slack_env can be imported as a relative sibling.
 _PIPELINE_DIR = Path(__file__).parent
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
@@ -64,8 +62,11 @@ except ImportError:
 log = logging.getLogger("session_bind")
 
 SESSIONS_ROOT = Path("~/.claude/sessions").expanduser()
-SESSION_INBOX_SCRIPT = _PIPELINE_DIR / "session_inbox.py"
+ROUTER_ROOT = Path("~/.claude/slack-router").expanduser()
+ROUTER_SCRIPT = _PIPELINE_DIR / "slack_router.py"
 SCHEMA_VERSION = 1
+
+_ROUTER_SCRIPT_NAME = "slack_router.py"
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +115,7 @@ def _inbox_path(sid: str) -> Path:
     return _session_dir(sid) / "inbox"
 
 
-def _acquire_lock(sid: str) -> "tuple[int, Path]":
+def _acquire_lock(sid: str) -> tuple[int, Path]:
     """Open + flock LOCK_EX|LOCK_NB on the session .lock file.
 
     Returns (fd, path). Caller must close fd to release.
@@ -196,39 +197,8 @@ def _is_pid_alive(pid: int) -> bool:
         return False
 
 
-def _spawn_inbox_daemon(sid: str) -> int | None:
-    """Spawn session_inbox.py detached. Returns PID or None on failure."""
-    if not SESSION_INBOX_SCRIPT.is_file():
-        log.warning("session_inbox.py not found at %s; inbox daemon not spawned", SESSION_INBOX_SCRIPT)
-        return None
-    log_path = _session_dir(sid) / "inbox-daemon.log"
-    try:
-        log_fh = open(log_path, "a")  # noqa: SIM115
-        proc = subprocess.Popen(
-            ["uv", "run", "--script", str(SESSION_INBOX_SCRIPT), sid],
-            start_new_session=True,
-            stdin=subprocess.DEVNULL,
-            stdout=log_fh,
-            stderr=subprocess.STDOUT,
-            close_fds=True,
-        )
-        log.info("spawned inbox daemon pid=%d sid=%s", proc.pid, sid)
-        return proc.pid
-    except OSError as exc:
-        log.warning("inbox daemon spawn failed: %s", exc)
-        return None
-
-
-_INBOX_SCRIPT_NAME = "session_inbox.py"
-
-
-def _verify_pid_is_inbox_daemon(pid: int, sid: str) -> bool:
-    """Best-effort: verify pid belongs to our inbox daemon via /proc/<pid>/cmdline.
-
-    Returns True if it looks like our daemon (or if /proc is unavailable).
-    Returns False if cmdline reads but does not contain the expected markers.
-    Linux-only; non-Linux systems always return True (safe to SIGTERM).
-    """
+def _verify_pid_is_router(pid: int) -> bool:
+    """Best-effort: check /proc/<pid>/cmdline contains slack_router.py."""
     cmdline_path = Path(f"/proc/{pid}/cmdline")
     try:
         raw = cmdline_path.read_bytes()
@@ -236,38 +206,98 @@ def _verify_pid_is_inbox_daemon(pid: int, sid: str) -> bool:
         log.debug("pid=%d already gone (no /proc entry)", pid)
         return False
     except OSError:
-        # /proc unavailable (non-Linux) — proceed with SIGTERM.
         return True
     cmdline = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace")
-    has_script = _INBOX_SCRIPT_NAME in cmdline
-    has_sid = sid in cmdline
-    if not has_script or not has_sid:
-        log.warning(
-            "pid=%d cmdline does not match inbox daemon for sid=%s; "
-            "skipping SIGTERM (pid may have been recycled). cmdline=%r",
-            pid, sid, cmdline[:200],
-        )
-        return False
-    return True
+    return _ROUTER_SCRIPT_NAME in cmdline
 
 
-def _sigterm_daemon(pid: int | None, sid: str = "") -> None:
-    """SIGTERM the inbox daemon after verifying pid identity (M1).
-
-    Ignores ESRCH (process already dead).
-    sid is used for cmdline verification; pass empty string to skip check.
-    """
-    if pid is None:
-        return
-    if sid and not _verify_pid_is_inbox_daemon(pid, sid):
-        return
+def _read_router_pid() -> int | None:
+    """Read PID from router.pid. Returns None if absent or unparseable."""
+    pid_path = ROUTER_ROOT / "router.pid"
+    if not pid_path.is_file():
+        return None
     try:
-        os.kill(pid, signal.SIGTERM)
-        log.info("sent SIGTERM to inbox daemon pid=%d", pid)
-    except ProcessLookupError:
-        pass
+        return int(pid_path.read_text().strip())
+    except (ValueError, OSError):
+        return None
+
+
+def _ensure_router_alive() -> int | None:
+    """Ensure router is alive. Spawn if absent or stale. Returns router PID."""
+    if not ROUTER_SCRIPT.is_file():
+        log.warning("slack_router.py not found at %s; router not spawned", ROUTER_SCRIPT)
+        return None
+
+    pid = _read_router_pid()
+    if pid is not None and _is_pid_alive(pid) and _verify_pid_is_router(pid):
+        log.debug("router already alive: pid=%d", pid)
+        return pid
+
+    ROUTER_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+    log_path = ROUTER_ROOT / "router.log"
+    try:
+        with open(str(log_path), "a") as log_fh:
+            # Child inherits the fd; `with` closes the parent's handle after
+            # Popen returns (Popen dup2's it into the child process).
+            proc = subprocess.Popen(
+                ["uv", "run", "--script", str(ROUTER_SCRIPT)],
+                start_new_session=True,
+                stdin=subprocess.DEVNULL,
+                stdout=log_fh,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+            )
+        log.info("spawned router pid=%d", proc.pid)
+        time.sleep(0.5)
+        return proc.pid
     except OSError as exc:
-        log.warning("SIGTERM to pid=%d failed: %s", pid, exc)
+        log.warning("router spawn failed: %s", exc)
+        return None
+
+
+def _reap_legacy_listeners() -> None:
+    """SIGTERM any surviving slack_listener.py processes (one-shot migration)."""
+    try:
+        result = subprocess.run(
+            ["pgrep", "-af", "slack_listener.py"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        log.debug("pgrep unavailable: %s", exc)
+        return
+
+    pids: list[int] = []
+    for line in result.stdout.splitlines():
+        parts = line.split(None, 1)
+        if parts:
+            try:
+                pids.append(int(parts[0]))
+            except ValueError:
+                pass
+
+    if not pids:
+        return
+
+    log.info("reaping %d legacy listener(s): %s", len(pids), pids)
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except OSError as exc:
+            log.warning("SIGTERM to pid=%d failed: %s", pid, exc)
+
+    time.sleep(2)
+
+    for pid in pids:
+        if _is_pid_alive(pid):
+            try:
+                os.kill(pid, signal.SIGKILL)
+                log.info("SIGKILL to surviving listener pid=%d", pid)
+            except OSError:
+                pass
 
 
 # ---------------------------------------------------------------------------
@@ -277,11 +307,9 @@ def _sigterm_daemon(pid: int | None, sid: str = "") -> None:
 
 def cmd_activate(args: argparse.Namespace) -> int:
     """Activate or reactivate session binding."""
-    # H3: restrict all new file/dir creation to owner-only.
     os.umask(0o077)
     sid = _require_session_id()
     cwd_full = Path.cwd()
-    # H4: strip $HOME prefix from cwd for Slack display.
     cwd_display = str(cwd_full).replace(str(Path.home()), "~", 1)
     project_path = Path(args.project).expanduser().resolve() if args.project else cwd_full
 
@@ -304,47 +332,39 @@ def cmd_activate(args: argparse.Namespace) -> int:
         )
         return 1
 
-    # H3: create session dir with mode 700 before taking lock.
     session_d = _session_dir(sid)
     session_d.mkdir(mode=0o700, parents=True, exist_ok=True)
     session_d.chmod(0o700)
 
-    # --- take lock BEFORE any Slack call ---
+    # Reap legacy listeners BEFORE ensuring router alive (T4 / AC4).
+    _reap_legacy_listeners()
+
     lock_fd, _ = _acquire_lock(sid)
     try:
         existing = _read_state(sid)
 
         if existing is not None:
-            # Already have state — determine reactivation or idempotent return.
             if existing.get("active", False):
-                # Idempotent: already active. Update last_bound_at.
-                # B4: SIGTERM stale daemon before respawn.
-                daemon_pid = existing.get("inbox_daemon_pid")
-                if daemon_pid is None or not _is_pid_alive(daemon_pid):
-                    _sigterm_daemon(daemon_pid, sid)
-                    new_pid = _spawn_inbox_daemon(sid)
-                    existing["inbox_daemon_pid"] = new_pid
+                # Idempotent: already active. Ensure router alive.
+                _ensure_router_alive()
                 existing["last_bound_at"] = now_iso()
+                # Drop inbox_daemon_pid field on write (router model).
+                existing.pop("inbox_daemon_pid", None)
                 _atomic_write_state(sid, existing)
                 result = {
                     "channel": existing["channel_id"],
                     "thread_ts": existing["thread_ts"],
                     "session_id": sid,
-                    "daemon_pid": existing.get("inbox_daemon_pid"),
                     "status": "already_active",
                 }
                 sys.stdout.write(json.dumps(result) + "\n")
                 return 0
 
-            # Previously deactivated — reopen the same thread.
-            # C3: two-step write — clear pid BEFORE spawn so crash mid-spawn
-            # leaves inbox_daemon_pid=None and next activate respawns cleanly.
-            # B4: SIGTERM any surviving daemon from previous session.
-            _sigterm_daemon(existing.get("inbox_daemon_pid"), sid)
+            # Previously deactivated — reopen same thread.
             existing["active"] = True
             existing["ended_at"] = None
             existing["last_bound_at"] = now_iso()
-            existing["inbox_daemon_pid"] = None
+            existing.pop("inbox_daemon_pid", None)
             _atomic_write_state(sid, existing)
 
             app = App(token=bot_token)
@@ -358,21 +378,17 @@ def cmd_activate(args: argparse.Namespace) -> int:
                 unfurl_media=False,
             )
 
-            # Spawn inbox daemon; write second state with new pid.
-            new_pid = _spawn_inbox_daemon(sid)
-            existing["inbox_daemon_pid"] = new_pid
-            _atomic_write_state(sid, existing)
+            _ensure_router_alive()
             result = {
                 "channel": reopen_channel,
                 "thread_ts": thread_ts,
                 "session_id": sid,
-                "daemon_pid": new_pid,
                 "status": "reactivated",
             }
             sys.stdout.write(json.dumps(result) + "\n")
             return 0
 
-        # No existing state — first bind. Post root message.
+        # No existing state — first bind.
         app = App(token=bot_token)
         sid_short = _sid_short(sid)
         resp = app.client.chat_postMessage(
@@ -384,9 +400,8 @@ def cmd_activate(args: argparse.Namespace) -> int:
             unfurl_links=False,
             unfurl_media=False,
         )
-        thread_ts: str = resp["ts"]
+        thread_ts_new: str = resp["ts"]
 
-        # H3: inbox dir mode 700 (tighter than design's 755 — holds private msg content).
         inbox_p = _inbox_path(sid)
         inbox_p.mkdir(mode=0o700, parents=True, exist_ok=True)
         inbox_p.chmod(0o700)
@@ -394,27 +409,22 @@ def cmd_activate(args: argparse.Namespace) -> int:
         state: dict[str, Any] = {
             "session_id": sid,
             "channel_id": channel,
-            "thread_ts": thread_ts,
+            "thread_ts": thread_ts_new,
             "cwd": str(cwd_full),
             "started_at": now_iso(),
             "last_bound_at": now_iso(),
             "ended_at": None,
             "active": True,
             "schema_version": SCHEMA_VERSION,
-            "inbox_daemon_pid": None,
         }
         _atomic_write_state(sid, state)
 
-        # Spawn inbox daemon; update state with its pid.
-        daemon_pid = _spawn_inbox_daemon(sid)
-        state["inbox_daemon_pid"] = daemon_pid
-        _atomic_write_state(sid, state)
+        _ensure_router_alive()
 
         result = {
             "channel": channel,
-            "thread_ts": thread_ts,
+            "thread_ts": thread_ts_new,
             "session_id": sid,
-            "daemon_pid": daemon_pid,
             "status": "activated",
         }
         sys.stdout.write(json.dumps(result) + "\n")
@@ -445,15 +455,10 @@ def cmd_deactivate(args: argparse.Namespace) -> int:
             sys.stderr.write(f"Session {sid[:8]}... is not bound.\n")
             return 1
 
-        daemon_pid = state.get("inbox_daemon_pid")
-
         if not state.get("active", False):
-            # Already inactive; still attempt to SIGTERM stale daemon.
-            _sigterm_daemon(daemon_pid, sid)
             sys.stdout.write("already_inactive\n")
             return 0
 
-        # Post closing message.
         app = App(token=bot_token)
         app.client.chat_postMessage(
             channel=state["channel_id"],
@@ -465,12 +470,10 @@ def cmd_deactivate(args: argparse.Namespace) -> int:
 
         state["active"] = False
         state["ended_at"] = now_iso()
-        state["inbox_daemon_pid"] = None
+        state.pop("inbox_daemon_pid", None)
         _atomic_write_state(sid, state)
 
-        _sigterm_daemon(daemon_pid, sid)
-
-        # Inbox subtree is intentionally preserved (Q4 / M5).
+        # Router stays alive to serve other sessions; drops this route on next poll.
         sys.stdout.write("ok\n")
         return 0
 
@@ -487,10 +490,11 @@ def cmd_status(args: argparse.Namespace) -> int:
         sys.stdout.write("unbound\n")
         return 0
 
-    # Augment with live daemon pid check.
-    daemon_pid = state.get("inbox_daemon_pid")
     out = dict(state)
-    out["daemon_pid_alive"] = _is_pid_alive(daemon_pid) if daemon_pid else False
+    # Show router liveness in status output.
+    router_pid = _read_router_pid()
+    out["router_pid"] = router_pid
+    out["router_pid_alive"] = _is_pid_alive(router_pid) if router_pid else False
     sys.stdout.write(json.dumps(out, indent=2, default=str) + "\n")
     return 0
 

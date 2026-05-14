@@ -26,10 +26,11 @@ OC: `skill({ name: "slack-bind" })` — body invokes same CLI.
 1. Reads `CLAUDE_CODE_SESSION_ID` from env. Refuses if missing.
 2. flock `~/.claude/sessions/<sid>/.lock` (mutex; rejects concurrent activate).
 3. Resolves Slack channel: `~/.claude/pipeline/slack.env.local` `SLACK_CHANNEL` (global) → `<cwd>/.pipeline/pipeline.toml [slack].channel` (per-project override).
-4. If state file exists + `active=true` → idempotent return (status `already_active`). Updates `last_bound_at`. No new root msg.
-5. If state file exists + `active=false` → reactivate. Reuses existing `thread_ts`. Posts a "Session reopened" reply (not new root). Respawns inbox daemon.
-6. Else → posts root message `:hourglass_flowing_sand: *Session started* <sid-short> (cwd=~)` to channel. Captures `thread_ts`. Writes `~/.claude/sessions/<sid>/slack.json` mode 600. Spawns `session_inbox.py` daemon.
-7. Prints JSON `{channel, thread_ts, session_id, daemon_pid, status}` to stdout.
+4. Reaps any surviving legacy `slack_listener.py` processes (one-shot migration step).
+5. If state file exists + `active=true` → idempotent return (status `already_active`). Updates `last_bound_at`. Ensures host router alive.
+6. If state file exists + `active=false` → reactivate. Reuses existing `thread_ts`. Posts a "Session reopened" reply (not new root). Ensures host router alive.
+7. Else → posts root message `:hourglass_flowing_sand: *Session started* <sid-short> (cwd=~)` to channel. Captures `thread_ts`. Writes `~/.claude/sessions/<sid>/slack.json` mode 600. Spawns host router (`slack_router.py`) if not already alive.
+8. Prints JSON `{channel, thread_ts, session_id, status}` to stdout.
 
 ## Output contract
 
@@ -44,9 +45,12 @@ Exit non-zero on:
 
 ## Side effects
 
-- Creates `~/.claude/sessions/<sid>/` (mode 700) on first bind
-- Spawns `session_inbox.py` background daemon (Bolt Socket Mode listener for thread-message events). Daemon survives across listener restarts and pipeline runs.
+- Creates `~/.claude/sessions/<sid>/` (mode 700) on first bind.
+- Ensures host router (`slack_router.py`) is alive; spawns detached if absent or stale PID.
+  Router is host-scoped (not session-scoped): one process serves all bindings.
+  Router survives session crash; idle-exits at 30 min when binding set is empty.
 - Posts one root Slack message per fresh bind. Reactivate posts a small reply, not a new root.
+- Reaps any orphan `slack_listener.py` processes found on the host (migration cleanup).
 
 ## Reverse
 
@@ -55,11 +59,11 @@ Use `slack-unbind` skill or `uv run --script ~/.claude/pipeline/session_bind.py 
 ## State
 
 - `~/.claude/sessions/<sid>/slack.json` — binding state, mode 600
-- `~/.claude/sessions/<sid>/inbox/<msg_ts>.json` — user replies captured by daemon
-- `~/.claude/sessions/<sid>/inbox-daemon.{pid,log}` — daemon process state
+- `~/.claude/sessions/<sid>/inbox/<msg_ts>.json` — user replies routed by host router
+- `~/.claude/slack-router/router.{pid,log}` — host-level router process state (NOT per-session)
 
 ## Related
 
 - `slack-status` — query current binding
-- `slack-unbind` — release binding + stop daemon (preserves inbox subtree for audit)
+- `slack-unbind` — release binding (removes session route; router stays alive for other sessions)
 - `decision-elicitation`, `question-elicitation` — pipeline stages that auto-route into bound thread when binding active

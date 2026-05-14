@@ -78,10 +78,10 @@ Flow:
 1. Pre-decision: spawn `options_source` role w/ `decision_emission: d<N>` flag in spawn template. Role emits `options-r<N>.md` (N ≤ 4 options w/ tradeoff lines) in lieu of its normal output.
 2. Orchestrator invokes decision-elicitation skill:
    - `mode=sync` → `AskUserQuestion` w/ N option labels.
-   - `mode=async` → write `awaiting-decision-r<N>.md` (sole trigger for Slack listener daemon), set `paused_on_decision:` block in pipeline.md, `ScheduleWakeup(delaySeconds=600, ...)`. Orchestrator never calls Slack API directly.
+   - `mode=async` → **requires active session binding** (`slack-bind` must have been run for this session). Posted via `pipeline_notify.py --kind decision`; host-bound router (`slack_router.py`) handles button click and writes `decision-r<N>.md`. Write `awaiting-decision-r<N>.md`, set `paused_on_decision:` block in pipeline.md, `ScheduleWakeup(delaySeconds=600, ...)`. Orchestrator never calls Slack API directly.
 3. Sync: user picks → write `decision-r<N>.md` → re-spawn `options_source` w/ `decision-r<N>.md` in Read set → role emits final pinned artifact.
-4. Async: halt. On wake (10min cadence): check `<run-dir>/decision-r<N>.md` existence. Present (listener wrote it after button click) → resume pipeline. Absent + listener active + within timeout → re-wake. Timeout default 7d → halt + surface.
-5. Async pre-check failure (no `pipeline.toml` [slack].channel / listener daemon inactive / tokens missing) → degrade to sync, log warning.
+4. Async: halt. On wake (10min cadence): check `<run-dir>/decision-r<N>.md` existence. Present (router wrote it after button click) → resume pipeline. Absent + binding active + within timeout → re-wake. Timeout default 7d → halt + surface.
+5. Async pre-check failure: no `pipeline.toml` [slack].channel → degrade to sync. **No active session binding** → log `slack.warning` to `pipeline.md` + degrade to sync. Tokens missing → degrade to sync. Never silently hang.
 
 Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans `awaiting-decision-*.md` in active runs; matching sentinel routes to skill resume logic.
 
