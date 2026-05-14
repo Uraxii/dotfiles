@@ -102,15 +102,35 @@ Channel resolution order:
 2. `SLACK_CHANNEL` env var from `~/.claude/pipeline/slack.env.local` (global default).
 3. Neither set → `AskUserQuestion` (sync) asks user to pick: paste channel + persist to env-level default, OR fall back to sync delivery for this run.
 
+### Session binding (r1)
+
+When `CLAUDE_CODE_SESSION_ID` is set and an active session binding exists
+(`~/.claude/sessions/<sid>/slack.json` with `active=true`), the listener is
+spawned with `--session-thread CHANNEL:TS`. All decision posts land in the
+bound session thread rather than creating a new per-run thread. Each message
+is prefixed with `[<run-id>]`. Button routing is unchanged: `value` field
+carries `<run-id>|<decision-id>|<choice>`.
+
+If no binding is active, legacy per-pipeline thread applies unchanged (AC6).
+
+If a brief declares async delivery and no session binding exists at intake,
+degrade to sync `AskUserQuestion` and log the reason to `pipeline.md`
+`slack.warning`. Pipeline continues; does not abort (AC10).
+
 ### Flow
 
 1. Verify preconditions; degrade to sync on failure (log to pipeline.md).
 2. Ensure listener alive (idempotent):
    - Check `<run-dir>/slack-listener.pid`. If file exists, read PID and call
      `os.kill(pid, 0)` — alive → skip spawn.
-   - Else spawn detached: `subprocess.Popen(["uv", "run", "--script",
-     "<HOME>/.claude/pipeline/slack_listener.py", "<project>", "<run-id>"],
-     start_new_session=True, stdin=DEVNULL, stdout=<log>, stderr=STDOUT)`.
+   - Else spawn via `session_slack.spawn_listener(<project>, <run-id>)` which
+     adds `--session-thread CHANNEL:TS` when a binding is active. Shell-
+     equivalent executed by the helper:
+     ```bash
+     uv run --script ~/.claude/pipeline/slack_listener.py \
+         "$PROJECT" "$RUN_ID" \
+         [--session-thread CHANNEL:TS]   # included when binding active
+     ```
      Log path: `<run-dir>/slack-listener.log`.
 3. Write `<run-dir>/awaiting-decision-r<N>.md` (schema below). Listener picks
    it up via inotify; orchestrator does NOT call Slack API directly.
@@ -120,10 +140,15 @@ Channel resolution order:
 6. Halt. Control returns to user.
 
 Listener behavior (informative; not orchestrator's concern):
-- On `awaiting-decision-r<N>.md` create → posts thread parent for run (first decision only) + decision msg w/ buttons.
-- On button click → writes `decision-r<N>.md` w/ `verdict: chosen`, deletes the awaiting file, edits Slack msg to "locked", posts confirmation in thread.
-- State persisted in `<run-dir>/slack-state.json` (thread_ts, posted decision_ids). Per-run; dies with the run dir.
-- Self-exits 30s after the run's awaiting set has been empty. Orchestrator re-spawns idempotently if a later decision lands in the same run.
+- Session-bound: posts `[<run-id>] :rocket: Pipeline started — brief: ...` header
+  on first artifact per run. Decision posts prefixed `[<run-id>]`.
+- Legacy: on `awaiting-decision-r<N>.md` create → posts thread parent for run (first
+  decision only) + decision msg w/ buttons.
+- On button click → writes `decision-r<N>.md` w/ `verdict: chosen`, deletes the
+  awaiting file, edits Slack msg to "locked", posts confirmation in thread.
+- State persisted in `<run-dir>/slack-state.json`. Per-run.
+- Idle exit after `SLACK_LISTENER_IDLE_TIMEOUT` seconds (default 86400 = 24h) with
+  no open decisions. Orchestrator re-spawns idempotently if a later decision lands.
 
 ## Resume (async only)
 

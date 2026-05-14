@@ -15,20 +15,22 @@ message with buttons, and on button click writes decision-r<N>.md back to
 the run dir for the pipeline to poll.
 
 Exits cleanly when the run's awaiting set has been empty for IDLE_GRACE
-seconds. Pipeline re-spawns this process if a later decision point fires
-in the same run.
+seconds (default 86400 = 24h; override via SLACK_LISTENER_IDLE_TIMEOUT env).
+Pipeline re-spawns this process if a later decision point fires in the same
+run.
 
 Outbound-only: uses Socket Mode WebSocket. No inbound port. No public URL.
 
 Usage:
-    slack_listener.py <project-path> <run-id>
+    slack_listener.py <project-path> <run-id> [--session-thread CHANNEL:TS]
 
 Environment (auto-loaded from ~/.claude/pipeline/slack.env.local if not in env;
 override path via SLACK_ENV_FILE):
-    SLACK_BOT_TOKEN     xoxb-... (chat:write, chat:write.public, reactions:write)
-    SLACK_APP_TOKEN     xapp-... (connections:write)
-    SLACK_ALLOWED_USERS comma-separated Slack user IDs allowed to click buttons
-                        (empty = anyone in channel)
+    SLACK_BOT_TOKEN            xoxb-... (chat:write, chat:write.public, reactions:write)
+    SLACK_APP_TOKEN            xapp-... (connections:write)
+    SLACK_ALLOWED_USERS        comma-separated Slack user IDs allowed to click buttons
+                               (empty = anyone in channel)
+    SLACK_LISTENER_IDLE_TIMEOUT  seconds before idle exit (default 86400 = 24h)
 
 Per-project config: <project>/.pipeline/pipeline.toml
     [slack]
@@ -37,6 +39,11 @@ Per-project config: <project>/.pipeline/pipeline.toml
 
 Per-run state: <run-dir>/slack-state.json (thread_ts, posted decision_ids).
 Per-run PID:   <run-dir>/slack-listener.pid (written at start, removed at exit).
+
+Session-bound mode (--session-thread CHANNEL:TS):
+    When supplied, all outbound posts land in the supplied thread rather than
+    a new per-run thread. Each message is prefixed with [<run-id>].  Inbound
+    thread replies for any known session are written to that session's inbox.
 """
 
 from __future__ import annotations
@@ -52,6 +59,19 @@ import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Import shared env helpers + session helper (stdlib-only).
+# Both live alongside this script in ~/.claude/pipeline/.
+_PIPELINE_DIR = Path(__file__).parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
+
+from _slack_env import (  # noqa: E402
+    atomic_write_text,
+    default_env_path,
+    load_env_file,
+)
+from session_slack import all_active_bindings, inbox_dir as _session_inbox_dir  # noqa: E402
 
 try:
     from slack_bolt import App
@@ -79,6 +99,85 @@ QUESTION_RE = re.compile(r"^question-r(\d+)\.md$")
 OPTIONS_RE = re.compile(r"^## Option ([A-D]): (.+)$")
 TRADEOFF_RE = re.compile(r"^- \*\*Tradeoff:\*\* (.+)$")
 
+_IDLE_TIMEOUT_S = int(os.environ.get("SLACK_LISTENER_IDLE_TIMEOUT", "86400"))
+
+# In-memory cross-listener routing index (populated at boot, refreshed on watchdog events).
+# thread_ts -> sid, sid -> inbox_dir
+_THREAD_TO_SID: dict[str, str] = {}
+_SID_TO_INBOX: dict[str, Path] = {}
+_ROUTING_LOCK = threading.Lock()
+
+
+def _rebuild_routing_index() -> None:
+    """Rebuild THREAD_TO_SID + SID_TO_INBOX from all active session bindings."""
+    try:
+        bindings = all_active_bindings()
+    except Exception as exc:
+        log.warning("routing index rebuild failed: %s", exc)
+        return
+    new_thread: dict[str, str] = {}
+    new_inbox: dict[str, Path] = {}
+    for sid, data in bindings.items():
+        ts = data.get("thread_ts", "")
+        if ts:
+            new_thread[ts] = sid
+            try:
+                new_inbox[sid] = _session_inbox_dir(sid)
+            except ValueError:
+                pass
+    with _ROUTING_LOCK:
+        _THREAD_TO_SID.clear()
+        _THREAD_TO_SID.update(new_thread)
+        _SID_TO_INBOX.clear()
+        _SID_TO_INBOX.update(new_inbox)
+    log.debug("routing index rebuilt: %d active sessions", len(new_thread))
+
+
+def _write_inbox_file(inbox: Path, event: dict[str, Any]) -> None:
+    """Atomically write one inbox/<msg_ts>.json. Skip if already exists (H3)."""
+    message_ts: str = event.get("ts", "")
+    if not message_ts:
+        return
+    inbox.mkdir(parents=True, exist_ok=True)
+    target = inbox / f"{message_ts}.json"
+    if target.exists():
+        return
+    thread_ts: str = event.get("thread_ts", "")
+    sid = inbox.parent.name
+    payload = {
+        "session_id": sid,
+        "thread_ts": thread_ts,
+        "message_ts": message_ts,
+        "user_id": event.get("user", ""),
+        "text": event.get("text", ""),
+        "received_at": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        atomic_write_text(target, json.dumps(payload, indent=2), mode=0o600)
+        log.info("inbox: wrote %s", target)
+    except OSError as exc:
+        # L4: surface ENOSPC explicitly so it's auditable.
+        if exc.errno == 28:  # ENOSPC
+            log.error(
+                "dropped inbox write: ENOSPC target=%s sid=%s", target, sid,
+                extra={"event": "inbox_drop_enospc", "target": str(target), "sid": sid},
+            )
+        else:
+            log.error("inbox write failed for %s: %s", target, exc)
+
+
+def _cleanup_orphan_tmps(inbox: Path) -> None:
+    """Remove *.tmp files older than 60s at writer startup."""
+    if not inbox.is_dir():
+        return
+    now = datetime.now(timezone.utc).timestamp()
+    for tmp in inbox.glob("*.tmp"):
+        try:
+            if now - tmp.stat().st_mtime > 60:
+                tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+
 
 # ----------------------------------------------------------------------------
 # Idle monitor (path-activated lifecycle)
@@ -95,7 +194,9 @@ class IdleMonitor:
     land), avoiding spawn churn.
     """
 
-    GRACE_SECONDS = 30
+    @property
+    def GRACE_SECONDS(self) -> int:  # type: ignore[override]
+        return _IDLE_TIMEOUT_S
 
     def __init__(self, run_dir: Path, pid_path: Path | None = None) -> None:
         self.run_dir = run_dir
@@ -303,19 +404,161 @@ class SlackPoster:
         channel: str,
         project_name: str,
         project_path: Path,
+        session_thread: tuple[str, str] | None = None,
+        project_channel: str | None = None,
+        run_dir: Path | None = None,
     ) -> None:
         self.app = app
         self.state = state
         self.channel = channel
         self.project_name = project_name
         self.project_path = project_path
+        self.session_thread = session_thread
+        self.session_bound: bool = session_thread is not None
+        self._project_channel = project_channel or channel
+        self._run_dir = run_dir
+
+    def _prefix(self, run_id: str, shard: str | None = None) -> str:
+        """Return message prefix for session-bound mode; empty string in legacy mode."""
+        if not self.session_bound:
+            return ""
+        if shard:
+            return f"[{run_id} {shard}] "
+        return f"[{run_id}] "
+
+    def _post_channel_mismatch_warning(
+        self,
+        run_id: str,
+        project_channel: str,
+        session_channel: str,
+    ) -> None:
+        """Warn about channel mismatch to bound thread (C3 policy)."""
+        msg = (
+            f":warning: pipeline `{run_id}` cwd-channel `{project_channel}` "
+            f"differs from session-bound channel `{session_channel}`; "
+            "posting here per session binding."
+        )
+        try:
+            self.app.client.chat_postMessage(
+                channel=session_channel,
+                thread_ts=self.session_thread[1],  # type: ignore[index]
+                text=msg,
+                unfurl_links=False,
+                unfurl_media=False,
+            )
+        except Exception as exc:
+            log.warning("failed to post channel-mismatch warning: %s", exc)
+        log.warning(
+            "channel mismatch for run=%s: project_channel=%s session_channel=%s",
+            run_id, project_channel, session_channel,
+        )
+        # Also write to slack-listener.log (already going to stderr/log).
+        # Write to pipeline.md if run_dir is known.
+        if self._run_dir is not None:
+            self._write_pipeline_md_warning(run_id, project_channel, session_channel)
+
+    def _write_pipeline_md_warning(
+        self,
+        run_id: str,
+        project_channel: str,
+        session_channel: str,
+    ) -> None:
+        """Best-effort: write slack.warning to pipeline.md frontmatter via pipeline_state.
+
+        Uses pipeline_state.py set (subprocess) so the write goes through the
+        same flock on the sidecar lock file, avoiding the flock-replace race (B2/B3).
+        """
+        if self._run_dir is None:
+            return
+        md_path = self._run_dir / "pipeline.md"
+        if not md_path.is_file():
+            return
+        warning = (
+            f"channel-mismatch: cwd-channel={project_channel}, "
+            f"session-channel={session_channel}; posting to session"
+        )
+        # Derive project path from run dir layout: <project>/.pipeline/runs/<run_id>
+        project_path = self._run_dir.parent.parent.parent
+        pipeline_state_script = _PIPELINE_DIR / "pipeline_state.py"
+        try:
+            import subprocess as _subprocess
+            _subprocess.run(
+                [
+                    "python3", str(pipeline_state_script),
+                    "set",
+                    "--project", str(project_path),
+                    "--run", run_id,
+                    "--key", "slack.warning",
+                    "--value", warning,
+                ],
+                check=True,
+                capture_output=True,
+                timeout=5,
+            )
+        except Exception as exc:
+            log.debug("could not write pipeline.md warning: %s", exc)
+
+    def _header_posted(self, run_id: str) -> bool:
+        """True if the run-header was already posted into the session thread."""
+        with self.state._lock:  # type: ignore[attr-defined]
+            run_data = self.state._data["runs"].get(run_id, {})  # type: ignore[attr-defined]
+        return bool(run_data.get("header_posted", False))
+
+    def _mark_header_posted(self, run_id: str, thread_ts: str, channel: str) -> None:
+        with self.state._lock:  # type: ignore[attr-defined]
+            self.state._data["runs"][run_id] = {  # type: ignore[attr-defined]
+                "thread_ts": thread_ts,
+                "channel": channel,
+                "session_bound": True,
+                "header_posted": True,
+            }
+            self.state._flush()  # type: ignore[attr-defined]
+
+    def _post_run_header(self, run_id: str, brief: str) -> None:
+        """Post one [run-id] rocket header reply when first artifact posted in session thread."""
+        assert self.session_thread is not None
+        channel, thread_ts = self.session_thread
+        brief_snippet = brief[:120] if brief else "(no brief)"
+        text = (
+            f"[{run_id}] :rocket: Pipeline started — brief: {brief_snippet}"
+        )
+        self.app.client.chat_postMessage(
+            channel=channel,
+            thread_ts=thread_ts,
+            text=text,
+            unfurl_links=False,
+            unfurl_media=False,
+        )
+        self._mark_header_posted(run_id, thread_ts, channel)
+        log.info("posted session-bound run header for run=%s", run_id)
 
     def ensure_thread(self, run_id: str, brief: str) -> str:
-        """Return thread_ts for run, posting parent message if first decision."""
+        """Return thread_ts for run.
+
+        Session-bound mode: return the supplied session thread_ts (no new root
+        message).  Post a one-off run header on first artifact for this run.
+        Legacy mode: post a per-run parent message as before.
+        """
+        if self.session_thread is not None:
+            session_channel, session_ts = self.session_thread
+            # Channel-mismatch policy (r1 C3): prefer session channel, warn, continue.
+            if session_channel != self._project_channel:
+                self._post_channel_mismatch_warning(
+                    run_id, self._project_channel, session_channel
+                )
+                self.channel = session_channel  # adopt session channel
+            if not self._header_posted(run_id):
+                self._post_run_header(run_id, brief)
+            return session_ts
+
+        # Legacy path.
         ts = self.state.get_thread_ts(run_id)
         if ts:
             return ts
-        text = f":hourglass_flowing_sand: *Pipeline started* `{run_id}`\nProject: `{self.project_name}`"
+        text = (
+            f":hourglass_flowing_sand: *Pipeline started* `{run_id}`\n"
+            f"Project: `{self.project_name}`"
+        )
         if brief:
             text += f"\nBrief: {brief}"
         resp = self.app.client.chat_postMessage(
@@ -342,12 +585,13 @@ class SlackPoster:
             log.info("already posted %s, skipping", decision_key)
             return ""
 
+        pfx = self._prefix(run_id)
         blocks: list[dict[str, Any]] = [
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*Decision {decision_id}*: {topic}",
+                    "text": f"{pfx}*Decision {decision_id}*: {topic}",
                 },
             },
         ]
@@ -380,7 +624,7 @@ class SlackPoster:
         resp = self.app.client.chat_postMessage(
             channel=self.channel,
             thread_ts=thread_ts,
-            text=f"Decision {decision_id}: {topic}",
+            text=f"{pfx}Decision {decision_id}: {topic}",
             blocks=blocks,
             unfurl_links=False,
             unfurl_media=False,
@@ -510,13 +754,14 @@ class SlackPoster:
         if self.state.has_posted(key):
             log.info("already posted %s, skipping", key)
             return ""
+        pfx = self._prefix(run_id)
         header_text = f"[{header}] " if header else ""
         blocks: list[dict[str, Any]] = [
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*{header_text}{question_id}*\n{prompt}",
+                    "text": f"{pfx}*{header_text}{question_id}*\n{prompt}",
                 },
             },
         ]
@@ -562,7 +807,7 @@ class SlackPoster:
         resp = self.app.client.chat_postMessage(
             channel=self.channel,
             thread_ts=thread_ts,
-            text=f"Question {question_id}: {prompt[:80]}",
+            text=f"{pfx}Question {question_id}: {prompt[:80]}",
             blocks=blocks,
             unfurl_links=False,
             unfurl_media=False,
@@ -881,29 +1126,9 @@ def load_project_config(project_path: Path) -> dict[str, Any]:
         return tomllib.load(fh)
 
 
-def load_env_file(path: Path) -> None:
-    """Populate os.environ from a KEY=VAL env file. Existing env wins.
-
-    Tolerates: blank lines, `#` comments, `export KEY=VAL`, quoted values
-    (single or double, stripped). Does not perform shell interpolation.
-    """
-    if not path.is_file():
-        return
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[len("export "):].lstrip()
-        if "=" not in line:
-            continue
-        key, _, val = line.partition("=")
-        key = key.strip()
-        val = val.strip()
-        if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
-            val = val[1:-1]
-        if key and key not in os.environ:
-            os.environ[key] = val
+# load_env_file imported from _slack_env at top of file.
+# Retained as local alias so existing internal references continue to work.
+# The canonical implementation lives in _slack_env.py.
 
 
 def write_pid_file(pid_path: Path) -> None:
@@ -913,10 +1138,40 @@ def write_pid_file(pid_path: Path) -> None:
     atexit.register(lambda: pid_path.unlink(missing_ok=True))
 
 
+class _SessionsWatcher(FileSystemEventHandler):
+    """Watchdog handler: refresh routing index when slack.json files change."""
+
+    def _maybe_refresh(self, event: Any) -> None:
+        if Path(getattr(event, "src_path", "")).name == "slack.json":
+            _rebuild_routing_index()
+
+    def on_created(self, event: Any) -> None:
+        self._maybe_refresh(event)
+
+    def on_modified(self, event: Any) -> None:
+        self._maybe_refresh(event)
+
+    def on_deleted(self, event: Any) -> None:
+        self._maybe_refresh(event)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Pipeline Slack decision listener (Socket Mode)."
+    )
     parser.add_argument("project_path", help="Project root containing .pipeline/")
-    parser.add_argument("run_id", help="Pipeline run id (artifact-slug; matches run dir name)")
+    parser.add_argument(
+        "run_id", help="Pipeline run id (artifact-slug; matches run dir name)"
+    )
+    parser.add_argument(
+        "--session-thread",
+        default=None,
+        metavar="CHANNEL:THREAD_TS",
+        help=(
+            "When set, override per-run thread routing with the supplied "
+            "session-bound channel + thread_ts."
+        ),
+    )
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args()
 
@@ -934,17 +1189,15 @@ def main() -> None:
         raise SystemExit(f"run dir missing: {run_dir}")
 
     # Load tokens from env file if not already injected.
-    env_path = Path(
-        os.environ.get("SLACK_ENV_FILE", "~/.claude/pipeline/slack.env.local")
-    ).expanduser()
+    env_path = default_env_path()
     load_env_file(env_path)
 
     cfg = load_project_config(project_path)
     slack_cfg = cfg.get("slack", {}) if isinstance(cfg, dict) else {}
 
     # Channel resolution: per-project override (pipeline.toml) → env default.
-    channel = slack_cfg.get("channel") or os.environ.get("SLACK_CHANNEL")
-    if not channel:
+    project_channel = slack_cfg.get("channel") or os.environ.get("SLACK_CHANNEL")
+    if not project_channel:
         raise SystemExit(
             "no Slack channel configured: set SLACK_CHANNEL in "
             f"{env_path} or [slack].channel in "
@@ -960,8 +1213,24 @@ def main() -> None:
             f"(checked env + {env_path})"
         )
     allowed_users = {
-        u.strip() for u in os.environ.get("SLACK_ALLOWED_USERS", "").split(",") if u.strip()
+        u.strip()
+        for u in os.environ.get("SLACK_ALLOWED_USERS", "").split(",")
+        if u.strip()
     }
+
+    # Parse --session-thread flag: CHANNEL:THREAD_TS.
+    session_thread: tuple[str, str] | None = None
+    if args.session_thread:
+        parts = args.session_thread.split(":", 1)
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise SystemExit(
+                f"--session-thread must be CHANNEL:THREAD_TS, got: {args.session_thread!r}"
+            )
+        session_thread = (parts[0], parts[1])
+        log.info("session-bound mode: channel=%s thread_ts=%s", parts[0], parts[1])
+
+    # Effective channel: session-bound channel wins for all posts when in session mode.
+    effective_channel = session_thread[0] if session_thread else project_channel
 
     # Per-run state + pid files.
     state_path = run_dir / "slack-state.json"
@@ -969,14 +1238,29 @@ def main() -> None:
     write_pid_file(pid_path)
 
     # Project-wide root used only for resolving cross-listener click deliveries.
-    # (Slack Socket Mode load-balances clicks across all listeners on the same
-    # app; any listener may receive a button event for another listener's run.
-    # The run-id in the button value lets us resolve the correct run dir.)
     runs_root = project_path / ".pipeline" / "runs"
+
+    # B5: Boot-time orphan tmp cleanup + routing index build — only in session-bound mode.
+    # In legacy (no --session-thread) mode, skip these: they require message.channels scope
+    # and add recursive watchdog cost for users who never bound a session.
+    from session_slack import SESSIONS_ROOT as _SESS_ROOT
+    if session_thread is not None:
+        for sdir in (_SESS_ROOT.glob("*/inbox") if _SESS_ROOT.is_dir() else []):
+            _cleanup_orphan_tmps(sdir)
+        _rebuild_routing_index()
 
     app = App(token=bot_token)
     state = State(state_path)
-    poster = SlackPoster(app, state, channel, project_name, project_path)
+    poster = SlackPoster(
+        app,
+        state,
+        effective_channel,
+        project_name,
+        project_path,
+        session_thread=session_thread,
+        project_channel=project_channel,
+        run_dir=run_dir,
+    )
     idle_monitor = IdleMonitor(run_dir, pid_path=pid_path)
 
     # Button click handlers (one per option letter; bolt requires action_id match)
@@ -1060,14 +1344,55 @@ def main() -> None:
     for letter in "ABCD":
         app.action(f"question_pick_{letter}")(on_pick_question)
 
+    # B5: Inbound thread-message handler + sessions watchdog — session-bound mode only.
+    # Gating on session_thread prevents registering message.channels scope requirement
+    # and recursive watchdog cost for users in legacy (no-bind) mode.
+    if session_thread is not None:
+        _session_channel_id = session_thread[0]
+
+        @app.event("message")
+        def on_thread_message(event: dict[str, Any], body: dict[str, Any]) -> None:  # noqa: ARG001
+            """Capture thread replies to known session threads (session-bound mode only).
+
+            M3/M4: verify event channel matches the bound session channel before
+            writing inbox, preventing cross-channel poisoning.
+            """
+            if event.get("subtype") is not None:
+                return  # skip edits, joins, file shares, thread_broadcast
+            thread_ts = event.get("thread_ts")
+            if not thread_ts:
+                return  # top-level message, not a reply
+            # M3/M4: channel verification — must match session-bound channel.
+            event_channel = event.get("channel", "")
+            if event_channel and event_channel != _session_channel_id:
+                log.debug(
+                    "inbox drop: event channel %s != session channel %s",
+                    event_channel, _session_channel_id,
+                )
+                return
+            with _ROUTING_LOCK:
+                sid = _THREAD_TO_SID.get(thread_ts)
+                if sid is None:
+                    return
+                inbox = _SID_TO_INBOX.get(sid)
+            if inbox is None:
+                return
+            _write_inbox_file(inbox, event)
+
     # Filesystem watch — scoped to this run only.
     handler = AwaitingHandler(poster, run_dir, idle_monitor)
     observer = Observer()
     observer.schedule(handler, str(run_dir), recursive=False)
+    # B5: Also watch ~/.claude/sessions/ for routing index refresh — session-bound only.
+    from session_slack import SESSIONS_ROOT as _SESS_ROOT_OBS
+    if session_thread is not None:
+        sessions_watcher = _SessionsWatcher()
+        if _SESS_ROOT_OBS.is_dir():
+            observer.schedule(sessions_watcher, str(_SESS_ROOT_OBS), recursive=True)
     observer.start()
     log.info(
-        "watching %s | run=%s | channel=%s | project=%s",
-        run_dir, args.run_id, channel, project_name,
+        "watching %s | run=%s | channel=%s | project=%s | session_bound=%s",
+        run_dir, args.run_id, effective_channel, project_name, session_thread is not None,
     )
 
     # Sweep existing awaiting files at startup (orchestrator may have written

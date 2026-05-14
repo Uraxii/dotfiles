@@ -255,6 +255,118 @@ To stop one: `kill $(cat <run-dir>/slack-listener.pid)`. The listener removes it
 - Outbound TCP 443 only (Socket Mode WebSocket). Verify with `ss -tlnp` — no new listening port should appear after starting a listener.
 - Optional allowlist (`SLACK_ALLOWED_USERS`) gates button clicks; everyone else gets an ephemeral "not authorized" message.
 
+## Session-bound mode
+
+One Claude Code session = one Slack thread. Opt-in via `/slack-bind`.
+
+### Activate
+
+```bash
+/slack-bind
+# or directly:
+python3 ~/.claude/pipeline/session_bind.py activate
+```
+
+Posts a root message to the configured channel. Captures `thread_ts`. Writes
+`~/.claude/sessions/<sid>/slack.json`. Spawns a per-session inbox daemon that
+captures user replies while no pipeline listener is running.
+
+Output JSON: `{"channel": "C...", "thread_ts": "...", "session_id": "...", "daemon_pid": ...}`
+
+### Deactivate
+
+```bash
+/slack-unbind
+# or:
+python3 ~/.claude/pipeline/session_bind.py deactivate
+```
+
+Posts `Session ended at <iso8601>` in the bound thread. Flips `active=false`.
+SIGTERMs the inbox daemon. Inbox files are **preserved** for audit.
+
+### Status
+
+```bash
+/slack-status
+# or:
+python3 ~/.claude/pipeline/session_bind.py status
+```
+
+Prints JSON state including `daemon_pid_alive` bool.
+
+### Multi-session model
+
+Each Claude Code process has a distinct `CLAUDE_CODE_SESSION_ID`. Each session
+gets its own `slack.json` + inbox directory + Slack thread. Two concurrent
+sessions never share a thread. Session state lives under `~/.claude/sessions/`
+(not under any project tree).
+
+### Inbox semantics
+
+User replies posted in a bound session thread are captured by either:
+- The per-run listener (alive during a pipeline decision/question wait), or
+- The always-on session-inbox daemon (active for the entire bound session lifetime).
+
+Files land at `~/.claude/sessions/<sid>/inbox/<msg_ts>.json`. Read via:
+
+```bash
+python3 ~/.claude/pipeline/inbox_drain.py [--consume] [--json]
+```
+
+Inbox messages do NOT auto-resume any pipeline. They are consumed only when an
+on-demand skill explicitly drains the inbox, or when a `decision-elicitation` /
+`question-elicitation` wait completes (those write structured `decision-r<N>.md`
+/ `answer-r<N>.md`, not inbox files).
+
+### Daemon lifecycle
+
+The session-inbox daemon is spawned by `activate` and killed by `deactivate`
+(SIGTERM). Its pid is stored in `slack.json` as `inbox_daemon_pid`. If it dies
+between bind and unbind, re-run `activate` — it detects the dead pid and
+respawns.
+
+Check daemon health:
+
+```bash
+python3 ~/.claude/pipeline/session_bind.py status \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); \
+    print('alive' if d.get('daemon_pid_alive') else 'dead')"
+```
+
+### Idle timeout
+
+The per-run listener's idle exit is controlled by `SLACK_LISTENER_IDLE_TIMEOUT`
+(seconds; default 86400 = 24h). Set in `~/.claude/pipeline/slack.env.local`:
+
+```bash
+SLACK_LISTENER_IDLE_TIMEOUT=3600   # 1 hour
+```
+
+### Channel mismatch handling
+
+If the session-bound channel differs from the project channel in `pipeline.toml`:
+the session-bound channel wins; a warning is posted in the session thread and
+written to `pipeline.md` `slack.warning`. Pipeline continues.
+
+### Slack app scopes (session-bound additions)
+
+To capture thread replies, the Slack app must subscribe to:
+- `message.channels` — replies in public channels
+- `message.groups` — replies in private channels
+
+Add under **Event Subscriptions** in the Slack app config, then
+**Reinstall to Workspace**.
+
+### Required new files
+
+| File | Purpose |
+|---|---|
+| `~/.claude/pipeline/session_bind.py` | activate/deactivate/status CLI |
+| `~/.claude/pipeline/session_slack.py` | stdlib-only binding helper |
+| `~/.claude/pipeline/session_inbox.py` | per-session inbox daemon |
+| `~/.claude/pipeline/pipeline_notify.py` | one-shot status/completion notify |
+| `~/.claude/pipeline/_slack_env.py` | shared env-file loader |
+
 ## Related
 
 - [[Pipeline Decisions]] — full decision-elicitation stage doc.

@@ -1,4 +1,8 @@
 *.local
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
 .claude/*local*
 .claude/**/*local*
 .config/opencode/projects/*

@@ -28,6 +28,18 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+# Import session_slack for spawn_listener helper.
+# session_slack is stdlib-only; safe to import in this stdlib-only module.
+_PIPELINE_DIR = Path(__file__).parent
+if str(_PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(_PIPELINE_DIR))
+
+try:
+    from session_slack import spawn_listener as _session_spawn_listener
+    _SESSION_SLACK_AVAILABLE = True
+except ImportError:
+    _SESSION_SLACK_AVAILABLE = False
+
 POLL_INTERVAL = 1.0
 LISTENER_SCRIPT = Path.home() / ".claude/pipeline/slack_listener.py"
 
@@ -59,7 +71,12 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
 
 
 def ensure_listener(project_path: Path, run_id: str, run_dir: Path) -> None:
-    """Spawn listener daemon if not already alive for this run."""
+    """Spawn listener daemon if not already alive for this run.
+
+    Uses session_slack.spawn_listener when available (adds --session-thread
+    flag automatically when a binding is active for the current session).
+    Falls back to inline Popen when session_slack is unavailable.
+    """
     pid_file = run_dir / "slack-listener.pid"
     if pid_file.is_file():
         try:
@@ -68,12 +85,22 @@ def ensure_listener(project_path: Path, run_id: str, run_dir: Path) -> None:
             return
         except (ValueError, ProcessLookupError, PermissionError, OSError):
             pass
+
+    if _SESSION_SLACK_AVAILABLE:
+        try:
+            _session_spawn_listener(project_path, run_id)
+            return
+        except Exception as e:
+            sys.stderr.write(f"session_slack.spawn_listener failed: {e}\n")
+            # Fall through to inline fallback.
+
+    # Inline fallback (no session_slack available or it errored).
     if not LISTENER_SCRIPT.is_file():
         sys.stderr.write(f"listener missing: {LISTENER_SCRIPT}\n")
         return
     log_path = run_dir / "slack-listener.log"
     try:
-        log_fh = open(log_path, "a")
+        log_fh = open(log_path, "a")  # noqa: SIM115
         subprocess.Popen(
             ["uv", "run", "--script", str(LISTENER_SCRIPT),
              str(project_path), run_id],
