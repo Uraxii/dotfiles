@@ -82,10 +82,10 @@
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(git clean:*)",
-      "Bash(rm -rf:*)"
+      "Bash(rm -rf /:)"
     ]
   },
-  "model": "claude-opus-4-6[1m]",
+  "model": "claude-opus-4-7[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -115,7 +115,7 @@
       }
     }
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "agent": "orchestrator",
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:manjaro",
