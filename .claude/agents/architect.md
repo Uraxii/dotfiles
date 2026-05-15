@@ -1,7 +1,7 @@
 ---
 name: architect
 description: System design, contracts, ADR-level decisions.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   write: true

@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Root agent. Triage direct answer vs pipeline execution. Composes role list, spawns subagents, routes verdicts.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 mode: primary
 color: primary
 ---

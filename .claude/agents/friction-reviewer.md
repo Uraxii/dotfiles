@@ -1,7 +1,7 @@
 ---
 name: friction-reviewer
 description: Closes pipeline runs. Surfaces process pain. Mandatory.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true

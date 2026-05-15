@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Reviews code + PRs. Quality, consistency, security, perf. Approves or req changes. Spawned in pairs (Standards + Spec) by orchestrator for two-axis review.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true

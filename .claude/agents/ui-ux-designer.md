@@ -1,7 +1,7 @@
 ---
 name: ui-ux-designer
 description: Shape UI/UX direction and write implementation-ready frontend handoff.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   write: true

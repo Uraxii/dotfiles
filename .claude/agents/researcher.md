@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Pre-plan domain research. APIs, feasibility, external sys. Structured briefs.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true

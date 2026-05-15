@@ -1,7 +1,7 @@
 ---
 name: security-auditor
 description: Vulns, threat modeling, security policy. Engage @ design phase.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true

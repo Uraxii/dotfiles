@@ -1,7 +1,7 @@
 ---
 name: tester
 description: Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true
