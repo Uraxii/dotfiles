@@ -1,8 +1,13 @@
 ---
 name: content-designer
 description: Dream up new content, features, themes for any project. Pre-plan ideation. Authors pitches, drafts, direction docs, decision options.
-model: opus
-tools: Read, Write, Grep, Glob, Skill
+model: openai/gpt-5.5
+tools:
+  read: true
+  write: true
+  grep: true
+  glob: true
+  skill: true
 mode: subagent
 color: info
 ---

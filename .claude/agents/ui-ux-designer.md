@@ -1,8 +1,13 @@
 ---
 name: ui-ux-designer
 description: Shape UI/UX direction and write implementation-ready frontend handoff.
-model: sonnet
-tools: Read, Write, Glob, Grep, Skill
+model: openai/gpt-5.5
+tools:
+  read: true
+  write: true
+  glob: true
+  grep: true
+  skill: true
 mode: subagent
 color: accent
 ---
