@@ -1,7 +1,9 @@
-"""Shared env-file loader + atomic write helper for pipeline Slack scripts.
+"""Generic 0o600-guarded env-file loader for pipeline scripts.
 
-Shared by session_bind.py, pipeline_notify.py, slack_router.py, and
-pipeline_ask.py. Stdlib-only. No third-party deps.
+Verbatim move of legacy _slack_env.py (B9/D14). Content identical;
+only the module path changes. default_env_path() still returns
+~/.claude/pipeline/slack.env.local (env-file LOCATION out-of-scope
+per brief §10 #8).
 """
 
 from __future__ import annotations
@@ -101,7 +103,7 @@ def atomic_write_text(path: Path, data: str, mode: int = 0o600) -> None:
     Steps:
     1. Write to ``<path>.tmp`` with ``os.open`` (avoids umask surprises).
     2. fsync the tmp file descriptor.
-    3. ``os.rename`` tmp → path (atomic on POSIX same-fs).
+    3. ``os.rename`` tmp -> path (atomic on POSIX same-fs).
     4. Best-effort fsync the parent directory.
 
     The mode argument sets the tmp file permissions before rename.

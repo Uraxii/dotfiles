@@ -1,20 +1,16 @@
-"""Shared fixtures for pipeline session tests.
-
-Provides a fake ~/.claude/sessions/<sid>/ layout using tmp_path.
-"""
-
+"""Fixtures for comms pipeline tests."""
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
-# Ensure .claude/pipeline is on sys.path for all tests.
-_PIPELINE_DIR = Path(__file__).parent.parent / ".claude" / "pipeline"
+# Ensure pipeline dir on path.
+_PIPELINE_DIR = Path(__file__).parent.parent.parent.parent / ".claude" / "pipeline"
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
@@ -39,30 +35,30 @@ if "filelock" not in sys.modules:
 
 
 @pytest.fixture()
-def sid() -> str:
-    return "test-session-deadbeef-1234-5678-abcd-000000000001"
-
-
-@pytest.fixture()
-def sessions_root(tmp_path: Path) -> Path:
-    root = tmp_path / "sessions"
-    root.mkdir(parents=True, exist_ok=True)
-    root.chmod(0o700)
+def comms_root(tmp_path: Path) -> Path:
+    """Temporary ~/.claude/comms-router equivalent."""
+    root = tmp_path / "comms-router"
+    root.mkdir(mode=0o700)
+    (root / "unrouted").mkdir(mode=0o700)
+    (root / "run-index").mkdir(mode=0o700)
     return root
 
 
 @pytest.fixture()
-def session_dir(sessions_root: Path, sid: str) -> Path:
-    d = sessions_root / sid
-    d.mkdir(parents=True, exist_ok=True)
-    inbox = d / "inbox"
-    inbox.mkdir(parents=True, exist_ok=True)
-    return d
+def sessions_root(tmp_path: Path) -> Path:
+    """Temporary ~/.claude/sessions equivalent."""
+    root = tmp_path / "sessions"
+    root.mkdir(mode=0o700)
+    return root
 
 
 @pytest.fixture()
-def slack_json_path(session_dir: Path) -> Path:
-    return session_dir / "slack.json"
+def run_dir(tmp_path: Path) -> Path:
+    """Fake pipeline run dir."""
+    project = tmp_path / "project"
+    rd = project / ".pipeline" / "runs" / "test-run-abc123"
+    rd.mkdir(parents=True)
+    return rd
 
 
 def make_slack_json(
@@ -72,10 +68,10 @@ def make_slack_json(
     channel_id: str = "C0TEST123",
     thread_ts: str = "1731628800.000200",
     schema_version: int = 1,
-    inbox_daemon_pid: int | None = None,
+    provider: str | None = "slack",
 ) -> Path:
-    """Write a minimal slack.json to session_dir. Returns the path."""
-    state = {
+    """Write a minimal slack.json. If provider is None, omits the field (legacy)."""
+    state: dict[str, Any] = {
         "session_id": sid,
         "channel_id": channel_id,
         "thread_ts": thread_ts,
@@ -85,23 +81,9 @@ def make_slack_json(
         "ended_at": None,
         "active": active,
         "schema_version": schema_version,
-        "inbox_daemon_pid": inbox_daemon_pid,
     }
+    if provider is not None:
+        state["provider"] = provider
     path = session_dir / "slack.json"
     path.write_text(json.dumps(state, indent=2), encoding="utf-8")
     return path
-
-
-@pytest.fixture()
-def run_dir(tmp_path: Path) -> Path:
-    """Fake pipeline run dir with pipeline.md."""
-    project = tmp_path / "project"
-    run = project / ".pipeline" / "runs" / "test-run-abc123"
-    run.mkdir(parents=True, exist_ok=True)
-    md = run / "pipeline.md"
-    md.write_text(
-        "---\nstatus: active\nslack:\n  bound_session: null\n  channel_id: null\n"
-        "  thread_ts: null\n  warning: null\n---\n\n# Pipeline test-run-abc123\n",
-        encoding="utf-8",
-    )
-    return run

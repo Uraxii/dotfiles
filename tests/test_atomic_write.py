@@ -13,7 +13,7 @@ _PIPELINE_DIR = Path(__file__).parent.parent / ".claude" / "pipeline"
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from _slack_env import atomic_write_text  # noqa: E402
+from comms.env import atomic_write_text  # noqa: E402
 
 
 def test_atomic_write_creates_file(tmp_path: Path) -> None:
@@ -47,7 +47,7 @@ def test_atomic_write_fsync_called(tmp_path: Path) -> None:
         fsync_calls.append(fd)
         real_fsync(fd)
 
-    with patch("_slack_env.os.fsync", side_effect=tracking_fsync):
+    with patch("comms.env.os.fsync", side_effect=tracking_fsync):
         atomic_write_text(target, "content")
 
     # At minimum the tmp file fd should be fsynced.

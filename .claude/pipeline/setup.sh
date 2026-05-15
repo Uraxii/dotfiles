@@ -64,7 +64,7 @@ header "Symlinks (stow)"
 
 for path in \
   ~/.claude/pipeline/pipeline_ask.py \
-  ~/.claude/pipeline/slack_router.py \
+  ~/.claude/pipeline/comms/router.py \
   ~/.claude/pipeline/session_bind.py \
   ~/.claude/hooks/cap_bash_timeout.py \
   ~/.claude/settings.json
@@ -157,7 +157,7 @@ fi
 # ─── 5. Router state dir ─────────────────────────────────────────────────────
 header "Router state"
 
-ROUTER_DIR="$HOME/.claude/slack-router"
+ROUTER_DIR="$HOME/.claude/comms-router"
 if [[ -d "$ROUTER_DIR" ]]; then
   r_perms=$(stat -c '%a' "$ROUTER_DIR" 2>/dev/null || stat -f '%A' "$ROUTER_DIR" 2>/dev/null)
   if [[ "$r_perms" == "700" ]]; then

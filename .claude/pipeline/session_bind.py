@@ -5,10 +5,10 @@
 #     "slack-bolt>=1.18",
 # ]
 # ///
-"""session_bind — activate / deactivate / status CLI for session-bound Slack threading.
+"""session_bind — activate / deactivate / status CLI for session-bound comms threading.
 
 Usage:
-    session_bind.py activate    # bind current session to a Slack thread
+    session_bind.py activate    # bind current session to a comms thread
     session_bind.py deactivate  # unbind and post closing message
     session_bind.py status      # print JSON state or "unbound"
 
@@ -44,37 +44,26 @@ _PIPELINE_DIR = Path(__file__).parent
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from _slack_env import (  # noqa: E402
+from comms.env import (  # noqa: E402
     atomic_write_text,
     default_env_path,
     load_env_file,
     validate_sid,
 )
 
-try:
-    from slack_bolt import App
-except ImportError:
-    sys.stderr.write(
-        "slack_bolt missing. Install: pip install --user slack-bolt\n"
-    )
-    sys.exit(2)
-
 log = logging.getLogger("session_bind")
 
 SESSIONS_ROOT = Path("~/.claude/sessions").expanduser()
-ROUTER_ROOT = Path("~/.claude/slack-router").expanduser()
-ROUTER_SCRIPT = _PIPELINE_DIR / "slack_router.py"
+COMMS_ROOT = Path("~/.claude/comms-router").expanduser()
+LEGACY_ROOT = Path("~/.claude/slack-router").expanduser()
+LEGACY_PID = LEGACY_ROOT / "router.pid"
+
+ROUTER_SCRIPT = _PIPELINE_DIR / "comms" / "router.py"
 SCHEMA_VERSION = 1
 
-_ROUTER_SCRIPT_NAME = "slack_router.py"
+_COMMS_ROUTER_SCRIPT_NAME = "comms/router.py"
 
-# Scopes required for end-to-end session-bound threading:
-# - chat:write           post root + thread replies
-# - channels:history     receive message events in public channels
-# - groups:history       receive message events in private channels
-# A missing scope means Slack will not deliver `message.channels` /
-# `message.groups` events even though Bolt connects. Symptom = posts
-# work, replies never reach the router. Fix is reinstall-to-workspace.
+# Scopes required for end-to-end session-bound threading.
 _REQUIRED_BOT_SCOPES: frozenset[str] = frozenset(
     {"chat:write", "channels:history", "groups:history"}
 )
@@ -208,8 +197,8 @@ def _is_pid_alive(pid: int) -> bool:
         return False
 
 
-def _verify_pid_is_router(pid: int) -> bool:
-    """Best-effort: check /proc/<pid>/cmdline contains slack_router.py."""
+def _verify_pid_is_comms_router(pid: int) -> bool:
+    """Best-effort: check /proc/<pid>/cmdline contains comms/router.py."""
     cmdline_path = Path(f"/proc/{pid}/cmdline")
     try:
         raw = cmdline_path.read_bytes()
@@ -219,12 +208,28 @@ def _verify_pid_is_router(pid: int) -> bool:
     except OSError:
         return True
     cmdline = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace")
-    return _ROUTER_SCRIPT_NAME in cmdline
+    return _COMMS_ROUTER_SCRIPT_NAME in cmdline
+
+
+def _verify_pid_is_slack_router(pid: int) -> bool:
+    """Best-effort: check /proc/<pid>/cmdline contains slack_router.py.
+
+    Used for N2 identity check before SIGKILL on legacy pidfile reap.
+    """
+    cmdline_path = Path(f"/proc/{pid}/cmdline")
+    try:
+        raw = cmdline_path.read_bytes()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+    cmdline = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace")
+    return "slack_router.py" in cmdline
 
 
 def _read_router_pid() -> int | None:
-    """Read PID from router.pid. Returns None if absent or unparseable."""
-    pid_path = ROUTER_ROOT / "router.pid"
+    """Read PID from comms-router/router.pid. Returns None if absent or unparseable."""
+    pid_path = COMMS_ROOT / "router.pid"
     if not pid_path.is_file():
         return None
     try:
@@ -233,23 +238,144 @@ def _read_router_pid() -> int | None:
         return None
 
 
+def _get_pid_owner_uid(pid: int) -> int | None:
+    """Return uid of process pid via /proc/<pid>/status, or None on error."""
+    status_path = Path(f"/proc/{pid}/status")
+    try:
+        for line in status_path.read_text().splitlines():
+            if line.startswith("Uid:"):
+                parts = line.split()
+                if len(parts) >= 2:
+                    return int(parts[1])  # real uid
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def _reap_legacy_slack_router() -> None:
+    """One-shot migration reap of legacy ~/.claude/slack-router daemon.
+
+    Algorithm (B5 soft-reap / N2 identity check):
+      1. LEGACY_PID absent -> no-op.
+      2. Read pid. Unreadable -> log + skip kill + rmtree.
+      3. Stat /proc/<pid> owner uid.
+         - cross-uid -> log warning + return (new daemon spawns alongside).
+         - proc absent -> process gone; unlink + rmtree.
+      4. Same uid + alive: N2 identity check via _verify_pid_is_slack_router.
+         - Not a slack_router process (stale pid): log warning + skip kill.
+      5. SIGTERM -> poll 2s -> SIGKILL -> unlink -> rmtree.
+      6. Hard-error only when same-uid kill raises unexpected EPERM.
+    """
+    if not LEGACY_PID.is_file():
+        return
+
+    try:
+        pid = int(LEGACY_PID.read_text().strip())
+    except (ValueError, OSError) as exc:
+        log.warning("legacy slack_router pidfile unreadable (%s); skipping kill; rmtree", exc)
+        try:
+            import shutil
+            shutil.rmtree(str(LEGACY_ROOT), ignore_errors=True)
+        except OSError:
+            pass
+        return
+
+    owner_uid = _get_pid_owner_uid(pid)
+    if owner_uid is None:
+        # Process already gone.
+        log.debug("legacy slack_router pid=%d already gone; unlinking + rmtree", pid)
+        try:
+            LEGACY_PID.unlink(missing_ok=True)
+            import shutil
+            shutil.rmtree(str(LEGACY_ROOT), ignore_errors=True)
+        except OSError as exc:
+            log.warning("legacy rmtree failed: %s", exc)
+        return
+
+    current_uid = os.getuid()
+    if owner_uid != current_uid:
+        log.warning(
+            "legacy slack_router pid=%d owned by uid=%d (not current %d); "
+            "skipping reap; new daemon will spawn alongside",
+            pid, owner_uid, current_uid,
+        )
+        return
+
+    # Same uid: N2 identity check before kill.
+    if not _verify_pid_is_slack_router(pid):
+        log.warning(
+            "legacy pidfile pid=%d does not appear to be slack_router.py "
+            "(stale pid reused by another process); skipping kill",
+            pid,
+        )
+        try:
+            LEGACY_PID.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return
+
+    log.info("reaping legacy slack_router pid=%d", pid)
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    except OSError as exc:
+        raise RuntimeError(
+            f"Failed to SIGTERM legacy slack_router pid={pid}: {exc}. "
+            "Cannot safely spawn new router daemon."
+        ) from exc
+
+    # Poll 2s for termination.
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        if not _is_pid_alive(pid):
+            break
+        time.sleep(0.1)
+
+    if _is_pid_alive(pid):
+        # N2: identity check again before SIGKILL.
+        if _verify_pid_is_slack_router(pid):
+            try:
+                os.kill(pid, signal.SIGKILL)
+                log.info("SIGKILL to surviving legacy slack_router pid=%d", pid)
+            except OSError as exc:
+                if not _is_pid_alive(pid):
+                    pass  # already gone
+                else:
+                    raise RuntimeError(
+                        f"Failed to SIGKILL legacy slack_router pid={pid}: {exc}"
+                    ) from exc
+
+    try:
+        LEGACY_PID.unlink(missing_ok=True)
+        import shutil
+        shutil.rmtree(str(LEGACY_ROOT), ignore_errors=True)
+    except OSError as exc:
+        log.warning("legacy rmtree failed (cosmetic): %s", exc)
+
+
 def _ensure_router_alive() -> int | None:
-    """Ensure router is alive. Spawn if absent or stale. Returns router PID."""
+    """Ensure comms router is alive. Spawn if absent or stale. Returns router PID."""
     if not ROUTER_SCRIPT.is_file():
-        log.warning("slack_router.py not found at %s; router not spawned", ROUTER_SCRIPT)
+        log.warning("comms/router.py not found at %s; router not spawned", ROUTER_SCRIPT)
         return None
 
     pid = _read_router_pid()
-    if pid is not None and _is_pid_alive(pid) and _verify_pid_is_router(pid):
+    if pid is not None and _is_pid_alive(pid) and _verify_pid_is_comms_router(pid):
         log.debug("router already alive: pid=%d", pid)
         return pid
 
-    ROUTER_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
-    log_path = ROUTER_ROOT / "router.log"
+    # One-shot legacy reap BEFORE spawning new daemon (D10 / §8.1).
+    try:
+        _reap_legacy_slack_router()
+    except RuntimeError as exc:
+        sys.stderr.write(f"[session_bind] {exc}\n")
+        return None
+
+    COMMS_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+    log_path = COMMS_ROOT / "router.log"
     try:
         with open(str(log_path), "a") as log_fh:
-            # Child inherits the fd; `with` closes the parent's handle after
-            # Popen returns (Popen dup2's it into the child process).
             proc = subprocess.Popen(
                 ["uv", "run", "--script", str(ROUTER_SCRIPT)],
                 start_new_session=True,
@@ -258,46 +384,12 @@ def _ensure_router_alive() -> int | None:
                 stderr=subprocess.STDOUT,
                 close_fds=True,
             )
-        log.info("spawned router pid=%d", proc.pid)
+        log.info("spawned comms router pid=%d", proc.pid)
         time.sleep(0.5)
         return proc.pid
     except OSError as exc:
         log.warning("router spawn failed: %s", exc)
         return None
-
-
-def _preflight_bot_scopes(bot_token: str) -> tuple[bool, str]:
-    """Verify bot token has all _REQUIRED_BOT_SCOPES.
-
-    Returns (ok, message). On ok=False, message is a human-readable
-    error describing the missing scopes and the reinstall fix.
-
-    Uses slack_sdk's SlackResponse, which exposes the
-    `x-oauth-scopes` header carrying the granted scope list.
-    """
-    try:
-        app = App(token=bot_token)
-        resp = app.client.auth_test()
-    except Exception as exc:  # noqa: BLE001 — surface network/auth errors verbatim
-        return False, f"auth.test failed: {exc}"
-
-    headers = getattr(resp, "headers", {}) or {}
-    raw = headers.get("x-oauth-scopes") or headers.get("X-OAuth-Scopes") or ""
-    granted: set[str] = {s.strip() for s in raw.split(",") if s.strip()}
-    missing = sorted(_REQUIRED_BOT_SCOPES - granted)
-    if not missing:
-        return True, ""
-
-    return False, (
-        f"Slack bot token is missing required scopes: {', '.join(missing)}.\n"
-        f"Granted scopes: {sorted(granted) or '<none>'}\n"
-        "Fix: api.slack.com/apps → your app → OAuth & Permissions → add the "
-        "missing scope(s) → click *Reinstall to Workspace* at the top of the "
-        "page → paste the refreshed xoxb- token into "
-        f"{default_env_path()}.\n"
-        "Without these scopes Slack will not deliver message events to the "
-        "router even though posts succeed."
-    )
 
 
 def _reap_legacy_listeners() -> None:
@@ -345,6 +437,37 @@ def _reap_legacy_listeners() -> None:
                 pass
 
 
+def _preflight_via_provider(project_path: Path) -> tuple[bool, str]:
+    """Verify provider creds/scopes before binding.
+
+    Delegates to CommsRegistry.active_provider().auth_preflight().
+    Returns (ok, message).
+    """
+    from comms.registry import get_registry  # noqa: PLC0415
+    try:
+        provider = get_registry().active_provider(project_path)
+        result = provider.auth_preflight()
+        return result.ok, result.message
+    except Exception as exc:  # noqa: BLE001
+        return False, f"auth preflight failed: {exc}"
+
+
+def _get_provider(project_path: Path) -> Any:
+    """Get active comms provider for project_path."""
+    from comms.registry import get_registry  # noqa: PLC0415
+    return get_registry().active_provider(project_path)
+
+
+def _make_thread_ref(channel_id: str, thread_ts: str) -> Any:
+    """Build a ThreadRef for Slack channel+thread_ts."""
+    from types import MappingProxyType  # noqa: PLC0415
+    from comms.types import ThreadRef  # noqa: PLC0415
+    return ThreadRef(
+        provider="slack",
+        provider_data=MappingProxyType({"channel_id": channel_id, "thread_ts": thread_ts}),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Subcommands
 # ---------------------------------------------------------------------------
@@ -359,14 +482,6 @@ def cmd_activate(args: argparse.Namespace) -> int:
     project_path = Path(args.project).expanduser().resolve() if args.project else cwd_full
 
     load_env_file(default_env_path())
-    bot_token = os.environ.get("SLACK_BOT_TOKEN", "")
-    app_token = os.environ.get("SLACK_APP_TOKEN", "")
-    if not bot_token or not app_token:
-        sys.stderr.write(
-            "SLACK_BOT_TOKEN and SLACK_APP_TOKEN required.\n"
-            f"Set them in {default_env_path()}\n"
-        )
-        return 1
 
     channel = _resolve_channel(project_path)
     if not channel:
@@ -377,7 +492,7 @@ def cmd_activate(args: argparse.Namespace) -> int:
         )
         return 1
 
-    ok, msg = _preflight_bot_scopes(bot_token)
+    ok, msg = _preflight_via_provider(project_path)
     if not ok:
         sys.stderr.write(msg + "\n")
         return 1
@@ -386,7 +501,7 @@ def cmd_activate(args: argparse.Namespace) -> int:
     session_d.mkdir(mode=0o700, parents=True, exist_ok=True)
     session_d.chmod(0o700)
 
-    # Reap legacy listeners BEFORE ensuring router alive (T4 / AC4).
+    # Reap legacy listeners BEFORE ensuring router alive.
     _reap_legacy_listeners()
 
     lock_fd, _ = _acquire_lock(sid)
@@ -398,8 +513,10 @@ def cmd_activate(args: argparse.Namespace) -> int:
                 # Idempotent: already active. Ensure router alive.
                 _ensure_router_alive()
                 existing["last_bound_at"] = now_iso()
-                # Drop inbox_daemon_pid field on write (router model).
                 existing.pop("inbox_daemon_pid", None)
+                # B7: schema_version always present; B8-write: always set provider.
+                existing.setdefault("schema_version", SCHEMA_VERSION)
+                existing["provider"] = "slack"
                 _atomic_write_state(sid, existing)
                 result = {
                     "channel": existing["channel_id"],
@@ -415,18 +532,22 @@ def cmd_activate(args: argparse.Namespace) -> int:
             existing["ended_at"] = None
             existing["last_bound_at"] = now_iso()
             existing.pop("inbox_daemon_pid", None)
+            existing.setdefault("schema_version", SCHEMA_VERSION)
+            existing["provider"] = "slack"
             _atomic_write_state(sid, existing)
 
-            app = App(token=bot_token)
             thread_ts = existing["thread_ts"]
             reopen_channel = existing["channel_id"]
-            app.client.chat_postMessage(
-                channel=reopen_channel,
-                thread_ts=thread_ts,
-                text=f":arrows_counterclockwise: *Session reopened* at {now_iso()}",
-                unfurl_links=False,
-                unfurl_media=False,
-            )
+            provider = _get_provider(project_path)
+            _thread_ref = _make_thread_ref(reopen_channel, thread_ts)
+            try:
+                provider.post_simple(
+                    _thread_ref,
+                    "status",
+                    f":arrows_counterclockwise: Session reopened at {now_iso()}",
+                )
+            except Exception as exc:
+                log.warning("reopen post failed: %s", exc)
 
             _ensure_router_alive()
             result = {
@@ -439,25 +560,24 @@ def cmd_activate(args: argparse.Namespace) -> int:
             return 0
 
         # No existing state — first bind.
-        app = App(token=bot_token)
+        provider = _get_provider(project_path)
         sid_short = _sid_short(sid)
-        resp = app.client.chat_postMessage(
-            channel=channel,
-            text=(
-                f":hourglass_flowing_sand: *Session started* `{sid_short}` "
-                f"(cwd={cwd_display})"
-            ),
-            unfurl_links=False,
-            unfurl_media=False,
+        opening_text = (
+            f":hourglass_flowing_sand: *Session started* `{sid_short}` "
+            f"(cwd={cwd_display})"
         )
-        thread_ts_new: str = resp["ts"]
+        thread_ref = provider.open_thread(channel, opening_text)
+        thread_ts_new: str = thread_ref.provider_data["thread_ts"]
 
         inbox_p = _inbox_path(sid)
         inbox_p.mkdir(mode=0o700, parents=True, exist_ok=True)
         inbox_p.chmod(0o700)
 
+        # B7: schema_version written; provider field written (new additive field).
         state: dict[str, Any] = {
+            "schema_version": SCHEMA_VERSION,
             "session_id": sid,
+            "provider": "slack",
             "channel_id": channel,
             "thread_ts": thread_ts_new,
             "cwd": str(cwd_full),
@@ -465,7 +585,6 @@ def cmd_activate(args: argparse.Namespace) -> int:
             "last_bound_at": now_iso(),
             "ended_at": None,
             "active": True,
-            "schema_version": SCHEMA_VERSION,
         }
         _atomic_write_state(sid, state)
 
@@ -490,13 +609,6 @@ def cmd_deactivate(args: argparse.Namespace) -> int:
     sid = _require_session_id()
 
     load_env_file(default_env_path())
-    bot_token = os.environ.get("SLACK_BOT_TOKEN", "")
-    app_token = os.environ.get("SLACK_APP_TOKEN", "")
-    if not bot_token or not app_token:
-        sys.stderr.write(
-            "SLACK_BOT_TOKEN and SLACK_APP_TOKEN required.\n"
-        )
-        return 1
 
     lock_fd, _ = _acquire_lock(sid)
     try:
@@ -509,21 +621,26 @@ def cmd_deactivate(args: argparse.Namespace) -> int:
             sys.stdout.write("already_inactive\n")
             return 0
 
-        app = App(token=bot_token)
-        app.client.chat_postMessage(
-            channel=state["channel_id"],
-            thread_ts=state["thread_ts"],
-            text=f":checkered_flag: *Session ended at {now_iso()}*",
-            unfurl_links=False,
-            unfurl_media=False,
-        )
+        project_path = Path(state.get("cwd", str(Path.cwd()))).expanduser().resolve()
+        provider = _get_provider(project_path)
+        thread_ref = _make_thread_ref(state["channel_id"], state["thread_ts"])
+        try:
+            provider.close_thread(
+                thread_ref,
+                f":checkered_flag: *Session ended at {now_iso()}*",
+            )
+        except Exception as exc:
+            log.warning("close_thread failed: %s", exc)
 
         state["active"] = False
         state["ended_at"] = now_iso()
         state.pop("inbox_daemon_pid", None)
+        # B7 + lazy-rewrite: always set schema_version and provider on write.
+        state.setdefault("schema_version", SCHEMA_VERSION)
+        state["provider"] = "slack"
         _atomic_write_state(sid, state)
 
-        # Router stays alive to serve other sessions; drops this route on next poll.
+        # Router stays alive to serve other sessions.
         sys.stdout.write("ok\n")
         return 0
 
@@ -558,14 +675,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="session_bind.py",
         description=(
-            "Activate / deactivate / status for session-bound Slack threading. "
+            "Activate / deactivate / status for session-bound comms threading. "
             "Reads CLAUDE_CODE_SESSION_ID from env."
         ),
     )
     parser.add_argument("--log-level", default="WARNING", help="logging level")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    act = sub.add_parser("activate", help="Bind session to a Slack thread")
+    act = sub.add_parser("activate", help="Bind session to a comms thread")
     act.add_argument(
         "--project",
         default=None,

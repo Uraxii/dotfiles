@@ -33,6 +33,7 @@ stow -n -v -t ~ .               # dry run (no filesystem changes)
 | opencode | AI agent stack | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
+| comms provider | Pipeline notification / Slack abstraction layer | [docs/comms.md](docs/comms.md) |
 
 For the theming architecture, agent rules, and the `docs/` contract itself, see [CLAUDE.md](CLAUDE.md).
 

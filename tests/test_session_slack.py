@@ -19,8 +19,8 @@ _PIPELINE_DIR = Path(__file__).parent.parent / ".claude" / "pipeline"
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from conftest import make_slack_json  # noqa: E402
-import session_slack  # noqa: E402
+from tests.conftest import make_slack_json  # noqa: E402
+import comms.session as session_slack  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
