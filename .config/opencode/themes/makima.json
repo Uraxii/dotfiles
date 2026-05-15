@@ -8,12 +8,12 @@
     "fg_muted": "#a89984",
     "accent": "#d79921",
     "error": "#cc241d",
-    "warning": "#d79921",
-    "success": "#98971a",
-    "info": "#458588",
+    "warning": "#fabd2f",
+    "success": "#b8bb26",
+    "info": "#83a598",
     "purple": "#b16286",
     "pink": "#d3869b",
-    "aqua": "#689d68",
+    "aqua": "#8ec07c",
     "border": "#1d2021"
   },
   "theme": {

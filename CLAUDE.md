@@ -24,7 +24,7 @@ stow -n -v .    # dry run
 │   ├── qt6ct/                    # Qt6 theming (qt6ct.conf)
 │   ├── starship.toml             # Starship prompt (currently disabled)
 │   ├── sway/                     # Sway WM (config, modules, themes, scripts)
-│   ├── waybar/                   # Waybar (config + CSS template)
+│   ├── waybar/                   # Waybar (HANCORE themes + Omarchy-shim)
 │   └── wofi/                     # Wofi launcher (config only, CSS is runtime)
 ├── .claude/                      # Claude Code project settings
 ├── home.nix                      # Nix home-manager config
@@ -63,8 +63,9 @@ Two placeholder syntaxes (to avoid Go template conflicts in oh-my-posh TOML):
 
 | Variable | Defined in | Placeholder | Used by |
 |----------|-----------|-------------|---------|
-| `$font_family` | `sway/prefs` | `{{FONT}}` | `waybar/style.css.tmpl`, `themes/*/data/wofi.css` |
+| `$font_family` | `sway/prefs` | `{{FONT}}` | `themes/*/data/wofi.css` |
 | `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
+| `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<id>/` |
 | OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
 
 Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
@@ -82,12 +83,13 @@ themes/<name>/
     ├── waybar-colors.css   # Waybar @define-color block
     ├── wofi.css            # Wofi CSS with {{FONT}} placeholder
     ├── omp-colors          # Shell vars for oh-my-posh ##PLACEHOLDER## substitution
+    ├── tmux-theme.conf     # Full tmux style overlay (status, window list, panes)
     └── icon-theme          # Icon theme name (e.g. Papirus-Dark)
 ```
 
 ## Runtime Files (generated, NOT tracked)
 
-`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors,style}.css`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`
+`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config}`, `~/.config/omarchy/current/theme/waybar.css` (HANCORE Omarchy-shim), `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`
 
 # Docs
 

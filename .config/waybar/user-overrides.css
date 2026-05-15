@@ -1,0 +1,19 @@
+/* User overrides — appended to every HANCORE theme's style.css by
+ * set-theme.sh. Survives theme switches.
+ *
+ * Constraints:
+ * - GTK CSS in waybar rejects `!important` on font-size + padding (logs
+ *   "Junk at end of value"). Use higher selector specificity instead.
+ * - Avoid applying min-height to `window#waybar *` — GTK SEGVs on layout
+ *   when min-height propagates into every leaf widget (icons, labels).
+ *   Apply size knobs to the bar root only.
+ */
+
+window#waybar {
+  font-size: 15px;
+  min-height: 24px;
+}
+
+window#waybar > box {
+  padding: 2px 6px;
+}

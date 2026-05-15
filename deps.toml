@@ -1,0 +1,314 @@
+# deps.toml — package manifest for install.py.
+#
+# Schema (option D, finalised):
+#   - Section header   = logical pkg id. Used by [groups] + script lookup.
+#   - pkg              = install name (default across distros).
+#   - description      = MANDATORY; one-line purpose.
+#   - enabled          = bool; default true. Set false to skip without deleting.
+#   - version          = optional pin (operator syntax). Omitted = latest;
+#                        installed-if-absent; no upgrade chase.
+#   - source           = native (default) | aur | nix-unstable | cargo | uv-tool
+#                        | pip | npm | manual | skip
+#                        Prefer `uv-tool` over `pip` for python CLIs on systems
+#                        with PEP 668 externally-managed-environment (Arch,
+#                        Fedora ≥39, Debian ≥12). uv-tool puts each tool in its
+#                        own isolated venv and exposes the binary on PATH.
+#   - bin              = optional binary name (string) OR list of names. If the
+#                        pkg-manager presence check returns absent but any
+#                        declared binary is on $PATH, the pkg is treated as
+#                        externally installed (skipped). Lets manually-installed
+#                        tools survive the idempotency check.
+#   - post_install     = optional idempotent shell snippet (run only if install fired).
+#   - <distro>.<field> = per-distro override (only fields that deviate).
+#
+# Version operators: "3.13", "=3.13", ">=3.13", "<4", "~=3.13", ">=3.13,<3.14".
+
+version = 1
+supported_distros = ["arch", "nixos", "ubuntu", "fedora"]
+
+[defaults]
+source  = "native"
+enabled = true
+
+# Default login shell. Script (post-install) ensures the chosen shell's binary
+# is registered in /etc/shells (sudo) and switches the current user via chsh.
+# Skipped if already current shell, or if the binary isn't found on PATH after
+# install. `id` refers to a section header below (e.g. "zsh", "xonsh", "bash").
+# Comment the whole [shell] block to disable the post-install shell switch.
+[shell]
+default = "xonsh"
+
+# ============================================================
+# Wayland / Sway ecosystem
+# ============================================================
+
+[sway]
+pkg = "sway"
+bin = "sway"
+description = "Wayland tiling window manager."
+
+[swayidle]
+pkg = "swayidle"
+bin = "swayidle"
+description = "Sway idle inhibitor and screen-lock trigger."
+
+[swaybg]
+pkg = "swaybg"
+bin = "swaybg"
+description = "Sway wallpaper daemon."
+
+[swaylock-effects]
+pkg = "swaylock-effects"
+bin = "swaylock"
+description = "Sway screen locker with blur and clock effects."
+arch.source = "aur"
+ubuntu.source = "manual"
+ubuntu.url = "https://github.com/jirutka/swaylock-effects"
+fedora.source = "manual"
+fedora.url = "https://github.com/jirutka/swaylock-effects"
+
+# ============================================================
+# Status bar & launcher
+# ============================================================
+
+[waybar]
+pkg = "waybar"
+bin = "waybar"
+description = "Status bar for Wayland compositors."
+
+[wofi]
+pkg = "wofi"
+bin = "wofi"
+description = "Application launcher for Wayland (rofi-style)."
+
+[networkmanager-dmenu]
+pkg = "networkmanager-dmenu"
+bin = "networkmanager_dmenu"
+description = "dmenu/wofi front-end for NetworkManager."
+arch.source = "aur"
+ubuntu.source = "manual"
+ubuntu.url = "https://github.com/firecat53/networkmanager-dmenu"
+fedora.source = "manual"
+fedora.url = "https://github.com/firecat53/networkmanager-dmenu"
+
+[pavucontrol]
+pkg = "pavucontrol"
+bin = "pavucontrol"
+description = "PulseAudio volume control GUI."
+
+# ============================================================
+# Applications
+# ============================================================
+
+[ghostty]
+pkg = "ghostty"
+bin = "ghostty"
+description = "GPU-accelerated terminal emulator."
+arch.source = "aur"
+ubuntu.source = "manual"
+ubuntu.url = "https://ghostty.org/download"
+fedora.source = "manual"
+fedora.url = "https://ghostty.org/download"
+
+[tmux]
+pkg = "tmux"
+bin = "tmux"
+description = "Terminal multiplexer (config: .config/tmux/tmux.conf)."
+
+[neovim]
+pkg = "neovim"
+bin = "nvim"
+description = "Modal text editor (Kickstart-based config)."
+version = ">=0.10"
+ubuntu.version = ">=0.9"
+
+[gcc]
+pkg = "gcc"
+bin = "gcc"
+description = "C compiler. Required by treesitter and native LSPs."
+
+[gnumake]
+pkg = "make"
+bin = "make"
+description = "Build tool. Required by plugin builds (telescope-fzf-native, etc)."
+nixos.pkg = "gnumake"
+
+[unzip]
+pkg = "unzip"
+bin = "unzip"
+description = "Zip extractor. Required for Mason package extraction."
+
+[ripgrep]
+pkg = "ripgrep"
+bin = "rg"
+description = "Fast recursive grep. Used by telescope live_grep."
+
+[fd]
+pkg = "fd"
+bin = ["fd", "fdfind"]
+description = "Fast find alternative. Used by telescope find_files."
+ubuntu.pkg = "fd-find"
+fedora.pkg = "fd-find"
+
+[wl-clipboard]
+pkg = "wl-clipboard"
+bin = ["wl-copy", "wl-paste"]
+description = "Wayland clipboard CLI (wl-copy / wl-paste). Used by nvim and tmux-yank."
+
+[nodejs]
+pkg = "nodejs"
+bin = ["node", "npm"]
+description = "JavaScript runtime. Required by Mason-installed JS/TS LSPs (tsserver, vtsls)."
+version = ">=22"
+nixos.pkg = "nodejs_22"
+ubuntu.pkg = "nodejs"
+fedora.pkg = "nodejs"
+
+# ============================================================
+# Fonts
+# ============================================================
+
+[nerd-fonts-0xproto]
+pkg = "ttf-0xproto-nerd"
+description = "0xProto patched Nerd Font. Used by ghostty, waybar, wofi."
+post_install = "fc-cache -f"
+arch.source = "aur"
+nixos.pkg = "nerd-fonts._0xproto"
+ubuntu.source = "manual"
+ubuntu.url = "https://github.com/ryanoasis/nerd-fonts/releases"
+fedora.source = "manual"
+fedora.url = "https://github.com/ryanoasis/nerd-fonts/releases"
+
+# ============================================================
+# Shell tooling
+# ============================================================
+
+[zsh]
+pkg = "zsh"
+bin = "zsh"
+description = "Z shell. Login shell for this user."
+
+[starship]
+pkg = "starship"
+bin = "starship"
+description = "Cross-shell prompt (config: .config/starship.toml.tmpl via set-theme.sh)."
+ubuntu.source = "cargo"
+
+[zoxide]
+pkg = "zoxide"
+bin = "zoxide"
+description = "Smart cd that learns frequent dirs. Used by .zshrc."
+
+[tealdeer]
+pkg = "tealdeer"
+bin = "tldr"
+description = "Fast tldr client (Rust). Offline man-page-style summaries."
+post_install = "tldr --update"
+ubuntu.source = "cargo"
+
+[stow]
+pkg = "stow"
+bin = "stow"
+description = "GNU Stow. Symlinks dotfiles into $HOME from this repo."
+
+[git]
+pkg = "git"
+bin = "git"
+description = "Base VCS. Required by lazy.nvim and tpm clone."
+
+[gh]
+pkg = "gh"
+bin = "gh"
+description = "GitHub CLI. PR / issue / repo operations."
+arch.pkg = "github-cli"
+
+[claude-code]
+pkg = "claude-code"
+bin = "claude"
+description = "Anthropic Claude Code CLI. Ships ~weekly; track upstream cadence."
+arch.source = "aur"
+arch.pkg = "claude-code-bin"
+nixos.source = "nix-unstable"
+ubuntu.source = "manual"
+ubuntu.url = "https://docs.claude.com/install"
+fedora.source = "manual"
+fedora.url = "https://docs.claude.com/install"
+
+[opencode]
+pkg = "opencode-ai"
+bin = "opencode"
+description = "Opencode AI coding agent CLI (config: .config/opencode/)."
+source = "npm"
+
+[pi]
+pkg = "@earendil-works/pi-coding-agent"
+bin = "pi"
+description = "Pi terminal coding harness (pi.dev). Minimal agent shell."
+source = "npm"
+
+# ============================================================
+# Python-CLI tools (uv tool install — PEP 668 safe)
+# ============================================================
+
+[xonsh]
+pkg = "xonsh[full]"
+bin = "xonsh"
+description = "Python-powered shell. Python syntax + shell operators in one prompt (xon.sh)."
+source = "pip"
+
+[jq]
+pkg = "jq"
+bin = "jq"
+description = "JSON parser CLI. Used by pipeline scripts and setup.sh."
+
+# ============================================================
+# Pipeline runtime (uv + python + weasyprint system libs)
+# ============================================================
+
+[uv]
+pkg = "uv"
+bin = "uv"
+description = "Python package runner. Drives `uv run --script` and `uvx weasyprint`."
+ubuntu.source = "cargo"
+
+[python]
+pkg = "python3.13"
+bin = ["python3.13", "python3"]
+description = "Python interpreter. Required by pipeline_ask, hooks, and inline-script tools."
+version = ">=3.11"
+arch.pkg = "python"
+nixos.pkg = "python313"
+
+[pango]
+pkg = "pango"
+description = "Text layout library. weasyprint runtime dep for HTML→PDF rendering."
+ubuntu.pkg = "libpango-1.0-0"
+
+[cairo]
+pkg = "cairo"
+description = "2D graphics library. weasyprint runtime dep for HTML→PDF rendering."
+ubuntu.pkg = "libcairo2"
+
+[gdk-pixbuf]
+pkg = "gdk-pixbuf2"
+description = "Image loading library. weasyprint runtime dep for HTML→PDF rendering."
+ubuntu.pkg = "libgdk-pixbuf-2.0-0"
+nixos.pkg = "gdk-pixbuf"
+
+[libffi]
+pkg = "libffi"
+description = "Foreign function interface library. weasyprint / cffi runtime dep."
+ubuntu.pkg = "libffi8"
+
+# ============================================================
+# Groups (bulk install: install.py --group <name>)
+# ============================================================
+
+[groups]
+desktop  = ["sway", "swayidle", "swaybg", "swaylock-effects", "waybar", "wofi", "networkmanager-dmenu", "pavucontrol"]
+terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer"]
+editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard", "nodejs"]
+fonts    = ["nerd-fonts-0xproto"]
+dotfiles = ["stow", "git", "gh", "jq"]
+ai       = ["claude-code", "opencode", "pi"]
+pipeline = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]

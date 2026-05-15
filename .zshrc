@@ -9,6 +9,14 @@
 export CHROME_EXECUTABLE=google-chrome-stable
 export PATH="$HOME/.local/bin:$PATH"
 
+# tmux autostart — attach to "root" session if exists, else create.
+# Guard: only outside an existing tmux, only if tmux binary present.
+# exec replaces this shell; tmux then spawns a fresh shell that re-reads
+# .zshrc with $TMUX set, so this branch is skipped on the inner shell.
+if [[ -z "$TMUX" ]] && command -v tmux &>/dev/null; then
+  exec tmux new-session -A -s root
+fi
+
 # Command Line Prompt
 
 # Use powerline
@@ -21,11 +29,11 @@ HAS_WIDECHARS="false"
 
 ## Starship
 
-#eval "$(starship init zsh)"
+eval "$(starship init zsh)"
 
 ## Oh My Posh
 
-eval "$(oh-my-posh init zsh --config ~/.config/omp/uraxii_atomic.omp.toml)"
+#eval "$(oh-my-posh init zsh --config ~/.config/omp/uraxii_atomic.omp.toml)"
 
 # Key Bindings
 

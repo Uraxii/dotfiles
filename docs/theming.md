@@ -1,8 +1,8 @@
 # Theming
 
 One-line: changing `set $theme <name>` in `.config/sway/prefs` and
-reloading sway re-skins sway, GTK, Qt6, waybar, wofi, and oh-my-posh
-in lock-step.
+reloading sway re-skins sway, GTK, Qt6, waybar, wofi, and the starship
+prompt in lock-step.
 
 For the full architecture, placeholder-syntax table, theme directory
 layout, and the list of generated runtime files, see the root
@@ -34,10 +34,16 @@ Practical recipes for extending the theming pipeline.
    - `waybar-colors.css` — `@define-color` block.
    - `wofi.css` — full CSS (no `@import` support); use `{{FONT}}` for
      font.
-   - `omp-colors` — shell-style `KEY=value` for the
-     `##PLACEHOLDER##` keys consumed by `set-theme.sh`
-     (see [shell.md](shell.md) for the full key list).
+   - `starship-palette` — shell-style `STARSHIP_PALETTE="<name>"`
+     naming a `[palettes.<name>]` block in
+     `.config/starship.toml.tmpl` (see [shell.md](shell.md)). Add the
+     matching palette block to the template too.
    - `icon-theme` — bare icon-theme name (e.g. `Papirus-Dark`).
+   - `tmux-theme.conf` — full tmux style overrides (status, window
+     list, panes, message). Copy from `themes/makima/data/tmux-theme.conf`
+     and re-color. `set-theme.sh` copies this to
+     `~/.local/share/tmux/theme.conf` and hot-reloads any running
+     tmux server.
 5. Set `set $theme <new>` in `.config/sway/prefs`, reload sway
    (`$mod+Shift+c`).
 
@@ -64,4 +70,4 @@ sub-section. Not duplicated here.
 ## External dependencies
 
 `bash`, `sed`, `gsettings` (GNOME schemas, for icon theme),
-plus all the per-component deps (waybar, wofi, qt6ct, oh-my-posh).
+plus all the per-component deps (waybar, wofi, qt6ct, starship).

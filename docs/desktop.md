@@ -76,38 +76,63 @@ configs (waybar, wofi, GTK, Qt6ct, oh-my-posh). See
 
 ### Purpose
 
-Top status bar. JSON config + theme-templated CSS.
+Top status bar. Layout + style sourced from HANCORE-linux/waybar-themes
+(vendored under `.config/waybar/themes/`). Active variant selected by
+`$waybar_theme` in `sway/prefs`. Colors come from active sway `$theme`
+via an Omarchy-compat shim.
 
 ### Key files
 
-- `.config/waybar/config` — JSON module layout.
-- `.config/waybar/style.css.tmpl` — CSS template
-  (`{{FONT}}` placeholder).
-- `.config/waybar/colors.css` — generated runtime, copied per theme.
-- `.config/waybar/style.css` — generated runtime, FONT-substituted.
+- `.config/waybar/themes/V*` — HANCORE theme variants
+  (`config.jsonc` + `style.css` per theme).
+- `.config/waybar/themes/omarchy/current/theme/waybar.css` — Omarchy-shim
+  source. Maps HANCORE color names (`@foreground`, `@background`,
+  `@red`, `@magenta`, `@base`, `@love`, ...) onto our palette
+  (`@bg`, `@fg`, `@accent`, `@urgent`, ...). Deployed at theme switch to
+  `~/.config/omarchy/current/theme/waybar.css` because waybar resolves
+  HANCORE's relative `@import` from the runtime CSS path, not the repo.
+- `.config/waybar/config` — runtime (generated, copy of selected
+  HANCORE `config.jsonc`).
+- `.config/waybar/style.css` — runtime (generated, copy of selected
+  HANCORE `style.css`).
+- `.config/waybar/colors.css` — runtime palette (generated from
+  `sway/themes/<theme>/data/waybar-colors.css`).
+- `.config/waybar/style.css.tmpl.legacy` — retired bespoke style
+  template (kept for reference; not consumed by anything).
 
 ### Keybindings & UX
 
-Modules:
-
-- left group: `power-profiles-daemon`, `bluetooth`, `network`
-- center: `sway/workspaces` (1..10 → 一..十)
-- right tray group: `tray`
-- right cluster: `pulseaudio`, `backlight`, `memory`, `cpu`, `battery`,
-  `clock`
-
-Click handlers:
-
-- bluetooth → `blueman-manager`
-- network → `networkmanager_dmenu`
-- pulseaudio → `pavucontrol` (left), `pamixer -t` (right), scroll ±5%
-- backlight → scroll `brightnessctl set 5%±`
+Modules: defined per HANCORE theme. Each `V*/config.jsonc` ships its own
+module list. To preview themes visually, see the HANCORE repo's
+`/showcases/` dir on GitHub.
 
 ### Theming integration
 
-`waybar-colors.css` from theme `data/` copied to
-`~/.config/waybar/colors.css`. `style.css.tmpl` rendered with
-`{{FONT}}` substitution.
+Two-axis: `$theme` (palette) and `$waybar_theme` (layout). Both live in
+`sway/prefs`. `set-theme.sh` writes:
+
+1. `~/.config/waybar/colors.css` ← `themes/<theme>/data/waybar-colors.css`.
+2. `~/.config/omarchy/current/theme/waybar.css` ← Omarchy-shim from repo
+   (re-imports `colors.css`, aliases HANCORE color names).
+3. `~/.config/waybar/{config,style.css}` ← chosen HANCORE theme.
+
+To switch layout: edit `$waybar_theme` in `sway/prefs`, reload sway.
+To switch palette: edit `$theme`, reload sway.
+
+### Omarchy caveat
+
+HANCORE themes target the Omarchy distro. Many `V*/config.jsonc` files
+reference Omarchy-specific helper commands and scripts:
+
+- `$OMARCHY_PATH/default/waybar/indicators/{idle,notification-silencing,screen-recording}.sh`
+- `omarchy-update-available`, `omarchy-voxtype-status`, `omarchy-theme-current`
+- `wttrbar` (weather; installable separately)
+- `waybar-module-pacman-updates` (Arch-only)
+
+Missing commands log errors in `journalctl --user`; the bar still
+renders and other modules work. Either install the equivalent tools,
+stub the scripts, or edit the chosen theme's `config.jsonc` to remove
+unwanted custom modules.
 
 ### External dependencies
 

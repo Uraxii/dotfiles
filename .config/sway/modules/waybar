@@ -1,2 +1,6 @@
 # Status Bar
+#
+# set-theme.sh (called via exec_always) also restarts waybar on every
+# config reload. Both paths converge on the same `~/.config/waybar/config`,
+# which has had Omarchy-only modules stripped by set-theme.sh.
 exec waybar

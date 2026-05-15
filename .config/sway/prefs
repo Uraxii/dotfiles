@@ -1,12 +1,16 @@
 ### Theme
 set $theme manjaro
+# Waybar layout (HANCORE-linux/waybar-themes). Any subdir name under
+# .config/waybar/themes/ (V1, V2.5, V3.6a, V7, ...). Each ships its own
+# config.jsonc + style.css; colors come from $theme via shim.
+set $waybar_theme V3.1d
 
 ### Default Applications
 set $term ghostty
 
 ### Font
 set $font_family "0xProto Nerd Font"
-font pango:0xProto Nerd Font 12
+font pango:0xProto Nerd Font 16
 
 # Your preferred application launcher
 set $menu wofi --show drun

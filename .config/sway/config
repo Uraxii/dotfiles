@@ -2,7 +2,7 @@ include consts
 include prefs
 include themes/$theme/*
 
-exec_always ~/.config/sway/scripts/set-theme.sh $theme $font_family
+exec_always ~/.config/sway/scripts/set-theme.sh $theme $font_family $waybar_theme
 
 include modules/*
 
