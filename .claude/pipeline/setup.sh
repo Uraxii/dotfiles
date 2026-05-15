@@ -41,10 +41,10 @@ check_cmd() {
   fi
 }
 
-check_cmd python3 "Install Python 3.11+ (system package or pyenv). NixOS: in home.nix."
-check_cmd uv      "Install: curl -LsSf https://astral.sh/uv/install.sh | sh   (NixOS: home.nix has uv)"
-check_cmd stow    "Install via your distro package manager (e.g. pacman -S stow). NixOS: home.nix."
-check_cmd jq      "Install via your distro package manager. NixOS: home.nix."
+check_cmd python3 "Install Python 3.11+ (system package or pyenv). Or: ./install.py --only python"
+check_cmd uv      "Install: curl -LsSf https://astral.sh/uv/install.sh | sh   (or: ./install.py --only uv)"
+check_cmd stow    "Install via your distro package manager (e.g. pacman -S stow). Or: ./install.py --only stow"
+check_cmd jq      "Install via your distro package manager. Or: ./install.py --only jq"
 check_cmd curl    "Install via your distro package manager."
 check_cmd git     "Install via your distro package manager."
 
@@ -206,7 +206,7 @@ if command -v uvx >/dev/null 2>&1; then
   ok "uvx ($(command -v uvx)) — weasyprint will be fetched on first --attach .html"
   note "Linux system libs may be required by weasyprint: pango cairo gdk-pixbuf."
   note "  Arch:    sudo pacman -S pango"
-  note "  NixOS:   home.nix lists pango + cairo + gdk-pixbuf + libffi"
+  note "  Any:     ./install.py --group pipeline   (deps.toml covers all 4)"
 else
   warn "uvx missing — HTML auto-PDF disabled. Install: ships with uv."
 fi
