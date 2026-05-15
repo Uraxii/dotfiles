@@ -39,9 +39,9 @@ bash ~/.claude/pipeline/setup.sh
 
 | OS | Command |
 |---|---|
-| **NixOS / home-manager** | `home.nix` already lists every dep (uv, stow, jq, python313, pango, cairo, gdk-pixbuf, libffi, gh). Run `home-manager switch` after pulling. |
-| **Arch** | `sudo pacman -S stow uv jq pango cairo gdk-pixbuf2 github-cli` |
-| **Debian / Ubuntu** | `sudo apt install stow jq libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 gh && curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **Any supported distro (recommended)** | `./install.py --group pipeline` (reads `deps.toml`; dispatches to native pkg manager per distro). |
+| **Arch (manual)** | `sudo pacman -S stow uv jq pango cairo gdk-pixbuf2 github-cli` |
+| **Debian / Ubuntu (manual)** | `sudo apt install stow jq libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 gh && curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | **macOS (Homebrew)** | `brew install stow uv jq pango cairo gdk-pixbuf gh` |
 
 `setup.sh` checks: external commands (`python3 ≥3.11`, `uv`, `stow`, `jq`,
