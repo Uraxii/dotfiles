@@ -8,16 +8,39 @@ return {
   -- Your original opts table is preserved
   opts = {
     cmdline = {
+      view = 'cmdline',
       format = {
         cmdline = {
-          title = 'Command',
-          icon = '>_',
+          title = '',
+          icon = '󰞷 ',
+        },
+        search_down = {
+          icon = ' ',
+        },
+        search_up = {
+          icon = ' ',
+        },
+        filter = {
+          icon = ' ',
+        },
+        lua = {
+          icon = ' ',
+        },
+        help = {
+          icon = '󰋗 ',
         },
       },
     },
+    messages = {
+      view_search = false,
+    },
+    popupmenu = {
+      enabled = true,
+      backend = 'cmp',
+    },
     presets = {
-      bottom_search = false,
-      command_palette = true,
+      bottom_search = true,
+      command_palette = false,
       long_message_to_split = true,
       inc_rename = false,
     },
@@ -42,15 +65,6 @@ return {
         },
       },
     },
-    -- We add this views table to control the border style
-    views = {
-      cmdline_popup = {
-        border = {
-          style = "rounded",
-          highlight = "FloatBorder",
-        },
-      },
-    },
   },
 
   -- The new config function handles all transparency overrides
@@ -66,10 +80,27 @@ return {
         "NormalFloat",
         "FloatBorder",
         -- Noice Specific UI
-        "NoiceCmdlinePopup",
-        "NoiceCmdlinePopupBorder",
+        "NoiceCmdline",
         "NoiceCmdlineIcon",
-        "NoiceCmdlineTitle",
+        "NoiceCmdlineIconCmdline",
+        "NoiceCmdlineIconSearch",
+        "NoiceCmdlineIconSearchDown",
+        "NoiceCmdlineIconSearchUp",
+        "NoiceCmdlineIconFilter",
+        "NoiceCmdlineIconLua",
+        "NoiceCmdlineIconHelp",
+        "NoiceCmdlineIconInput",
+        -- Popupmenu (cmp wildmenu via noice)
+        "NoicePopupmenu",
+        "NoicePopupmenuBorder",
+        "NoicePopupmenuSelected",
+        "NoicePopupmenuMatch",
+        -- Generic noice views
+        "NoicePopup",
+        "NoicePopupBorder",
+        "NoiceConfirm",
+        "NoiceConfirmBorder",
+        "NoiceMini",
       }
 
       for _, group in ipairs(highlights) do
