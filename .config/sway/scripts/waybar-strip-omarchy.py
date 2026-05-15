@@ -1,34 +1,65 @@
 #!/usr/bin/env python3
-"""Strip Omarchy-dependent modules from a HANCORE waybar config.
+"""Strip broken custom modules from a waybar config.
 
-Why: HANCORE themes call commands like omarchy-voxtype-status, wttrbar,
-waybar-module-pacman-updates, and scripts under $OMARCHY_PATH. When those
-are absent (we are not on Omarchy), the custom modules either log errors
-or SEGV waybar — especially modules declaring return-type: json that
-receive non-JSON on stdin.
+Why: third-party waybar themes routinely call helper commands the local
+system doesn't have (omarchy-*, wttrbar, waybar-module-pacman-updates,
+$OMARCHY_PATH/...sh, custom scripts that ship in OTHER themes, etc.).
+When a custom module declares `return-type: json` and its exec emits
+non-JSON (or the shell can't even find the binary), waybar SEGVs in the
+glib event loop.
+
+Two strip rules:
+  1. Pattern-based: known-bad commands (omarchy/wttrbar/etc.).
+  2. Resolvability: any custom/* module whose `exec` target doesn't
+     resolve to an existing file or PATH command gets dropped.
 
 Behavior:
 - Reads waybar config (jsonc) from argv[1].
-- Removes any "custom/*" module whose exec/on-click/etc. references one of
-  the Omarchy-specific patterns.
-- Also drops references to those module names from modules-left,
-  modules-center, modules-right (and any "modules" array).
-- Strips // line comments and /* */ block comments outside strings.
+- Removes matching "custom/*" module defs.
+- Removes their names from modules-{left,center,right} and any "modules"
+  array, including inside `group/*` containers.
+- Strips // line and /* */ block comments outside strings + trailing
+  commas so stock json.loads can parse.
 - Writes plain JSON back over the same file.
 
-Idempotent: safe to run on already-stripped config.
+Idempotent.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
+import shlex
+import shutil
 import sys
 from pathlib import Path
 
 OMARCHY_PATTERNS = re.compile(
     r"omarchy|wttrbar|waybar-module-pacman-updates|\$OMARCHY_PATH"
 )
+
+
+def exec_target_missing(exec_str: str) -> bool:
+    """Return True if the exec's first word can't be found on the system.
+
+    Handles three shapes seen in waybar custom modules:
+      - `~/.config/waybar/scripts/foo.sh -j`   (path with tilde + args)
+      - `/usr/bin/foo`                          (absolute path)
+      - `bare-binary --flag`                    (PATH lookup)
+    """
+    if not exec_str:
+        return False  # no exec key — not an exec module (e.g. format-only)
+    try:
+        words = shlex.split(exec_str, posix=True)
+    except ValueError:
+        return False  # unparseable; leave alone
+    if not words:
+        return False
+    first = os.path.expanduser(os.path.expandvars(words[0]))
+    if "/" in first:
+        return not (os.path.isfile(first) and os.access(first, os.X_OK))
+    return shutil.which(first) is None
 
 
 def strip_jsonc(text: str) -> str:
@@ -77,24 +108,37 @@ def strip_trailing_commas(text: str) -> str:
     return re.sub(r",(\s*[}\]])", r"\1", text)
 
 
-def is_omarchy_module(name: str, body: dict | None) -> bool:
-    """A custom/* module is Omarchy-tied if its name or any string field
-    matches the OMARCHY_PATTERNS regex."""
+def is_broken_module(name: str, body: dict | None) -> bool:
+    """A custom/* module should be stripped if either:
+      - Any string field matches the known-bad pattern set, OR
+      - Its `exec` field's first word doesn't resolve on this system.
+    """
     if not name.startswith("custom/"):
         return False
-    haystack = [name]
     if isinstance(body, dict):
         for v in body.values():
-            if isinstance(v, str):
-                haystack.append(v)
-    return any(OMARCHY_PATTERNS.search(s) for s in haystack)
+            if isinstance(v, str) and OMARCHY_PATTERNS.search(v):
+                return True
+        if OMARCHY_PATTERNS.search(name):
+            return True
+        if exec_target_missing(body.get("exec", "")):
+            return True
+    elif OMARCHY_PATTERNS.search(name):
+        return True
+    return False
 
 
 def filter_modules(cfg: dict) -> dict:
-    """Remove Omarchy module definitions + references in a single bar config."""
+    """Remove Omarchy module definitions + references in a single bar config.
+
+    Strips:
+      1. Top-level custom/* defs that match OMARCHY_PATTERNS.
+      2. Their names from modules-left/center/right.
+      3. Their names from group/*.modules arrays (nested module containers).
+    """
     omarchy_names: set[str] = set()
     for key, val in list(cfg.items()):
-        if key.startswith("custom/") and is_omarchy_module(key, val):
+        if key.startswith("custom/") and is_broken_module(key, val):
             omarchy_names.add(key)
             cfg.pop(key)
     if not omarchy_names:
@@ -108,6 +152,12 @@ def filter_modules(cfg: dict) -> dict:
         arr = cfg.get(arr_key)
         if isinstance(arr, list):
             cfg[arr_key] = [m for m in arr if m not in omarchy_names]
+    # Recurse into group/* containers: each defines its own `modules` array.
+    for key, val in cfg.items():
+        if key.startswith("group/") and isinstance(val, dict):
+            inner = val.get("modules")
+            if isinstance(inner, list):
+                val["modules"] = [m for m in inner if m not in omarchy_names]
     return cfg
 
 

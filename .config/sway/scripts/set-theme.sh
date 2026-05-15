@@ -1,7 +1,7 @@
 #!/bin/bash
 THEME="${1:-makima}"
 FONT="${2:-0xProto Nerd Font}"
-WAYBAR_THEME="${3:-V1}"
+WAYBAR_THEME="${3:-minimal}"
 THEME_DIR="$HOME/.config/sway/themes/$THEME/data"
 WAYBAR_THEMES_DIR="$HOME/.config/waybar/themes"
 [ ! -d "$THEME_DIR" ] && exit 1
@@ -16,44 +16,45 @@ WAYBAR_THEMES_DIR="$HOME/.config/waybar/themes"
 [ -f "$THEME_DIR/waybar-colors.css" ] && \
     cp "$THEME_DIR/waybar-colors.css" "$HOME/.config/waybar/colors.css"
 
-# Omarchy-shim — HANCORE themes import "../omarchy/current/theme/waybar.css"
-# which resolves from ~/.config/waybar/style.css to ~/.config/omarchy/...
-# Deploy the tracked shim there so HANCORE @imports succeed; shim then
-# re-imports our colors.css and aliases Omarchy color names to ours.
-SHIM_SRC="$HOME/.config/waybar/themes/omarchy/current/theme/waybar.css"
-SHIM_DST="$HOME/.config/omarchy/current/theme/waybar.css"
-[ -f "$SHIM_SRC" ] && {
-    mkdir -p "$(dirname "$SHIM_DST")"
-    cp "$SHIM_SRC" "$SHIM_DST"
-}
-
-# Waybar layout — pick HANCORE theme by $waybar_theme. Each theme dir ships
-# config.jsonc + style.css plus optional sibling palette/scripts
-# (rose-pine.css, cava.sh, scrolling-mpris.py, window_pill.py, bob2.svg, ...).
-# Some style.css files @import siblings relatively (e.g. ./rose-pine.css)
-# which resolve to ~/.config/waybar/ at runtime — so copy the whole dir.
+# Waybar layout — copy chosen theme's files to runtime dir + deploy module
+# helper scripts. Theme dir ships config.jsonc + style.css and optionally
+# a scripts/ subdir referenced by custom modules at ~/.config/waybar/scripts/.
 if [ -d "$WAYBAR_THEMES_DIR/$WAYBAR_THEME" ]; then
     # Purge previous theme's sibling files. Preserve: colors.css (palette
-    # owned by $theme pipeline), legacy template, dotfiles.
+    # owned by $theme pipeline), user-overrides.css, dotfiles.
     # -L follows the ~/.config/waybar symlink (stow tree-folded into repo).
     find -L "$HOME/.config/waybar" -maxdepth 1 -type f \
         ! -name 'colors.css' \
         ! -name 'user-overrides.css' \
-        ! -name 'style.css.tmpl.legacy' \
         ! -name '.*' \
         -delete 2>/dev/null
+    # Purge previous scripts/ — refreshed below from active theme.
+    rm -rf "$HOME/.config/waybar/scripts" 2>/dev/null
     cp -r "$WAYBAR_THEMES_DIR/$WAYBAR_THEME"/. "$HOME/.config/waybar/"
-    # Waybar expects "config" at default path, HANCORE ships "config.jsonc".
+    # Waybar default config path is `config`. Themes may ship `config.jsonc`.
     [ -f "$HOME/.config/waybar/config.jsonc" ] && \
         mv "$HOME/.config/waybar/config.jsonc" "$HOME/.config/waybar/config"
-    # Strip Omarchy-dependent custom modules (omarchy-*, wttrbar,
-    # waybar-module-pacman-updates, $OMARCHY_PATH/...). Those exec calls
-    # fail on non-Omarchy systems and SEGV waybar when `return-type: json`
-    # modules receive non-JSON output.
+    # Ensure module helper scripts are executable post-copy.
+    [ -d "$HOME/.config/waybar/scripts" ] && \
+        chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null
+    # Strip Omarchy-dependent custom modules (no-op on themes that don't use
+    # them, but preserved for future theme additions).
     STRIPPER="$HOME/.config/sway/scripts/waybar-strip-omarchy.py"
     [ -x "$STRIPPER" ] && python3 "$STRIPPER" "$HOME/.config/waybar/config" 2>/dev/null
-    # User overrides — appended at end of style.css (CSS cascade + !important
-    # lets us beat per-theme rules without prepending an @import).
+    # Prepend palette @import so theme CSS + user overrides can use
+    # @bg / @fg / @accent / @urgent / @info / @success / @warning /
+    # @accent1 / @accent2 (defined in colors.css, generated per $theme).
+    # @import must be at the top of the file per GTK CSS spec.
+    if [ -f "$HOME/.config/waybar/style.css" ] && [ -f "$HOME/.config/waybar/colors.css" ]; then
+        STYLE_TMP=$(mktemp)
+        {
+            printf '@import url("colors.css");\n\n'
+            cat "$HOME/.config/waybar/style.css"
+        } > "$STYLE_TMP"
+        mv "$STYLE_TMP" "$HOME/.config/waybar/style.css"
+    fi
+    # User overrides appended at end (cascade beats per-theme rules via
+    # selector specificity; GTK CSS rejects !important on font-size/padding).
     USER_OVERRIDES="$HOME/.config/waybar/user-overrides.css"
     if [ -f "$USER_OVERRIDES" ] && [ -f "$HOME/.config/waybar/style.css" ]; then
         printf '\n/* --- user-overrides.css --- */\n' >> "$HOME/.config/waybar/style.css"

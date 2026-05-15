@@ -1,19 +1,143 @@
 /* User overrides — appended to every HANCORE theme's style.css by
  * set-theme.sh. Survives theme switches.
  *
- * Constraints:
- * - GTK CSS in waybar rejects `!important` on font-size + padding (logs
- *   "Junk at end of value"). Use higher selector specificity instead.
- * - Avoid applying min-height to `window#waybar *` — GTK SEGVs on layout
- *   when min-height propagates into every leaf widget (icons, labels).
- *   Apply size knobs to the bar root only.
+ * Hard-won constraints:
+ * - GTK CSS in waybar rejects `!important` on font-size + padding
+ *   ("Junk at end of value"). Use selector specificity instead.
+ * - DO NOT apply `min-height` to descendant widgets (`*`, `label`, ...).
+ *   GTK SEGVs in gtk_widget_get_preferred_height when min-height
+ *   propagates through nested module containers.
+ *   min-height is bar-root ONLY.
+ *
+ * Tune `font-size` + `min-height` here. Bigger font → bigger min-height
+ * (font 17 → height 30 ish).
  */
 
-window#waybar {
-  font-size: 15px;
-  min-height: 24px;
+/* ----- Font ----- */
+/* Theme defaults to JetBrainsMono Nerd Font which isn't installed → font
+ * fallback drops Nerd Font glyph alignment → icons overlap text. Force
+ * the installed Nerd Font from sway/prefs ($font_family). */
+window#waybar,
+window#waybar label {
+  font-family: "0xProto Nerd Font", "0xProto Nerd Font Mono", monospace;
 }
 
+/* ----- Size ----- */
+window#waybar {
+  font-size: 20px;
+  min-height: 28px;
+  margin: 0;             /* kill ashish-kus minimal's 5px screen-edge gap */
+  border-radius: 0;
+}
+
+window#waybar label {
+  font-size: 20px;
+}
+
+/* ----- Colors ----- */
+/* Palette imported at top of runtime style.css by set-theme.sh
+ * (colors.css). Re-skins ashish-kus minimal's hard-coded #000000 pills
+ * with the active sway $theme's palette. Updates on every sway reload
+ * because exec_always re-runs set-theme.sh which regenerates colors.css. */
+window#waybar {
+  background: transparent;
+  color: @fg;
+}
+
+.modules-left,
+.modules-right {
+  background: @bg2;
+  color: @fg;
+}
+
+.modules-center {
+  background: transparent;
+  color: @fg;
+}
+
+/* Workspace buttons (sway/workspaces). GTK ignores button vertical
+ * margin reliably, so highlight as a colored bottom underline instead
+ * of a full-height pill. */
+window#waybar #workspaces button {
+  padding: 0 10px;
+  margin: 0 2px;
+  color: @fg;
+  background: transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  min-width: 0;
+  min-height: 0;
+}
+window#waybar #workspaces button.focused,
+window#waybar #workspaces button.active {
+  color: @accent;
+  background: transparent;
+  border-bottom: 3px solid @accent;
+}
+window#waybar #workspaces button.urgent {
+  color: @urgent;
+  border-bottom: 3px solid @urgent;
+}
+
+/* Urgent / critical states. */
+window#waybar #battery.critical,
+window#waybar #battery.warning,
+window#waybar #workspaces button.urgent,
+window#waybar #temperature.critical,
+window#waybar #pulseaudio.muted {
+  color: @urgent;
+}
+
+/* ----- Spacing ----- */
 window#waybar > box {
-  padding: 2px 6px;
+  padding: 0;
+}
+
+/* ashish-kus minimal rounds + offsets the left/right groups. Keep the
+ * INNER (center-facing) ends rounded, flush the OUTER (screen-edge)
+ * ends. border-radius: TL TR BR BL. */
+.modules-left,
+.modules-right,
+.modules-center {
+  margin: 0;
+}
+/* Asymmetric padding: more on the rounded (inner, center-facing) end so
+ * content doesn't crash into the curve; less on the flush (outer,
+ * screen-edge) end. */
+.modules-left {
+  border-radius: 0 20px 20px 0;   /* round right side only */
+  padding: 0 14px 0 8px;
+}
+.modules-right {
+  border-radius: 20px 0 0 20px;   /* round left side only */
+  padding: 0 8px 0 14px;
+}
+.modules-center {
+  /* Empty center group — kill the pill backdrop. */
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+/* Module padding — explicit ID list. No `*` selector to avoid GTK layout
+ * recursion bugs. Add to this list if a new module shows up cramped. */
+window#waybar #workspaces button,
+window#waybar #clock,
+window#waybar #battery,
+window#waybar #network,
+window#waybar #bluetooth,
+window#waybar #pulseaudio,
+window#waybar #backlight,
+window#waybar #cpu,
+window#waybar #memory,
+window#waybar #tray,
+window#waybar #idle_inhibitor,
+window#waybar #language,
+window#waybar #keyboard-state,
+window#waybar #temperature,
+window#waybar #disk,
+window#waybar #power-profiles-daemon {
+  padding: 0 10px;
+  margin: 0 2px;
 }

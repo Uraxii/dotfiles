@@ -6,6 +6,6 @@ for_window [app_id="com.mitchellh.ghostty"] opacity 0.92
 # Borders
 smart_borders on
 gaps inner 5
-gaps outer 3
+gaps outer 0
 default_border pixel 3
 

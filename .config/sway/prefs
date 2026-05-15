@@ -1,9 +1,9 @@
 ### Theme
 set $theme manjaro
-# Waybar layout (HANCORE-linux/waybar-themes). Any subdir name under
-# .config/waybar/themes/ (V1, V2.5, V3.6a, V7, ...). Each ships its own
-# config.jsonc + style.css; colors come from $theme via shim.
-set $waybar_theme V3.1d
+# Waybar layout. Subdir name under .config/waybar/themes/. Currently only
+# `minimal` (ashish-kus/waybar-minimal — single config, Hyprland-leaning
+# but degrades cleanly on sway).
+set $waybar_theme minimal
 
 ### Default Applications
 set $term ghostty
