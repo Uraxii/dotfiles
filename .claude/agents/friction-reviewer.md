@@ -1,8 +1,14 @@
 ---
 name: friction-reviewer
 description: Closes pipeline runs. Surfaces process pain. Mandatory.
-model: haiku
-tools: Read, Grep, Glob, Edit, Write, Skill
+model: openai/gpt-5.5
+tools:
+  read: true
+  grep: true
+  glob: true
+  edit: true
+  write: true
+  skill: true
 mode: subagent
 color: secondary
 ---
