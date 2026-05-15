@@ -1,8 +1,13 @@
 ---
 name: architect
 description: System design, contracts, ADR-level decisions.
-model: opus
-tools: Read, Write, Grep, Glob, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  write: true
+  grep: true
+  glob: true
+  skill: true
 mode: subagent
 color: accent
 ---
