@@ -1,7 +1,7 @@
 ---
 name: build
 description: Implement design into prod code/tests w/ build-evidence + prebuild-checklist artifacts. TDD doctrine when test runner permits red-green loop.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   write: true

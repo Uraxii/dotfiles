@@ -1,7 +1,7 @@
 ---
 name: content-designer
 description: Dream up new content, features, themes for any project. Pre-plan ideation. Authors pitches, drafts, direction docs, decision options.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   write: true

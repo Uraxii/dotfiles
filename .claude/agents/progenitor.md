@@ -1,7 +1,7 @@
 ---
 name: progenitor
 description: Creates, modifies, retires agent roles AND skills. Root of agent system.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true

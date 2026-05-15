@@ -1,7 +1,7 @@
 ---
 name: skeptic
 description: Critical gatekeeper. Reviews designs pre-impl + code post-impl. Mandatory all pipelines.
-model: openai/gpt-5.5
+model: openai/gpt-5.5-pro
 tools:
   read: true
   grep: true
