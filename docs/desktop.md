@@ -76,35 +76,33 @@ configs (waybar, wofi, GTK, Qt6ct, oh-my-posh). See
 
 ### Purpose
 
-Top status bar. Layout + style sourced from HANCORE-linux/waybar-themes
-(vendored under `.config/waybar/themes/`). Active variant selected by
+Top status bar. Layout + style sourced from a vendored upstream theme
+under `.config/waybar/themes/<name>/`. Active theme selected by
 `$waybar_theme` in `sway/prefs`. Colors come from active sway `$theme`
-via an Omarchy-compat shim.
+via the palette pipeline (`.config/waybar/colors.css`).
 
 ### Key files
 
-- `.config/waybar/themes/V*` — HANCORE theme variants
-  (`config.jsonc` + `style.css` per theme).
-- `.config/waybar/themes/omarchy/current/theme/waybar.css` — Omarchy-shim
-  source. Maps HANCORE color names (`@foreground`, `@background`,
-  `@red`, `@magenta`, `@base`, `@love`, ...) onto our palette
-  (`@bg`, `@fg`, `@accent`, `@urgent`, ...). Deployed at theme switch to
-  `~/.config/omarchy/current/theme/waybar.css` because waybar resolves
-  HANCORE's relative `@import` from the runtime CSS path, not the repo.
-- `.config/waybar/config` — runtime (generated, copy of selected
-  HANCORE `config.jsonc`).
-- `.config/waybar/style.css` — runtime (generated, copy of selected
-  HANCORE `style.css`).
+- `.config/waybar/themes/minimal/` — ashish-kus/waybar-minimal (current
+  only vendored theme). Ships `config.jsonc`, `style.css`, `style2.css`,
+  `scripts/` (helper scripts for custom modules).
+- `.config/waybar/config` — runtime config (generated; selected theme's
+  `config.jsonc` post-stripped).
+- `.config/waybar/style.css` — runtime CSS (generated; selected theme's
+  `style.css` + appended user-overrides).
 - `.config/waybar/colors.css` — runtime palette (generated from
   `sway/themes/<theme>/data/waybar-colors.css`).
-- `.config/waybar/style.css.tmpl.legacy` — retired bespoke style
-  template (kept for reference; not consumed by anything).
-
-### Keybindings & UX
-
-Modules: defined per HANCORE theme. Each `V*/config.jsonc` ships its own
-module list. To preview themes visually, see the HANCORE repo's
-`/showcases/` dir on GitHub.
+- `.config/waybar/scripts/` — runtime copy of selected theme's
+  `scripts/` dir (referenced by custom modules at
+  `~/.config/waybar/scripts/<name>.sh`).
+- `.config/waybar/user-overrides.css` — persistent style overlay
+  (font size, padding, etc.). Appended to runtime `style.css` on every
+  theme switch. Tracked. Edit this, not the runtime file.
+- `.config/sway/scripts/waybar-strip-omarchy.py` — pre-launch sanitizer.
+  Drops `custom/*` modules whose `exec` command doesn't resolve on this
+  system (Omarchy-only commands, missing scripts, missing binaries).
+  Without it, waybar SEGVs in glib when `return-type: json` modules
+  receive non-JSON from a failed exec.
 
 ### Theming integration
 
@@ -112,27 +110,22 @@ Two-axis: `$theme` (palette) and `$waybar_theme` (layout). Both live in
 `sway/prefs`. `set-theme.sh` writes:
 
 1. `~/.config/waybar/colors.css` ← `themes/<theme>/data/waybar-colors.css`.
-2. `~/.config/omarchy/current/theme/waybar.css` ← Omarchy-shim from repo
-   (re-imports `colors.css`, aliases HANCORE color names).
-3. `~/.config/waybar/{config,style.css}` ← chosen HANCORE theme.
+2. `~/.config/waybar/{config, style.css, scripts/}` ← chosen waybar theme
+   (full dir copy; old siblings purged first).
+3. Runs `waybar-strip-omarchy.py` over the new config to drop broken
+   `custom/*` modules.
+4. Appends `user-overrides.css` to runtime `style.css`.
 
-To switch layout: edit `$waybar_theme` in `sway/prefs`, reload sway.
-To switch palette: edit `$theme`, reload sway.
+To swap layout: edit `$waybar_theme` in `sway/prefs`, reload sway.
+To swap palette: edit `$theme`, reload sway.
 
-### Omarchy caveat
+### Adding a new waybar theme
 
-HANCORE themes target the Omarchy distro. Many `V*/config.jsonc` files
-reference Omarchy-specific helper commands and scripts:
-
-- `$OMARCHY_PATH/default/waybar/indicators/{idle,notification-silencing,screen-recording}.sh`
-- `omarchy-update-available`, `omarchy-voxtype-status`, `omarchy-theme-current`
-- `wttrbar` (weather; installable separately)
-- `waybar-module-pacman-updates` (Arch-only)
-
-Missing commands log errors in `journalctl --user`; the bar still
-renders and other modules work. Either install the equivalent tools,
-stub the scripts, or edit the chosen theme's `config.jsonc` to remove
-unwanted custom modules.
+1. Drop the upstream theme dir at `.config/waybar/themes/<name>/`
+   (must contain `config.jsonc` and `style.css`; optionally `scripts/`).
+2. Set `set $waybar_theme <name>` in `.config/sway/prefs`.
+3. Reload sway. The stripper runs automatically — modules referencing
+   missing commands are removed.
 
 ### External dependencies
 

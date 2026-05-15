@@ -24,7 +24,7 @@ stow -n -v .    # dry run
 │   ├── qt6ct/                    # Qt6 theming (qt6ct.conf)
 │   ├── starship.toml             # Starship prompt (currently disabled)
 │   ├── sway/                     # Sway WM (config, modules, themes, scripts)
-│   ├── waybar/                   # Waybar (HANCORE themes + Omarchy-shim)
+│   ├── waybar/                   # Waybar (themes/<name>/ + user-overrides.css)
 │   └── wofi/                     # Wofi launcher (config only, CSS is runtime)
 ├── .claude/                      # Claude Code project settings
 ├── home.nix                      # Nix home-manager config
@@ -65,7 +65,7 @@ Two placeholder syntaxes (to avoid Go template conflicts in oh-my-posh TOML):
 |----------|-----------|-------------|---------|
 | `$font_family` | `sway/prefs` | `{{FONT}}` | `themes/*/data/wofi.css` |
 | `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
-| `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<id>/` |
+| `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<name>/` (currently `minimal`) |
 | OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
 
 Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
@@ -89,7 +89,7 @@ themes/<name>/
 
 ## Runtime Files (generated, NOT tracked)
 
-`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config}`, `~/.config/omarchy/current/theme/waybar.css` (HANCORE Omarchy-shim), `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`
+`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config,scripts/}`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`
 
 # Docs
 
