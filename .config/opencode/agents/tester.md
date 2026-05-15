@@ -1,8 +1,15 @@
 ---
 name: tester
 description: Test strategy, cases, runs. Unit, integration, Playwright. Adversarial.
-model: sonnet
-tools: Read, Grep, Glob, Bash, Edit, Write, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  edit: true
+  write: true
+  skill: true
 mode: subagent
 color: secondary
 ---

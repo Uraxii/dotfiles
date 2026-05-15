@@ -1,8 +1,13 @@
 ---
 name: plan
 description: Scope/task breakdown only. No composition decisions.
-model: opus
-tools: Read, Grep, Glob, Write, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  grep: true
+  glob: true
+  write: true
+  skill: true
 mode: subagent
 color: info
 ---

@@ -1,8 +1,12 @@
 ---
 name: reviewer
 description: Reviews code + PRs. Quality, consistency, security, perf. Approves or req changes. Spawned in pairs (Standards + Spec) by orchestrator for two-axis review.
-model: haiku
-tools: Read, Grep, Glob, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  grep: true
+  glob: true
+  skill: true
 mode: subagent
 color: secondary
 ---

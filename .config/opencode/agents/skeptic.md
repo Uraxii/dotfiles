@@ -1,8 +1,14 @@
 ---
 name: skeptic
 description: Critical gatekeeper. Reviews designs pre-impl + code post-impl. Mandatory all pipelines.
-model: opus
-tools: Read, Grep, Glob, Bash, Edit, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  edit: true
+  skill: true
 mode: subagent
 color: warning
 ---

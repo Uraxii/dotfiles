@@ -1,8 +1,14 @@
 ---
 name: progenitor
 description: Creates, modifies, retires agent roles AND skills. Root of agent system.
-model: haiku
-tools: Read, Grep, Glob, Edit, Write, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  grep: true
+  glob: true
+  edit: true
+  write: true
+  skill: true
 mode: primary
 color: accent
 ---

@@ -1,8 +1,13 @@
 ---
 name: security-auditor
 description: Vulns, threat modeling, security policy. Engage @ design phase.
-model: opus
-tools: Read, Grep, Glob, Bash, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  skill: true
 mode: subagent
 color: error
 ---

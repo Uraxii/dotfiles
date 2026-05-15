@@ -1,8 +1,15 @@
 ---
 name: build
 description: Implement design into prod code/tests w/ build-evidence + prebuild-checklist artifacts. TDD doctrine when test runner permits red-green loop.
-model: sonnet
-tools: Read, Write, Edit, Grep, Glob, Bash, Skill
+model: openai/gpt-5.5-pro
+tools:
+  read: true
+  write: true
+  edit: true
+  grep: true
+  glob: true
+  bash: true
+  skill: true
 mode: subagent
 color: success
 ---
