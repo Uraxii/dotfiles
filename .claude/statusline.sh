@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Claude Code statusline: usage bars + tokens per minute
 
 input=$(cat)
