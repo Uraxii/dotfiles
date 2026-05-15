@@ -1,146 +1,283 @@
 {
-    "reload_style_on_change": true,
-    "exclusive": true,
-    "position": "top",
-    "spacing": 0,
-    "height": 0,
-    "margin-top": 0,
-    "margin-bottom": 0,
-    "margin-right": 0,
-    "margin-left": 0,
-
-    "modules-left": [
-        "group/left2"
-    ],
-    "modules-center": ["sway/workspaces"],
-    "modules-right": ["group/right1", "group/right"],
-
-    "group/left2": {
-        "orientation": "inherit",
-        "modules": ["power-profiles-daemon", "bluetooth", "network"]
+  "reload_style_on_change": true,
+  "layer": "top",
+  "position": "top",
+  "mod": "dock",
+  "margin-top": 4,
+  "margin-left": 10,
+  "margin-right": 10,
+  "margin-bottom": 0,
+  "group/left1": {
+    "orientation": "inherit",
+    "modules": [
+      "custom/omarchy",
+      "clock",
+      "custom/voxtype",
+      "custom/idle-indicator",
+      "custom/notification-silencing-indicator",
+      "custom/weather"
+    ]
+  },
+  "group/left2": {
+    "orientation": "inherit",
+    "modules": [
+      "hyprland/workspaces"
+    ]
+  },
+  "group/left3": {
+    "orientation": "inherit",
+    "modules": [
+      "idle_inhibitor",
+      "custom/screenrecording-indicator",
+      "custom/updatespacman",
+      "custom/update"
+    ]
+  },
+  "group/left4": {
+    "orientation": "inherit",
+    "modules": [
+      "mpris"
+    ]
+  },
+  "modules-left": [
+    "group/left1",
+    "group/left2",
+    "group/left3",
+    "group/left4"
+  ],
+  "modules-center": [
+    "hyprland/window"
+  ],
+  "modules-right": [
+    "group/right1",
+    "group/right2"
+  ],
+  "group/right1": {
+    "orientation": "inherit",
+    "modules": [
+      "tray"
+    ]
+  },
+  "group/right2": {
+    "orientation": "inherit",
+    "modules": [
+      "backlight",
+      "bluetooth",
+      "pulseaudio#output",
+      "pulseaudio#input",
+      "network",
+      "memory",
+      "cpu",
+      "battery"
+    ]
+  },
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "1": "\u4e00",
+      "2": "\u4e8c",
+      "3": "\u4e09",
+      "4": "\u56db",
+      "5": "\u4e94",
+      "6": "\u516d"
     },
-
-    "group/right1": {
-        "orientation": "inherit",
-        "modules": ["tray"]
-    },
-
-    "group/right": {
-        "orientation": "inherit",
-        "modules": ["pulseaudio", "backlight", "memory", "cpu", "battery", "clock"]
-    },
-
-    "sway/workspaces": {
-        "disable-scroll": true,
-        "all-outputs": true,
-        "format": "{icon}",
-        "format-icons": {
-            "1": "一",
-            "2": "二",
-            "3": "三",
-            "4": "四",
-            "5": "五",
-            "6": "六",
-            "7": "七",
-            "8": "八",
-            "9": "九",
-            "10": "十"
-        }
-    },
-
-    "power-profiles-daemon": {
-        "format": "{icon}",
-        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
-        "tooltip": true,
-        "format-icons": {
-            "performance": " 󰓅 ",
-            "balanced": " 󰾅 ",
-            "power-saver": " 󰌪 "
-        }
-    },
-
-    "clock": {
-        "format": "{:%H:%M}",
-        "format-alt": "{:%d %B %Y}",
-        "tooltip-format": "<span>{calendar}</span>",
-        "calendar": {
-            "mode": "month",
-            "format": {
-                "month": "<span color='#ffead3'><b>{}</b></span>",
-                "weekdays": "<span color='#d79921'><b>{}</b></span>",
-                "today": "<span color='#cc241d'><b>{}</b></span>"
-            }
-        }
-    },
-
-    "bluetooth": {
-        "format": " 󰂯 ",
-        "format-connected": " 󰂱 ",
-        "format-disabled": " 󰂲 ",
-        "tooltip-format": "{controller_alias}\n{num_connections} connected",
-        "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n{device_enumerate}",
-        "tooltip-format-enumerate-connected": "{device_alias}",
-        "on-click": "blueman-manager"
-    },
-
-    "network": {
-        "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
-        "format-wifi": "{icon} ",
-        "format-ethernet": " 󰈀 ",
-        "format-disconnected": " 󰤮 ",
-        "tooltip-format-wifi": "{essid}\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
-        "tooltip-format-ethernet": "⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
-        "tooltip-format-disconnected": "Disconnected",
-        "on-click": "networkmanager_dmenu",
-        "interval": 3
-    },
-
-    "pulseaudio": {
-        "format": "{icon} {volume}%",
-        "format-muted": "󰝟",
-        "format-icons": {
-            "default": [" 󰕿 ", " 󰖀 ", " 󰕾 "]
-        },
-        "on-click": "pavucontrol",
-        "on-click-right": "pamixer -t",
-        "scroll-step": 5,
-        "tooltip-format": "{volume}%"
-    },
-
-    "memory": {
-        "interval": 5,
-        "format": " 󰘚 {used:0.1f}G"
-    },
-
-    "cpu": {
-        "interval": 5,
-        "format": " 󰍛 {usage}%"
-    },
-
-    "battery": {
-        "interval": 5,
-        "format": "{icon} {capacity}%",
-        "format-charging": " 󰂄 {capacity}%",
-        "format-full": " 󰁹 {capacity}%",
-        "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
-        "tooltip-format-discharging": "{power:>1.0f}W  {timeTo}",
-        "tooltip-format-charging": "{power:>1.0f}W  {timeTo}",
-        "states": {
-            "good": 80,
-            "low": 20,
-            "critical": 10
-        }
-    },
-
-    "backlight": {
-        "format": " {icon} {percent}%",
-        "format-icons": ["󰃞", "󰃟", "󰃠"],
-        "on-scroll-up": "brightnessctl set 5%+",
-        "on-scroll-down": "brightnessctl set 5%-"
-    },
-
-    "tray": {
-        "icon-size": 11,
-        "spacing": 5
+    "persistent-workspaces": {
+      "*": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
     }
+  },
+  "hyprland/window": {
+    "format": "{title} - {class}",
+    "max-length": 85,
+    "rewrite": {
+      " - ": "",
+      "(.*?) - Chromium - chromium": " \uf268  $1 ",
+      "(.*chrome)...(.*)": " \uf268  $1 ",
+      "(.*) - Obsidian - .* - obsidian": " \uf24a  $1 ",
+      "(.*nvim)...(.*)": " \uf36f  $2 ",
+      "(.*code) - (.*)": " \udb82\ude1e  $1 ",
+      "^.*btop( .*|$)": " \udb82\udde8 BTOP $1 ",
+      "^.*cmatrix( .*|$)": " \udb81\ude28 MATRIX $1 ",
+      "(.*) - Spotify": " \uf1bc $1 ",
+      "(.*) - com.mitchellh.ghostty": " \udb80\udea0 $1 ",
+      "(.*) - Alacritty": " \uf489  $1 ",
+      "(.*) - BeeperTexts": " \udb83\udede  $1 ",
+      "(.*Discord)...(.*).. (.*)": " \uf1ff  $2 ",
+      "(.*) - org.gnome.Nautilus": " \udb82\udcc6  $1 ",
+      "(.*) - fish": " \uf489  [$1] ",
+      "(.*Steam)...(.*)": " \uf1b6  $1",
+      "(.*imv)...(.*).. (.*)": " \uf4e5  $2",
+      "(.*) - com.obsproject.Studio": " \uf447 $1 "
+    }
+  },
+  "cpu": {
+    "interval": 5,
+    "format": "\uf2db {usage:02}%",
+    "on-click": "omarchy-launch-or-focus-tui btop"
+  },
+  "memory": {
+    "interval": 5,
+    "format": " \ue266 {percentage:02}%",
+    "on-click": "omarchy-launch-or-focus-tui btop"
+  },
+  "clock": {
+    "format": "\uf133 {:%H:%M %a} ",
+    "format-alt": "\uf133 {:%d/%m/%Y  %H:%M:%S}",
+    "tooltip-format": "<span>{calendar}</span>",
+    "calendar": {
+      "mode": "month",
+      "weeks-pos": "right",
+      "mode-mon-col": 3,
+      "on-click-right": "mode",
+      "format": {
+        "month": "<span color='#ffead3'><b>{}</b></span>",
+        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+        "today": "<span color='#ff6699'><b>{}</b></span>"
+      }
+    },
+    "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
+  },
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "\udb81\udeca",
+      "deactivated": "\udb83\udfab"
+    }
+  },
+  "network": {
+    "format-icons": [
+      "\udb82\udd2f",
+      "\udb82\udd1f",
+      "\udb82\udd22",
+      "\udb82\udd25",
+      "\udb82\udd28"
+    ],
+    "format": "{icon}",
+    "format-wifi": "{icon}",
+    "format-ethernet": "\udb80\udc02",
+    "format-disconnected": "\udb81\uddaa",
+    "tooltip-format-wifi": "{essid} ({frequency} GHz)\n\u21e3{bandwidthDownBytes}  \u21e1{bandwidthUpBytes}",
+    "tooltip-format-ethernet": "\u21e3{bandwidthDownBytes}  \u21e1{bandwidthUpBytes}",
+    "tooltip-format-disconnected": "Disconnected",
+    "interval": 3,
+    "nospacing": 1,
+    "on-click": "alacritty --class=Impala -e impala"
+  },
+  "battery": {
+    "format": "{capacity}% {icon}",
+    "format-discharging": "{capacity}% {icon}",
+    "format-charging": "{icon}",
+    "format-plugged": "\uf1e6",
+    "format-icons": {
+      "charging": [
+        "\udb82\udc9c",
+        "\udb80\udc86",
+        "\udb80\udc87",
+        "\udb80\udc88",
+        "\udb82\udc9d",
+        "\udb80\udc89",
+        "\udb82\udc9e",
+        "\udb80\udc8a",
+        "\udb80\udc8b",
+        "\udb80\udc85"
+      ],
+      "default": [
+        "\udb80\udc7a",
+        "\udb80\udc7b",
+        "\udb80\udc7c",
+        "\udb80\udc7d",
+        "\udb80\udc7e",
+        "\udb80\udc7f",
+        "\udb80\udc80",
+        "\udb80\udc81",
+        "\udb80\udc82",
+        "\udb80\udc79"
+      ]
+    },
+    "format-full": "\udb80\udc85",
+    "tooltip-format-discharging": "{timeTo}",
+    "tooltip-format-charging": "{timeTo}",
+    "interval": 5,
+    "on-click": "omarchy-menu power",
+    "on-click-right": "notify-send -u low \"$(omarchy-battery-status)\"",
+    "states": {
+      "warning": 20,
+      "critical": 10
+    }
+  },
+  "bluetooth": {
+    "format": "\uf294",
+    "format-disabled": "\udb80\udcb2",
+    "format-off": "\udb80\udcb2",
+    "format-connected": "\uf294",
+    "tooltip-format": "Devices connected: {num_connections}",
+    "on-click": "omarchy-launch-bluetooth"
+  },
+  "backlight": {
+    "device": "intel_backlight",
+    "format": "{icon}",
+    "tooltip-format": "{percent}%",
+    "format-icons": [
+      "\ud83c\udf11",
+      "\ud83c\udf18",
+      "\ud83c\udf17",
+      "\ud83c\udf16",
+      "\ud83c\udf15"
+    ]
+  },
+  "pulseaudio#input": {
+    "format-source": "\uf130",
+    "format-source-muted": "\uf131 ",
+    "format": "{format_source}",
+    "tooltip-format": "{format_source} {source_volume}%",
+    "scroll-step": 1,
+    "smooth-scrolling-threshold": 1,
+    "max-volume": 100,
+    "on-click": "omarchy-launch-or-focus-tui wiremix",
+    "on-click-right": "pamixer -t",
+    "on-scroll-up": "pactl set-source-volume @DEFAULT_SOURCE@ +1%",
+    "on-scroll-down": "pactl set-source-volume @DEFAULT_SOURCE@ -1%"
+  },
+  "pulseaudio#output": {
+    "format": "{icon}",
+    "tooltip-format": "{icon}  {volume}%",
+    "format-muted": "\uf026 off",
+    "format-icons": {
+      "default": [
+        "\uf025"
+      ]
+    },
+    "max-volume": 100,
+    "scroll-step": 2,
+    "smooth-scrolling-threshold": 1,
+    "on-click": "omarchy-launch-or-focus-tui wiremix",
+    "on-click-right": "pamixer -t"
+  },
+  "tray": {
+    "icon-size": 12,
+    "spacing": 10
+  },
+  "mpris": {
+    "format": "\udb80\udece {artist} - {title}",
+    "format-paused": "<i>{status_icon} {artist}</i>",
+    "max-length": 20,
+    "player-icons": {
+      "default": "\u23f8",
+      "mpv": "\ud83c\udfb5"
+    },
+    "status-icons": {
+      "paused": "\udb80\uded0"
+    },
+    "ignored-players": [
+      "firefox",
+      "chromium",
+      "brave"
+    ]
+  }
 }
