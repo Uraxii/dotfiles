@@ -217,6 +217,20 @@ local function set_transparency()
     'PmenuSel',
     'PmenuSbar',
     'PmenuThumb',
+    -- Telescope (find_files, live_grep, etc.)
+    'TelescopeNormal',
+    'TelescopeBorder',
+    'TelescopePromptNormal',
+    'TelescopePromptBorder',
+    'TelescopePromptTitle',
+    'TelescopeResultsNormal',
+    'TelescopeResultsBorder',
+    'TelescopeResultsTitle',
+    'TelescopePreviewNormal',
+    'TelescopePreviewBorder',
+    'TelescopePreviewTitle',
+    'TelescopeSelection',
+    'TelescopeMatching',
   }
 
   for _, group in ipairs(highlights) do

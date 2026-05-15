@@ -13,6 +13,7 @@ return {
         cmdline = {
           title = '',
           icon = '󰞷 ',
+          icon_hl_group = 'MyCmdlineIcon',
         },
         search_down = {
           icon = ' ',
@@ -65,6 +66,14 @@ return {
         },
       },
     },
+    -- Cmdline popup window size (forced popup b/c cmdheight=0)
+    views = {
+      cmdline_popup = {
+        position = { row = '50%', col = '50%' },
+        size = { width = 80, height = 3 },
+        border = { style = 'rounded' },
+      },
+    },
   },
 
   -- The new config function handles all transparency overrides
@@ -90,17 +99,23 @@ return {
         "NoiceCmdlineIconLua",
         "NoiceCmdlineIconHelp",
         "NoiceCmdlineIconInput",
-        -- Popupmenu (cmp wildmenu via noice)
-        "NoicePopupmenu",
-        "NoicePopupmenuBorder",
-        "NoicePopupmenuSelected",
-        "NoicePopupmenuMatch",
-        -- Generic noice views
-        "NoicePopup",
-        "NoicePopupBorder",
-        "NoiceConfirm",
-        "NoiceConfirmBorder",
-        "NoiceMini",
+        -- Cmdline floating popup (cmdheight=0 forces popup even w/
+        -- view='cmdline'). Per-format suffix groups inherit theme bg.
+        "NoiceCmdlinePopup",
+        "NoiceCmdlinePopupBorder",
+        "NoiceCmdlinePopupBorderCmdline",
+        "NoiceCmdlinePopupBorderSearch",
+        "NoiceCmdlinePopupBorderFilter",
+        "NoiceCmdlinePopupBorderLua",
+        "NoiceCmdlinePopupBorderHelp",
+        "NoiceCmdlinePopupBorderInput",
+        "NoiceCmdlinePopupTitle",
+        "NoiceCmdlinePopupTitleCmdline",
+        "NoiceCmdlinePopupTitleSearch",
+        "NoiceCmdlinePopupTitleFilter",
+        "NoiceCmdlinePopupTitleLua",
+        "NoiceCmdlinePopupTitleHelp",
+        "NoiceCmdlinePopupTitleInput",
       }
 
       for _, group in ipairs(highlights) do
@@ -108,13 +123,33 @@ return {
       end
     end
 
-    -- We set up an autocommand that runs AFTER a colorscheme is loaded.
-    -- This ensures our transparency settings override the theme's colors.
+    -- ColorScheme: re-apply on theme switch
     vim.api.nvim_create_autocmd("ColorScheme", {
       pattern = "*",
       callback = function()
         set_transparency()
       end,
+    })
+
+    -- CmdlineEnter: noice creates per-format icon hl groups lazily on
+    -- first cmdline open. Re-apply each time so theme bg never sticks.
+    vim.api.nvim_create_autocmd("CmdlineEnter", {
+      pattern = "*",
+      callback = function()
+        vim.schedule(set_transparency)
+      end,
+    })
+
+    -- Custom icon hl — own group, noice does not clobber.
+    -- fg=NONE inherits Normal fg (theme-default text color, not blue).
+    -- To pick a specific color: change fg to e.g. '#dca561' (kanagawa yellow).
+    local function apply_icon_hl()
+      vim.api.nvim_set_hl(0, 'MyCmdlineIcon', { fg = 'NONE', bg = 'NONE' })
+    end
+    apply_icon_hl()
+    vim.api.nvim_create_autocmd({ 'ColorScheme', 'CmdlineEnter', 'VimEnter' }, {
+      pattern = '*',
+      callback = function() vim.schedule(apply_icon_hl) end,
     })
 
     -- Run once on startup as well
