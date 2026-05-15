@@ -1,253 +1,248 @@
-@import "./rose-pine.css";
-
-/* --- Global-Settings ---*/
+@import url("colors.css");
 
 * {
-  font-family: 'JetBrainsMono Nerd Font';
-  font-size: 12px;
-  font-weight: 800;
-  min-height: 0px;
-  border-radius:3px;
-  }
-
-  /* --- Waybar ---*/
-  window#waybar {
-  background-color: transparent;
-  transition-property: background-color;
-  transition-duration: .5s;
+    border: none;
+    font-size: 14px;
+    font-family: "JetBrainsMono Nerd Font,JetBrainsMono NF" ;
+    min-height: 25px;
 }
 
-#waybar > box {
-  margin: 4px 10px;
-  padding: 2px;
-  background-color: @base; 
-  border: 1px solid alpha(@highlightMed, 0.3); 
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.6);
-}
-
-/* --- Single Module Config's ---*/
-#left1, #left2, #left3, #left4, 
-#right1, #right2, 
-.modules-center {
-  margin: 0px 4px;
-  padding: 0 10px;
-  transition: all 0.2s ease-in-out;
-}
-
-#left1 {
-  background-color: @overlay; 
-  box-shadow: inset 3px 0 0 0 @iris;
-  border-radius: 2px;
-}
-
-#left2 {
-background-color: @overlay; 
-  box-shadow: inset 0 -3px 0 0 @love;
-  padding: 0px;
-}
-
-#left3 {
-background-color: @surface; 
-  box-shadow: inset 0 -3px 0 0 @pine;
-}
-
-#left4 {
-background-color: @surface; 
-  box-shadow: inset 0 -3px 0 0 @rose;
-}
-
-.modules-center {
-  background-color: @surface;
-  box-shadow: inset 0 -3px 0 0 @foam;
-  padding: 0px;
-}
-
-#right1 {
-  background-color: @surface; 
-  box-shadow: inset 0 -3px 0 0 @subtle;
-}
-
-#right2 {
-  background-color: @overlay; 
-  margin-right: 2px; 
-box-shadow: inset -3px 0 0 0 @gold;
-}
-
-
-window#waybar.empty #window {
+window#waybar {
   background: transparent;
-  background-color: transparent;
-  border: none;
-  border-radius: 0;
-  color: transparent;
-  padding: 0;
-  margin: 0;
-}
-#waybar.empty .modules-center {
-  opacity: 0;
+  margin: 5px;
+ }
+
+#custom-logo {
+  padding: 0 10px;
 }
 
-#mpris {
-  background-color: transparent;
-  color: @rose;
+.modules-right {
+  padding-left: 5px;
+  border-radius: 15px 0 0 15px;
+  margin-top: 2px;
+  background: #000000;
 }
 
-#workspaces {
-  background-color: transparent;
-  padding: 0px;
-  margin: 0px;
+.modules-center {
+  padding: 0 15px;
+  margin-top: 2px;
+  border-radius: 15px 15px 15px 15px;
+  background: #000000;
 }
 
-#workspaces button {
-  color: @subtle;
-  padding: 0 8px;
-  margin: 2px 2px;
-  transition: all 0.2s ease;
-  opacity: 0.75;
+.modules-left {
+  border-radius: 0 15px 15px 0;
+  margin-top: 2px;
+  background: #000000;
 }
 
-#workspaces button.active {
-  color: @love;
-}
-
-#workspaces button.empty {
-  color: @muted;
-  opacity: 0.2;
-}
-
-#workspaces button.empty.active {
-  color: @rose;
-  opacity: 1;
-}
-
-#workspaces button:hover {
-  background-color: alpha(@highlightMed, 0.5);
-  color: @text;
-}
-
-#workspaces button.urgent {
-  color: @base;
-  background-color: @love;
-}
-
-
-
-/* --- General Modules --- */
-
-#tray,
-#window,
-#cpu,
-#clock,
 #battery,
-#network,
-#memory,
-#backlight,
+#custom-clipboard,
+#custom-colorpicker,
+#custom-powerDraw,
 #bluetooth,
 #pulseaudio,
+#network,
+#disk,
+#memory,
+#backlight,
+#cpu,
+#temperature,
 #custom-weather,
-#custom-update,
 #idle_inhibitor,
-#custom-idle-indicator,
-#custom-notification-silencing-indicator,
-#custom-omarchy,
-#custom-screenrecording-indicator,
-#custom-updatespacman {
-  min-width: 16px;
-  margin: 0 2px;      
-  padding: 0 4px;
+#jack,
+#tray,
+#window,
+#workspaces,
+#clock {
+  padding: 0 5px;
+}
+#pulseaudio {
+  padding-top: 3px;
 }
 
-#custom-update {
-  padding-left: 3px;
-}
-
-/* --- Module-Group-Colors --- */
-
-#custom-omarchy { color: @gold; } 
-#clock { color: @text; } 
-#cpu { color: @rose; } 
-#memory { color: @iris; } 
-#pulseaudio { color: @love; }
-#network { color: @foam; } 
-#battery { color: @pine; }
-#backlight { color: @gold; }
-#idle_inhibitor { color: @gold; }
-#tray { color: @muted; }
-
-#custom-voxtype {
-  min-width: 12px;
-  margin: 0 0 0 7.5px;
-}
-
-#custom-voxtype.recording,
-#custom-idle-indicator.active,
-#custom-notification-silencing-indicator.active {
-  color: @love;
-}
-
-#custom-idle-indicator,
-#custom-notification-silencing-indicator {
-  min-width: 12px;
-  margin-left: 0;
-  margin-right: 0;
-  font-size: 12px;
-  padding-bottom: 1px;
+#temperature.critical,
+#pulseaudio.muted {
+  color: #FF0000;
+  padding-top: 0;
 }
 
 
-/* Specific Module */
 
-#tray > .needs-attention {
-    -gtk-icon-effect: highlight;
-    background-color: @transparent;
+
+#clock{
+  color: #5fd1fa;
 }
 
-.hidden {
-  opacity: 0;
+#battery.charging {
+    color: #ffffff;
+    background-color: #26A65B;
 }
 
-tooltip {
-  background-color: @base;
-  border: 1px solid @highlightHigh;
-  border-radius: 3px;
+#battery.warning:not(.charging) {
+    background-color: #ffbe61;
+    color: black;
 }
 
-tooltip label {
-  color: @text;
-  padding: 4px;
-}
-
-
-/* Specific animation Module */
-
-#custom-screenrecording-indicator.active {
-  color: @rose;
-  animation: blink-recording 0.5s infinite alternate linear;
-}
-
-@keyframes blink-recording {
-  to { color: transparent; }
+#battery.critical:not(.charging) {
+    background-color: #f53c3c;
+    color: #ffffff;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
 }
 
 
+@keyframes blink {
+    to {
+        background-color: #ffffff;
+        color: #000000;
+    }
+}
 
 /* --- user-overrides.css --- */
 /* User overrides — appended to every HANCORE theme's style.css by
  * set-theme.sh. Survives theme switches.
  *
- * Constraints:
- * - GTK CSS in waybar rejects `!important` on font-size + padding (logs
- *   "Junk at end of value"). Use higher selector specificity instead.
- * - Avoid applying min-height to `window#waybar *` — GTK SEGVs on layout
- *   when min-height propagates into every leaf widget (icons, labels).
- *   Apply size knobs to the bar root only.
+ * Hard-won constraints:
+ * - GTK CSS in waybar rejects `!important` on font-size + padding
+ *   ("Junk at end of value"). Use selector specificity instead.
+ * - DO NOT apply `min-height` to descendant widgets (`*`, `label`, ...).
+ *   GTK SEGVs in gtk_widget_get_preferred_height when min-height
+ *   propagates through nested module containers.
+ *   min-height is bar-root ONLY.
+ *
+ * Tune `font-size` + `min-height` here. Bigger font → bigger min-height
+ * (font 17 → height 30 ish).
  */
 
-window#waybar {
-  font-size: 15px;
-  min-height: 24px;
+/* ----- Font ----- */
+/* Theme defaults to JetBrainsMono Nerd Font which isn't installed → font
+ * fallback drops Nerd Font glyph alignment → icons overlap text. Force
+ * the installed Nerd Font from sway/prefs ($font_family). */
+window#waybar,
+window#waybar label {
+  font-family: "0xProto Nerd Font", "0xProto Nerd Font Mono", monospace;
 }
 
+/* ----- Size ----- */
+window#waybar {
+  font-size: 20px;
+  min-height: 28px;
+  margin: 0;             /* kill ashish-kus minimal's 5px screen-edge gap */
+  border-radius: 0;
+}
+
+window#waybar label {
+  font-size: 20px;
+}
+
+/* ----- Colors ----- */
+/* Palette imported at top of runtime style.css by set-theme.sh
+ * (colors.css). Re-skins ashish-kus minimal's hard-coded #000000 pills
+ * with the active sway $theme's palette. Updates on every sway reload
+ * because exec_always re-runs set-theme.sh which regenerates colors.css. */
+window#waybar {
+  background: transparent;
+  color: @fg;
+}
+
+.modules-left,
+.modules-right {
+  background: @bg2;
+  color: @fg;
+}
+
+.modules-center {
+  background: transparent;
+  color: @fg;
+}
+
+/* Workspace buttons (sway/workspaces). GTK ignores button vertical
+ * margin reliably, so highlight as a colored bottom underline instead
+ * of a full-height pill. */
+window#waybar #workspaces button {
+  padding: 0 10px;
+  margin: 0 2px;
+  color: @fg;
+  background: transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  min-width: 0;
+  min-height: 0;
+}
+window#waybar #workspaces button.focused,
+window#waybar #workspaces button.active {
+  color: @accent;
+  background: transparent;
+  border-bottom: 3px solid @accent;
+}
+window#waybar #workspaces button.urgent {
+  color: @urgent;
+  border-bottom: 3px solid @urgent;
+}
+
+/* Urgent / critical states. */
+window#waybar #battery.critical,
+window#waybar #battery.warning,
+window#waybar #workspaces button.urgent,
+window#waybar #temperature.critical,
+window#waybar #pulseaudio.muted {
+  color: @urgent;
+}
+
+/* ----- Spacing ----- */
 window#waybar > box {
-  padding: 2px 6px;
+  padding: 0;
+}
+
+/* ashish-kus minimal rounds + offsets the left/right groups. Keep the
+ * INNER (center-facing) ends rounded, flush the OUTER (screen-edge)
+ * ends. border-radius: TL TR BR BL. */
+.modules-left,
+.modules-right,
+.modules-center {
+  margin: 0;
+}
+/* Asymmetric padding: more on the rounded (inner, center-facing) end so
+ * content doesn't crash into the curve; less on the flush (outer,
+ * screen-edge) end. */
+.modules-left {
+  border-radius: 0 20px 20px 0;   /* round right side only */
+  padding: 0 14px 0 8px;
+}
+.modules-right {
+  border-radius: 20px 0 0 20px;   /* round left side only */
+  padding: 0 8px 0 14px;
+}
+.modules-center {
+  /* Empty center group — kill the pill backdrop. */
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+/* Module padding — explicit ID list. No `*` selector to avoid GTK layout
+ * recursion bugs. Add to this list if a new module shows up cramped. */
+window#waybar #workspaces button,
+window#waybar #clock,
+window#waybar #battery,
+window#waybar #network,
+window#waybar #bluetooth,
+window#waybar #pulseaudio,
+window#waybar #backlight,
+window#waybar #cpu,
+window#waybar #memory,
+window#waybar #tray,
+window#waybar #idle_inhibitor,
+window#waybar #language,
+window#waybar #keyboard-state,
+window#waybar #temperature,
+window#waybar #disk,
+window#waybar #power-profiles-daemon {
+  padding: 0 10px;
+  margin: 0 2px;
 }
