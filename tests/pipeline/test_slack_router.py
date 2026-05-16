@@ -1,13 +1,10 @@
-"""test_slack_router — stdlib unittest coverage for the slack router refactor.
+"""test_slack_router — DEPRECATED: slack_router.py deleted in comms refactor.
 
-No network, no Slack credentials, no slack_bolt required for these tests.
-Covers: regex validators, YAML escaping, payload parsing, file I/O atomicity,
-single-instance flock semantics, GC logic, schema compatibility, and more.
-
-Run: python3 -m unittest discover -v  (from worktree root)
-  or: python3 -m unittest .claude.pipeline.tests.test_slack_router -v
+Original tests covered: regex validators, YAML escaping, payload parsing, file I/O
+atomicity, single-instance flock semantics, GC logic, schema compatibility.
+Functionality ported to tests/pipeline/test_comms/. File kept for reference; all
+tests skipped.
 """
-
 from __future__ import annotations
 
 import fcntl
@@ -30,6 +27,9 @@ from unittest.mock import MagicMock, patch
 # Resolve pipeline module path without importing slack_bolt
 # ---------------------------------------------------------------------------
 
+import pytest
+pytest.importorskip("slack_router", reason="slack_router.py deleted in comms refactor")
+
 _PIPELINE_DIR = Path(__file__).parent.parent.parent / ".claude" / "pipeline"
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
@@ -49,7 +49,7 @@ for _key, _val in [
         sys.modules[_key] = _val  # type: ignore[assignment]
 
 import slack_router  # noqa: E402
-from _slack_env import atomic_write_text  # noqa: E402
+from comms.env import atomic_write_text  # noqa: E402
 
 
 # ===========================================================================

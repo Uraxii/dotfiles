@@ -11,7 +11,7 @@ _PIPELINE_DIR = Path(__file__).parent.parent / ".claude" / "pipeline"
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from _slack_env import validate_sid  # noqa: E402
+from comms.env import validate_sid  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

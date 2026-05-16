@@ -1,16 +1,17 @@
-"""session_slack — stdlib-only session binding helper.
+"""comms.session — provider-aware session binding reader.
 
-Reads ~/.claude/sessions/<sid>/slack.json and exposes the public surface
-used by pipeline_ask.py, slack_router.py, and the orchestrator intake step.
-
-No slack-bolt, no PyYAML, no requests. Pure stdlib.
+Replaces session_slack.py (C3 — deleted, not re-exported). Reads
+~/.claude/sessions/<sid>/slack.json and applies the B8 fix: sets
+data["provider"] = "slack" inside _load_slack_json so all callers
+can assume the field is present.
 
 Public surface:
-    resolve_session_binding(session_id)  -> tuple[str, str] | None
-    session_state_path(session_id)       -> Path
-    inbox_dir(session_id)                -> Path
-    is_bound(session_id)                 -> bool
-    all_active_bindings()                -> dict[str, dict]
+    resolve_session_binding(session_id)    -> tuple[str, str] | None
+    resolve_session_thread_ref(session_id) -> ThreadRef | None
+    session_state_path(session_id)         -> Path
+    inbox_dir(session_id)                  -> Path
+    is_bound(session_id)                   -> bool
+    all_active_bindings()                  -> dict[str, dict]
 """
 
 from __future__ import annotations
@@ -21,8 +22,11 @@ import os
 from pathlib import Path
 from typing import Any
 
+from .types import ThreadRef
+
 __all__ = [
     "resolve_session_binding",
+    "resolve_session_thread_ref",
     "session_state_path",
     "inbox_dir",
     "is_bound",
@@ -63,7 +67,11 @@ def inbox_dir(session_id: str | None = None) -> Path:
 
 
 def _load_slack_json(path: Path) -> dict[str, Any] | None:
-    """Parse slack.json. Returns None on missing file, JSON error, or unsupported schema."""
+    """Parse slack.json. Returns None on missing file, JSON error, or unsupported schema.
+
+    B8 fix: applies data.setdefault("provider", "slack") at the LOWEST read
+    level. All post-call code MAY assume data["provider"] is set.
+    """
     if not path.is_file():
         return None
     try:
@@ -72,17 +80,20 @@ def _load_slack_json(path: Path) -> dict[str, Any] | None:
         log.warning("failed to read %s: %s", path, exc)
         return None
     if not isinstance(data, dict):
-        log.warning("slack.json top-level is not a dict (got %s); path=%s", type(data).__name__, path)
+        log.warning(
+            "slack.json top-level is not a dict (got %s); path=%s",
+            type(data).__name__, path,
+        )
         return None
     version = data.get("schema_version", 1)
     if version > SCHEMA_VERSION_SUPPORTED:
         log.warning(
             "slack.json schema_version=%d unsupported (max=%d); path=%s",
-            version,
-            SCHEMA_VERSION_SUPPORTED,
-            path,
+            version, SCHEMA_VERSION_SUPPORTED, path,
         )
         return None
+    # B8: default provider at the lowest read level so callers need not repeat it.
+    data.setdefault("provider", "slack")
     return data
 
 
@@ -114,6 +125,37 @@ def resolve_session_binding(
     return channel, thread_ts
 
 
+def resolve_session_thread_ref(
+    session_id: str | None = None,
+) -> ThreadRef | None:
+    """Provider-aware resolver. Returns ThreadRef or None.
+
+    The 2-tuple resolve_session_binding() is kept as a thin shim that
+    unpacks ThreadRef.provider_data for the Slack provider only (legacy
+    callers unchanged). New code uses this.
+    """
+    sid = _get_session_id(session_id)
+    if not sid:
+        return None
+    path = SESSIONS_ROOT / sid / "slack.json"
+    data = _load_slack_json(path)
+    if data is None:
+        return None
+    if not data.get("active", False):
+        return None
+    channel = data.get("channel_id", "")
+    thread_ts = data.get("thread_ts", "")
+    if not channel or not thread_ts:
+        log.warning("slack.json at %s missing channel_id or thread_ts", path)
+        return None
+    from types import MappingProxyType
+    provider = data.get("provider", "slack")
+    return ThreadRef(
+        provider=provider,
+        provider_data=MappingProxyType({"channel_id": channel, "thread_ts": thread_ts}),
+    )
+
+
 def is_bound(session_id: str | None = None) -> bool:
     """True iff resolve_session_binding(...) is not None."""
     return resolve_session_binding(session_id) is not None
@@ -122,7 +164,8 @@ def is_bound(session_id: str | None = None) -> bool:
 def all_active_bindings() -> dict[str, dict[str, Any]]:
     """Glob ~/.claude/sessions/*/slack.json; return {sid: parsed_json} for all active.
 
-    Used by slack_router.py to build the thread_ts -> sid routing index.
+    B8: provider field guaranteed present via _load_slack_json.
+    Used by comms/router.py to build the thread_ts -> sid routing index.
     """
     result: dict[str, dict[str, Any]] = {}
     if not SESSIONS_ROOT.is_dir():

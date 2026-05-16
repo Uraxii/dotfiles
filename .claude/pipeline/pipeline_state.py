@@ -29,7 +29,7 @@ _PIPELINE_DIR = Path(__file__).parent
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from _slack_env import atomic_write_text  # noqa: E402
+from comms.env import atomic_write_text  # noqa: E402
 
 log = logging.getLogger("pipeline_state")
 

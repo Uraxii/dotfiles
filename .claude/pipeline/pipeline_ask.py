@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""pipeline-ask — block until human answers a Slack question.
+"""pipeline-ask — block until human answers a comms question.
 
 Agent-callable CLI. Writes a question artifact to a pipeline run dir, posts
 via pipeline_notify.py (which routes through the host router), then blocks
@@ -32,7 +32,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Strict artifact-slug format: `<adj>-<mid>-<noun>-<hex6>`.
-# Must match `_RUN_ID_RE` in slack_router.py — router rejects button clicks
+# Must match `_RUN_ID_RE` in comms/router.py — router rejects button clicks
 # carrying any other shape, so the ask side fails fast w/ a clear error.
 _RUN_ID_RE = re.compile(r"^[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6}$")
 
@@ -40,7 +40,7 @@ _PIPELINE_DIR = Path(__file__).parent
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from session_slack import resolve_session_binding  # noqa: E402
+from comms.session import resolve_session_binding  # noqa: E402
 
 POLL_INTERVAL = 1.0
 NOTIFY_SCRIPT = _PIPELINE_DIR / "pipeline_notify.py"
@@ -149,7 +149,7 @@ def write_question(
     return qfile
 
 
-def _write_initial_slack_context(
+def _write_initial_comms_context(
     run_dir: Path,
     project_path: Path,
     run_id: str,
@@ -158,8 +158,8 @@ def _write_initial_slack_context(
     prompt: str,
     options: list[tuple[str, str]],
 ) -> None:
-    """Write initial .slack-context.json (no message_ts/channel/thread_ts — notify fills)."""
-    ctx_path = run_dir / ".slack-context.json"
+    """Write initial .comms-context.json (no message_ts/channel/thread_ts -- notify fills)."""
+    ctx_path = run_dir / ".comms-context.json"
     if ctx_path.is_file():
         # Preserve any notify-owned fields already populated on re-run.
         try:
@@ -188,7 +188,7 @@ def _write_initial_slack_context(
         "attachment_permalinks": [],
         "created_at": now_iso(),
     }
-    from _slack_env import atomic_write_text  # noqa: E402
+    from comms.env import atomic_write_text  # noqa: E402, PLC0415
     atomic_write_text(ctx_path, json.dumps(payload, indent=2), mode=0o600)
 
 
@@ -203,9 +203,6 @@ def _require_binding_or_degrade(run_dir: Path) -> bool:
         "or use AskUserQuestion for synchronous fallback.\n"
     )
     sys.stderr.write(msg)
-    pipeline_md = run_dir.parent.parent / "pipeline.md" if run_dir.parent.parent.is_dir() else None
-    if pipeline_md is None:
-        pipeline_md = run_dir / "pipeline.md"
     return False
 
 
@@ -325,7 +322,7 @@ def main() -> int:
         sys.stderr.write(f"answer file present but malformed: {afile}\n")
         return 4
 
-    # Validate binding before writing artifacts (AC8).
+    # Validate binding before writing artifacts.
     if not _require_binding_or_degrade(run_dir):
         return 4
 
@@ -357,12 +354,12 @@ def main() -> int:
         write_question(run_dir, qid, args.header or "", args.prompt or "", options,
                        args.role, deadline, attachments=attachments)
 
-        _write_initial_slack_context(
+        _write_initial_comms_context(
             run_dir, project_path, args.run, qid,
             args.header or "", args.prompt or "", options,
         )
 
-    # Post via notify subprocess (AC7 — no daemon spawn from here).
+    # Post via notify subprocess.
     _invoke_notify(run_dir, args.run, qid)
 
     # Read deadline from artifact.

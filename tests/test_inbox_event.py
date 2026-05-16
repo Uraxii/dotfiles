@@ -1,10 +1,8 @@
 """Tests for M3/M4 — channel verification in inbox write path.
 
-Tests the write_inbox_file function from session_inbox.py in isolation,
-without importing the bolt/watchdog dependencies (which require a live venv).
-We extract the function logic by patching the sys.exit guard.
+Tests the write_inbox_file function from session_inbox.py in isolation.
+DEPRECATED: session_inbox.py removed in comms refactor. Tests skipped.
 """
-
 from __future__ import annotations
 
 import json
@@ -14,6 +12,8 @@ from typing import Any
 from unittest.mock import patch, MagicMock
 
 import pytest
+
+pytestmark = pytest.mark.skip(reason="session_inbox.py removed in comms refactor")
 
 _PIPELINE_DIR = Path(__file__).parent.parent / ".claude" / "pipeline"
 if str(_PIPELINE_DIR) not in sys.path:

@@ -5,26 +5,26 @@
 #     "slack-bolt>=1.18",
 # ]
 # ///
-"""slack_router — host-bound Slack Socket Mode router daemon.
+"""comms_router — host-bound provider-neutral router daemon.
 
-Single process per host. Routes inbound Slack thread replies to per-session
+Single process per host. Routes inbound thread events to per-session
 inbox dirs based on a binding table built from
 ~/.claude/sessions/*/slack.json.
 
 Usage (detached, via session_bind.py activate — do not run directly):
-    uv run --script ~/.claude/pipeline/slack_router.py
+    uv run --script ~/.claude/pipeline/comms/router.py
 
 Environment (auto-loaded from ~/.claude/pipeline/slack.env.local):
     SLACK_BOT_TOKEN           xoxb-...
     SLACK_APP_TOKEN           xapp-...
-    SLACK_ALLOWED_USERS       comma-separated Slack user IDs (empty = any)
+    SLACK_ALLOWED_USERS       comma-separated user IDs (empty = any)
     SLACK_ROUTER_IDLE_TIMEOUT seconds before idle exit (default 1800 = 30min)
 
 State (host-level, not stowed):
-    ~/.claude/slack-router/router.pid     — held flock + PID number
-    ~/.claude/slack-router/router.log     — daemon log
-    ~/.claude/slack-router/unrouted/      — unmatched events (audit)
-    ~/.claude/slack-router/run-index/     — per-run context for button routing
+    ~/.claude/comms-router/router.pid     — held flock + PID number
+    ~/.claude/comms-router/router.log     — daemon log
+    ~/.claude/comms-router/unrouted/      — unmatched events (audit)
+    ~/.claude/comms-router/run-index/     — per-run context for button routing
 """
 
 from __future__ import annotations
@@ -46,83 +46,43 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-_PIPELINE_DIR = Path(__file__).parent
+# N3 fix: same sys.path bootstrap as session_bind.py:43-45 so
+# `import comms.xxx` works when spawned as a script.
+_PIPELINE_DIR = Path(__file__).parent.parent
 if str(_PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(_PIPELINE_DIR))
 
-from _slack_env import atomic_write_text, default_env_path, load_env_file  # noqa: E402
-from session_slack import all_active_bindings, inbox_dir as _inbox_dir  # noqa: E402
-
-try:
-    from slack_bolt import App
-    from slack_bolt.adapter.socket_mode import SocketModeHandler
-except ImportError:
-    sys.stderr.write("slack_bolt missing. Install: pip install --user slack-bolt\n")
-    sys.exit(2)
+from comms.env import atomic_write_text, default_env_path, load_env_file  # noqa: E402
+from comms.session import all_active_bindings, inbox_dir as _inbox_dir  # noqa: E402
+from comms.types import InboundConsumer, InboundEvent, ThreadRef  # noqa: E402
 
 __all__ = ["main"]
 
-log = logging.getLogger("slack_router")
+log = logging.getLogger("comms_router")
 
 # ---------------------------------------------------------------------------
 # Top-level constants
 # ---------------------------------------------------------------------------
 
-ROUTER_ROOT = Path("~/.claude/slack-router").expanduser()
-PID_PATH = ROUTER_ROOT / "router.pid"
-LOG_PATH = ROUTER_ROOT / "router.log"
-UNROUTED_DIR = ROUTER_ROOT / "unrouted"
-RUN_INDEX_DIR = ROUTER_ROOT / "run-index"
+COMMS_ROOT = Path("~/.claude/comms-router").expanduser()
+PID_PATH = COMMS_ROOT / "router.pid"
+LOG_PATH = COMMS_ROOT / "router.log"
+UNROUTED_DIR = COMMS_ROOT / "unrouted"
+RUN_INDEX_DIR = COMMS_ROOT / "run-index"
+
+# T9 reap target ONLY — never read/write for new state.
+LEGACY_ROOT = Path("~/.claude/slack-router").expanduser()
 
 POLL_INTERVAL_S = 3.0
 IDLE_TIMEOUT_S = int(os.environ.get("SLACK_ROUTER_IDLE_TIMEOUT", "1800"))
 RUN_INDEX_MAX_AGE_S = 14 * 86400
-BUTTON_LETTERS = ("A", "B", "C", "D")
-
 ORPHAN_TMP_MAX_AGE_S = 60
 
-# Regex guards for button-payload fields (H3).
+# Regex guards for button-payload fields (H3). Must match pipeline_ask.py.
 _RUN_ID_RE = re.compile(r"^[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6}$")
 _QD_ID_RE = re.compile(r"^[qd][0-9]{1,4}$")
 
-
-# ---------------------------------------------------------------------------
-# Dataclasses
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class Route:
-    """Active binding for one session: maps thread_ts → inbox dir."""
-
-    sid: str
-    channel_id: str
-    thread_ts: str
-    inbox_dir: Path
-
-
-@dataclass(frozen=True, slots=True)
-class RoutingSnapshot:
-    """Immutable point-in-time view of all active session routes."""
-
-    by_thread: Mapping[str, Route]
-    by_sid: Mapping[str, Route]
-    fingerprint: str
-
-
-@dataclass(frozen=True, slots=True)
-class SlackContext:
-    """Per-run Slack context written to .slack-context.json by pipeline_notify."""
-
-    project_path: Path
-    project_path_hash: str
-    run_id: str
-    channel: str
-    thread_ts: str
-    qid: str | None
-    did: str | None
-    options: tuple[tuple[str, str], ...]
-    message_ts: str | None
+BUTTON_LETTERS = ("A", "B", "C", "D")
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +95,10 @@ def _now_iso() -> str:
 
 
 def _safe_yaml_scalar(value: str) -> str:
-    """Escape newlines and colons for inline YAML scalar values (C1)."""
+    """Escape newlines and colons for inline YAML scalar values (C1).
+
+    Location pinned here per design §13.
+    """
     return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r")
 
 
@@ -156,28 +119,52 @@ def _cleanup_orphan_tmps(inbox: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Dataclasses
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class Route:
+    """Active binding for one session: maps thread_ref -> inbox dir."""
+
+    sid: str
+    thread_ref: ThreadRef
+    inbox_dir: Path
+
+
+@dataclass(frozen=True, slots=True)
+class RoutingSnapshot:
+    """Immutable point-in-time view of all active session routes."""
+
+    by_thread: Mapping[str, Route]
+    by_sid: Mapping[str, Route]
+    fingerprint: str
+
+
+# ---------------------------------------------------------------------------
 # Inbox / unrouted writers
 # ---------------------------------------------------------------------------
 
 
-def _write_inbox_file(inbox: Path, event: dict[str, Any]) -> bool:
-    """Write inbox/<msg_ts>.json atomically. Returns True if written."""
-    message_ts: str = event.get("ts", "")
+def _write_inbox_file(inbox: Path, ev: InboundEvent) -> bool:
+    """Write inbox/<msg_ts>.json atomically from InboundEvent. Returns True if written."""
+    mref = ev.message_ref
+    message_ts = mref.provider_data.get("message_ts", "") if mref else ""
     if not message_ts:
         return False
     inbox.mkdir(parents=True, exist_ok=True, mode=0o700)
     target = inbox / f"{message_ts}.json"
     if target.exists():
         return False
-    thread_ts: str = event.get("thread_ts", "")
     sid = inbox.parent.name
+    # Field names retain thread_ts/message_ts keys for inbox-reader compat (§3.6).
     payload = {
         "session_id": sid,
-        "thread_ts": thread_ts,
+        "thread_ts": ev.thread_ref.provider_data.get("thread_ts", ""),
         "message_ts": message_ts,
-        "user_id": event.get("user", ""),
-        "text": event.get("text", ""),
-        "received_at": _now_iso(),
+        "user_id": ev.user_id,
+        "text": ev.text or "",
+        "received_at": ev.received_at,
     }
     try:
         atomic_write_text(target, json.dumps(payload, indent=2), mode=0o600)
@@ -195,22 +182,24 @@ def _write_inbox_file(inbox: Path, event: dict[str, Any]) -> bool:
         return False
 
 
-def _write_unrouted_file(event: dict[str, Any]) -> None:
-    message_ts: str = event.get("ts", "")
+def _write_unrouted_file(ev: InboundEvent) -> None:
+    """Write unrouted/<msg_ts>.json for events with no route in index."""
+    mref = ev.message_ref
+    message_ts = mref.provider_data.get("message_ts", "") if mref else ""
     if not message_ts:
         return
     UNROUTED_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     target = UNROUTED_DIR / f"{message_ts}.json"
     if target.exists():
         return
-    payload = {
+    payload: dict[str, Any] = {
         "session_id": None,
-        "thread_ts": event.get("thread_ts", ""),
+        "thread_ts": ev.thread_ref.provider_data.get("thread_ts", ""),
         "message_ts": message_ts,
-        "user_id": event.get("user", ""),
-        "text": event.get("text", ""),
-        "received_at": _now_iso(),
-        "event_channel": event.get("channel", ""),
+        "user_id": ev.user_id,
+        "text": ev.text or "",
+        "received_at": ev.received_at,
+        "event_channel": ev.thread_ref.provider_data.get("channel_id", ""),
     }
     try:
         atomic_write_text(target, json.dumps(payload, indent=2), mode=0o600)
@@ -269,34 +258,14 @@ def _gc_run_index() -> int:
     return pruned
 
 
-def _resolve_route_dir_from_value(
-    value: str,
+def _resolve_route_dir_from_run_id(
+    run_id: str,
+    phash8: str,
 ) -> tuple[Path, str] | tuple[None, str]:
-    """Parse <phash8>|<run-id>|<qd-id>|<choice>, validate, return (run_dir, qd_id).
-
-    On failure returns ``(None, reason)`` where ``reason`` is a short
-    human-readable string the caller can surface to the clicking user via
-    ``chat_postEphemeral``. Reasons:
-
-    - ``malformed``      — value did not split into 4 fields
-    - ``run_id_format``  — run-id didn't match artifact-slug regex
-    - ``qd_id_format``   — qd-id didn't match q/d-prefix regex
-    - ``index_missing``  — no run-index entry for this run-id
-    - ``index_unreadable`` — run-index entry present but unreadable
-    - ``project_mismatch`` — phash8 didn't match the run-index entry
-    - ``run_dir_gone``   — run-dir recorded in the index no longer exists
-    """
-    parts = value.split("|", 3)
-    if len(parts) != 4:
-        log.warning("malformed button value: %r", value)
-        return (None, "malformed")
-    phash8, run_id, qd_id, _ = parts
+    """Look up run-index by run_id + phash8. Returns (run_dir, run_id) or (None, reason)."""
     if not _RUN_ID_RE.match(run_id):
         log.warning("run_id failed validation: %r", run_id)
         return (None, "run_id_format")
-    if not _QD_ID_RE.match(qd_id):
-        log.warning("qd_id failed validation: %r", qd_id)
-        return (None, "qd_id_format")
     entry_path = RUN_INDEX_DIR / f"{run_id}.json"
     if not entry_path.is_file():
         log.warning("run-index missing for run_id=%s", run_id)
@@ -306,7 +275,9 @@ def _resolve_route_dir_from_value(
     except (OSError, json.JSONDecodeError) as exc:
         log.warning("run-index read error for %s: %s", run_id, exc)
         return (None, "index_unreadable")
-    if data.get("project_path_hash") != phash8:
+    # phash8 is a security check. If phash8 is empty (comms-context absent/fresh
+    # install), skip the check to allow routing. Non-empty phash must match.
+    if phash8 and data.get("project_path_hash") != phash8:
         log.warning(
             "project_path_hash mismatch for run_id=%s: button=%s index=%s",
             run_id, phash8, data.get("project_path_hash"),
@@ -316,7 +287,7 @@ def _resolve_route_dir_from_value(
     if not run_dir.is_dir():
         log.warning("run_dir gone for run_id=%s: %s", run_id, run_dir)
         return (None, "run_dir_gone")
-    return run_dir, qd_id
+    return run_dir, run_id
 
 
 _RESOLVE_REASON_TEXT: dict[str, str] = {
@@ -333,30 +304,15 @@ _RESOLVE_REASON_TEXT: dict[str, str] = {
 }
 
 
-def _load_slack_context(run_dir: Path) -> SlackContext | None:
-    ctx_path = run_dir / ".slack-context.json"
+def _load_comms_context(run_dir: Path) -> dict[str, Any]:
+    """Read .comms-context.json from run_dir. Returns {} on missing or error."""
+    ctx_path = run_dir / ".comms-context.json"
     if not ctx_path.is_file():
-        return None
+        return {}
     try:
-        data = json.loads(ctx_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
-        log.warning("failed to read .slack-context.json: %s", exc)
-        return None
-    opts_raw = data.get("options", [])
-    options: tuple[tuple[str, str], ...] = tuple(
-        (str(pair[0]), str(pair[1])) for pair in opts_raw if len(pair) == 2
-    )
-    return SlackContext(
-        project_path=Path(data.get("project_path", "")),
-        project_path_hash=data.get("project_path_hash", ""),
-        run_id=data.get("run_id", ""),
-        channel=data.get("channel", ""),
-        thread_ts=data.get("thread_ts", ""),
-        qid=data.get("qid"),
-        did=data.get("did"),
-        options=options,
-        message_ts=data.get("message_ts"),
-    )
+        return json.loads(ctx_path.read_text())  # type: ignore[return-value]
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 # ---------------------------------------------------------------------------
@@ -394,13 +350,14 @@ def _write_answer_file(
             elif line.startswith("requesting_role:"):
                 requesting_role = line.split(":", 1)[1].strip()
     safe_user_id = _safe_yaml_scalar(user_id)
+    # D9: delivery_mode: async (not "slack") — neutralised literal.
     body = (
         "---\n"
         f"question_id: {qid}\n"
         "verdict: answered\n"
         f"chosen_key: {choice}\n"
         f"chosen_label: {label}\n"
-        "delivery_mode: slack\n"
+        "delivery_mode: async\n"
         f"opened_at: {opened_at}\n"
         f"answered_at: {_now_iso()}\n"
         f"answered_by_slack_user: {safe_user_id}\n"
@@ -436,12 +393,13 @@ def _write_decision_file(
             elif line.startswith("options_source:"):
                 options_source = line.split(":", 1)[1].strip()
     safe_user_id = _safe_yaml_scalar(user_id)
+    # D9: delivery_mode: async (not "slack") — neutralised literal.
     body = (
         "---\n"
         f"decision_id: {did}\n"
         "verdict: chosen\n"
         f"chosen_option: {choice}\n"
-        "delivery_mode: slack\n"
+        "delivery_mode: async\n"
         "issue_url: null\n"
         f"opened_at: {opened_at}\n"
         f"decided_at: {_now_iso()}\n"
@@ -519,17 +477,25 @@ def _build_snapshot() -> RoutingSnapshot:
         except ValueError as err:
             log.debug("invalid sid skipped: %s", err)
             continue
+        provider = data.get("provider", "slack")
+        thread_ref = ThreadRef(
+            provider=provider,
+            provider_data=MappingProxyType(
+                {"channel_id": channel_id, "thread_ts": thread_ts}
+            ),
+        )
         route = Route(
             sid=sid,
-            channel_id=channel_id,
-            thread_ts=thread_ts,
+            thread_ref=thread_ref,
             inbox_dir=inbox,
         )
         thread_map[thread_ts] = route
         sid_map[sid] = route
 
     sorted_triples = sorted(
-        (sid, r.thread_ts, r.channel_id) for sid, r in sid_map.items()
+        (sid, r.thread_ref.provider_data.get("thread_ts", ""),
+         r.thread_ref.provider_data.get("channel_id", ""))
+        for sid, r in sid_map.items()
     )
     fp = hashlib.sha1(str(sorted_triples).encode()).hexdigest()[:16]
 
@@ -619,169 +585,155 @@ class IdleMonitor:
 
 
 # ---------------------------------------------------------------------------
-# RouterApp — Slack event + action handlers
+# InboundConsumerImpl — provider-agnostic dispatcher
 # ---------------------------------------------------------------------------
 
 
-class RouterApp:
+class InboundConsumerImpl:
+    """Implements InboundConsumer Protocol.
+
+    Provider's worker thread calls dispatch() synchronously per event.
+    Consumer is responsible for synchronization on shared state
+    (RoutingIndex is internally thread-safe; writers use atomic
+    rename / O_EXCL; allowed_users is immutable frozenset).
+
+    H1 invariant: allowlist enforced HERE before any artefact write.
+    """
+
     def __init__(
         self,
-        app: App,
+        provider: Any,
         index: RoutingIndex,
-        allowed_users: set[str],
+        allowed_users: frozenset[str],
+        stop_evt: threading.Event,
     ) -> None:
-        self._app = app
+        self._provider = provider
         self._index = index
         self._allowed_users = allowed_users
+        self._stop_evt = stop_evt
 
-    def register(self) -> None:
-        self._app.event("message")(self._on_message)
-        for letter in BUTTON_LETTERS:
-            self._app.action(f"decision_pick_{letter}")(self._on_button_factory("decision"))
-            self._app.action(f"question_pick_{letter}")(self._on_button_factory("question"))
+    def dispatch(self, ev: InboundEvent) -> None:
+        """Dispatch one normalized inbound event."""
+        if self._stop_evt.is_set():
+            return
+        # H1: allowlist enforced before any artefact write.
+        if self._allowed_users and ev.user_id not in self._allowed_users:
+            if ev.event_role in ("question_answer", "decision_pick"):
+                snap = self._index.current()
+                thread_ref = ev.thread_ref
+                self._provider.post_ephemeral_error(
+                    thread_ref,
+                    ev.user_id,
+                    "You are not authorized to respond to this pipeline.",
+                )
+            # Message path: silent drop (prevents reply-loop).
+            return
 
-    def _on_message(self, event: dict[str, Any]) -> None:
-        if event.get("subtype") is not None:
-            return
-        if event.get("bot_id") or event.get("bot_profile"):
-            return
-        thread_ts: str | None = event.get("thread_ts")
-        if not thread_ts:
-            return
-        message_ts: str | None = event.get("ts")
-        if not message_ts:
-            return
-        # Enforce allowlist symmetrically with _process_button (H1).
-        user_id: str = event.get("user", "")
-        if self._allowed_users and user_id not in self._allowed_users:
-            log.debug(
-                "inbox drop: user=%s not in allowlist (message ts=%s)",
-                user_id, message_ts,
-            )
-            return
+        if ev.event_role == "message":
+            self._handle_message(ev)
+        elif ev.event_role == "question_answer":
+            self._handle_button(ev, kind="question")
+        elif ev.event_role == "decision_pick":
+            self._handle_button(ev, kind="decision")
+
+    def _handle_message(self, ev: InboundEvent) -> None:
+        thread_ts = ev.thread_ref.provider_data.get("thread_ts", "")
         snap = self._index.current()
         route = snap.by_thread.get(thread_ts)
         if route is None:
-            _write_unrouted_file(event)
+            _write_unrouted_file(ev)
             return
-        ev_channel: str = event.get("channel", "")
-        if ev_channel and ev_channel != route.channel_id:
-            log.warning(
-                "cross-channel drop: event=%s bound=%s sid=%s",
-                ev_channel, route.channel_id, route.sid,
-            )
-            _write_unrouted_file(event)
-            return
-        _write_inbox_file(route.inbox_dir, event)
+        # Router trusts cross-channel guard is already done by adapter (B3).
+        _write_inbox_file(route.inbox_dir, ev)
 
-    # type: ignore[return] — factory returns a Bolt event-handler closure, not None
-    def _on_button_factory(self, kind: str):  # type: ignore[return]
-        def handler(ack: Any, body: dict[str, Any], client: Any) -> None:
-            ack()
-            try:
-                self._process_button(body, client, kind)
-            except Exception:
-                log.exception("button handler failed (kind=%s)", kind)
-        return handler
+    def _handle_button(self, ev: InboundEvent, kind: str) -> None:
+        """Handle button click: resolve run_dir, write answer/decision, confirm."""
+        run_id = ev.run_id
+        qd_id = ev.qd_id
+        option_index = ev.option_index
 
-    def _process_button(
-        self, body: dict[str, Any], client: Any, kind: str
-    ) -> None:
-        user_id: str = body.get("user", {}).get("id", "")
-        if self._allowed_users and user_id not in self._allowed_users:
-            channel_id = (body.get("channel") or {}).get("id", "")
-            client.chat_postEphemeral(
-                channel=channel_id,
-                user=user_id,
-                text="You are not authorized to respond to this pipeline.",
-            )
+        if run_id is None or qd_id is None or option_index is None:
+            log.warning("button event missing routing fields: %r", ev)
             return
 
-        actions = body.get("actions", [])
-        if not actions:
-            log.warning("button body has no actions")
+        if not _QD_ID_RE.match(qd_id):
+            log.warning("qd_id failed validation: %r", qd_id)
             return
-        value: str = actions[0].get("value", "")
-        parts = value.split("|", 3)
-        if len(parts) != 4:
-            log.warning("malformed button value: %r", value)
-            channel_id = (body.get("channel") or {}).get("id", "")
-            client.chat_postEphemeral(
-                channel=channel_id,
-                user=user_id,
-                text=_RESOLVE_REASON_TEXT["malformed"],
-            )
-            return
-        _phash8, run_id, qd_id, choice = parts
 
-        resolved = _resolve_route_dir_from_value(value)
-        first, second = resolved
+        if not (0 <= option_index < len(BUTTON_LETTERS)):
+            log.warning("option_index out of range: %d", option_index)
+            return
+
+        choice = BUTTON_LETTERS[option_index]
+
+        # Resolve run dir from run-index. phash8 from context file.
+        ctx = _load_comms_context_by_run_id(run_id)
+        phash8 = ctx.get("project_path_hash", "")
+
+        result = _resolve_route_dir_from_run_id(run_id, phash8)
+        first, second = result
         if first is None:
-            reason: str = second  # type: ignore[assignment]  # narrowed by first is None
-            channel_id = (body.get("channel") or {}).get("id", "")
-            client.chat_postEphemeral(
-                channel=channel_id,
-                user=user_id,
-                text=_RESOLVE_REASON_TEXT.get(
+            reason: str = second  # type: ignore[assignment]
+            self._provider.post_ephemeral_error(
+                ev.thread_ref,
+                ev.user_id,
+                _RESOLVE_REASON_TEXT.get(
                     reason, f"Click could not be routed ({reason}).",
                 ),
             )
             return
+
         run_dir = first
-        qd_id = second
 
         if kind == "decision":
-            _write_decision_file(run_dir, qd_id, choice, user_id)
+            _write_decision_file(run_dir, qd_id, choice, ev.user_id)
         else:
             label = _resolve_choice_label(run_dir, qd_id, choice)
-            _write_answer_file(run_dir, qd_id, choice, label, user_id)
+            _write_answer_file(run_dir, qd_id, choice, label, ev.user_id)
 
-        self._confirm_pick(client, body, qd_id, choice, user_id, kind)
+        self._confirm_pick(ev, qd_id, choice, kind)
 
     def _confirm_pick(
         self,
-        client: Any,
-        body: dict[str, Any],
+        ev: InboundEvent,
         qd_id: str,
         choice: str,
-        user_id: str,
         kind: str,
     ) -> None:
-        message = body.get("message") or {}
-        message_ts: str = message.get("ts", "")
-        thread_ts: str = message.get("thread_ts") or message_ts
-        channel_id = (body.get("channel") or {}).get("id", "")
-        if not message_ts or not channel_id:
+        mref = ev.message_ref
+        if mref is None:
+            return
+        message_ts = mref.provider_data.get("message_ts", "")
+        if not message_ts:
             return
         label = "Decision" if kind == "decision" else "Question"
+        new_body = (
+            f":white_check_mark: *{label} {qd_id}* — "
+            f"`{choice}` chosen by <@{ev.user_id}>"
+        )
         try:
-            client.chat_update(
-                channel=channel_id,
-                ts=message_ts,
-                text=f"{label} {qd_id}: locked",
-                blocks=[{
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": (
-                            f":white_check_mark: *{label} {qd_id}* — "
-                            f"`{choice}` chosen by <@{user_id}>"
-                        ),
-                    },
-                }],
-            )
+            self._provider.update_message(mref, new_body, lock=True)
         except Exception as exc:
-            log.warning("chat_update failed (ts=%s): %s", message_ts, exc)
+            log.warning("update_message failed: %s", exc)
         try:
-            client.chat_postMessage(
-                channel=channel_id,
-                thread_ts=thread_ts,
-                text=f"Recorded `{choice}` for `{qd_id}`. Pipeline resuming.",
-                unfurl_links=False,
-                unfurl_media=False,
-            )
+            self._provider.post_confirmation(ev.thread_ref, mref, choice)
         except Exception as exc:
-            log.warning("confirm post failed: %s", exc)
+            log.warning("post_confirmation failed: %s", exc)
+
+
+def _load_comms_context_by_run_id(run_id: str) -> dict[str, Any]:
+    """Try to find .comms-context.json for a run_id via run-index."""
+    entry_path = RUN_INDEX_DIR / f"{run_id}.json"
+    if not entry_path.is_file():
+        return {}
+    try:
+        data = json.loads(entry_path.read_text())
+        run_dir = Path(data.get("run_dir", ""))
+        if run_dir.is_dir():
+            return _load_comms_context(run_dir)
+    except (OSError, json.JSONDecodeError):
+        pass
+    return {}
 
 
 # ---------------------------------------------------------------------------
@@ -791,7 +743,7 @@ class RouterApp:
 
 def _acquire_pid_or_exit() -> int:
     """Acquire flock on PID_PATH. Winner returns open fd; loser exits 0."""
-    ROUTER_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+    COMMS_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
     fd = os.open(str(PID_PATH), os.O_RDWR | os.O_CREAT, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -829,25 +781,16 @@ def _install_signal_handlers(stop_evt: threading.Event) -> None:
 
 
 def _supervisor(
-    stop_evt: threading.Event, handler: SocketModeHandler
+    stop_evt: threading.Event,
+    provider: Any,
 ) -> None:
     stop_evt.wait()
-    closer = threading.Thread(
-        target=_safe_close, args=(handler,), daemon=True, name="handler-closer"
-    )
-    closer.start()
-    closer.join(timeout=2.0)
-    if closer.is_alive():
-        log.warning("handler.close exceeded 2s; force exit")
+    try:
+        provider.stop_inbound()
+    except Exception:
+        log.exception("provider.stop_inbound failed")
     _cleanup_pidfile()
     os._exit(0)
-
-
-def _safe_close(h: SocketModeHandler) -> None:
-    try:
-        h.close()
-    except Exception:
-        log.exception("handler.close failed")
 
 
 # ---------------------------------------------------------------------------
@@ -863,7 +806,7 @@ def _run() -> None:
     log_level = os.environ.get("SLACK_ROUTER_LOG_LEVEL", "INFO")
 
     if not is_tty:
-        ROUTER_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+        COMMS_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
         logging.basicConfig(
             filename=str(LOG_PATH),
             level=log_level,
@@ -884,13 +827,13 @@ def _run() -> None:
         log.error("SLACK_BOT_TOKEN and SLACK_APP_TOKEN required")
         raise SystemExit(2)
 
-    allowed_users: set[str] = {
+    allowed_users: frozenset[str] = frozenset(
         u.strip()
         for u in os.environ.get("SLACK_ALLOWED_USERS", "").split(",")
         if u.strip()
-    }
+    )
 
-    ROUTER_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+    COMMS_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
     UNROUTED_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     RUN_INDEX_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
 
@@ -918,22 +861,29 @@ def _run() -> None:
     for sessions_sid_inbox in sessions_root.glob("*/inbox"):
         _cleanup_orphan_tmps(sessions_sid_inbox)
 
-    app = App(token=bot_token)
-    router_app = RouterApp(app, index, allowed_users)
-    router_app.register()
+    # Build provider via registry (uses active_provider with cwd as project_path).
+    from comms.registry import get_registry  # noqa: PLC0415
+    project_path = Path.cwd()
+    provider = get_registry().active_provider(project_path)
 
-    handler = SocketModeHandler(app, app_token)
+    # Wire routing_index_ref for cross-channel guard (B3).
+    if hasattr(provider, "set_routing_index_ref"):
+        provider.set_routing_index_ref(index.current)
+
+    consumer = InboundConsumerImpl(provider, index, allowed_users, stop_evt)
 
     supervisor_thread = threading.Thread(
-        target=_supervisor, args=(stop_evt, handler), daemon=True, name="supervisor"
+        target=_supervisor, args=(stop_evt, provider), daemon=True, name="supervisor"
     )
     supervisor_thread.start()
 
     log.info(
-        "slack_router started: pid=%d idle_timeout=%ds", os.getpid(), IDLE_TIMEOUT_S
+        "comms_router started: pid=%d idle_timeout=%ds", os.getpid(), IDLE_TIMEOUT_S
     )
 
-    handler.start()  # blocks MainThread
+    provider.start_inbound(consumer, stop_evt)
+
+    stop_evt.wait()
 
     poller.join(timeout=1.0)
     idle.join(timeout=1.0)

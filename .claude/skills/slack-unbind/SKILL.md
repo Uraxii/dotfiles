@@ -29,9 +29,9 @@ uv run --script ~/.claude/pipeline/session_bind.py deactivate
 6. Flips `active=false`, sets `ended_at`.
 7. Prints `ok`.
 
-Router behavior: removes binding entry from state file. Host router (`slack_router.py`)
+Router behavior: removes binding entry from state file. Host router (`comms/router.py`)
 drops this session's route on its next 3s poll. Router stays alive to serve other
-bound sessions. For immediate router shutdown: `pkill -f slack_router.py`.
+bound sessions. For immediate router shutdown: `pkill -f comms/router.py`.
 Router idle-exits automatically after 30 min if no other sessions remain bound.
 
 ## Preserved on disk
