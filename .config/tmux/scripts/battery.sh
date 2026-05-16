@@ -29,22 +29,34 @@ cap=$(cat "$cap_file" 2>/dev/null || true)
 
 state=$(cat "${cap_file%/capacity}/status" 2>/dev/null || echo "Unknown")
 
-# Glyph byte sequences.
-#   CAP_L         U+E0B6   = \xee\x82\xb6
-#   CAP_R         U+E0B4   = \xee\x82\xb4
-#   CHARGING      U+F0084  = \xf3\xb0\x82\x84
-#   DISCHARGING   U+F0079  = \xf3\xb0\x81\xb9
-#   LOW_OUTLINE   U+F008E  = \xf3\xb0\x82\x8e
-#   UNKNOWN       U+F007D  = \xf3\xb0\x81\xbd
+# Glyph byte sequences (UTF-8).
+#   CAP_L      U+E0B6   = \xee\x82\xb6   left  pill cap (powerline-extra)
+#   CAP_R      U+E0B4   = \xee\x82\xb4   right pill cap
+#   CHARGING   U+F0084  = \xf3\xb0\x82\x84   nf-md-battery_charging (bolt)
+#   FULL       U+F0079  = \xf3\xb0\x81\xb9   nf-md-battery (full rect)
+#   B90        U+F0082  = \xf3\xb0\x82\x82   nf-md-battery_90
+#   B70        U+F0080  = \xf3\xb0\x82\x80   nf-md-battery_70
+#   LOW        U+F12A1  = \xf3\xb1\x8a\xa1   nf-md-battery_low (modern rounded)
+#
+# Discharge tier (icon morphs by capacity):
+#   >=85  → FULL
+#   >=60  → B90
+#   >=30  → B70
+#   < 30  → LOW
+# Charging state overrides w/ CHARGING regardless of capacity.
 CAP_L='\xee\x82\xb6'
 CAP_R='\xee\x82\xb4'
 
 case "$state" in
-    Charging|Full)    icon='\xf3\xb0\x82\x84' ;;
-    Discharging|Not*) icon='\xf3\xb0\x81\xb9' ;;
-    *)                icon='\xf3\xb0\x81\xbd' ;;
+    Charging|Full) icon='\xf3\xb0\x82\x84' ;;
+    *)
+        if   [ "$cap" -ge 85 ]; then icon='\xf3\xb0\x81\xb9'
+        elif [ "$cap" -ge 60 ]; then icon='\xf3\xb0\x82\x82'
+        elif [ "$cap" -ge 30 ]; then icon='\xf3\xb0\x82\x80'
+        else                          icon='\xf3\xb1\x8a\xa1'
+        fi
+        ;;
 esac
-[ "$cap" -lt 5 ] && icon='\xf3\xb0\x82\x8e'
 
 # Color tier — read palette from tmux user options; fall back to mocha hex.
 get() { tmux show -gv "$1" 2>/dev/null || true; }
