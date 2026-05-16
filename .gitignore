@@ -22,6 +22,9 @@ __pycache__/
 .config/opencode/models.local
 messages.md
 
+# tpm-installed tmux plugins — runtime install, never tracked
+.config/tmux/plugins/
+
 .claude/plans
 .claude/projects
 # claude-code runtime state (written into ~/.claude/ at runtime; never tracked)
