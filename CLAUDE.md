@@ -123,24 +123,9 @@ When a component is added, removed, or materially changed (new module, new keybi
 - Theming pipeline lives in this file's "Theming System" section. `docs/theming.md` links here, then adds howto recipes only.
 - Neovim internals live in `.config/nvim/CLAUDE.md` and `.config/nvim/README.md`. `docs/tooling.md` links — never copies.
 
-# Writing NerdFont Glyphs
+# NerdFont Glyphs
 
-Some tooling (Claude's Write/Edit, certain editors) strips high-codepoint UTF-8 chars (NerdFont glyphs in U+E000+ private-use area) on save. Don't paste raw glyphs into config files.
+Tooling strips high-codepoint UTF-8 on write. Never paste raw glyphs.
 
-## Config files (e.g. `.config/tmux/tmux.conf`)
-
-Use ASCII placeholder tokens (`__CAP_L__`, `__DIR__`, `__GIT__`, `__USER__`, `__CLOCK__`, …). Run `~/.config/tmux/scripts/glyphs.sh` to sed-substitute literal UTF-8 bytes in place. Token → codepoint map lives at the top of `glyphs.sh`; add a new entry there when adding a new glyph.
-
-## Shell scripts (e.g. `battery.sh`)
-
-Emit glyphs via `printf '\xHH\xHH\xHH'` byte-literal escapes — the script source stays ASCII; bytes get assembled at runtime by `printf`. Example: U+E0B6 (left pill cap) → `printf %b '\xee\x82\xb6'`.
-
-## Verifying a glyph exists in your NerdFont
-
-```bash
-python3 -c "from fontTools.ttLib import TTFont; \
-  cmap = TTFont('/usr/share/fonts/TTF/0xProtoNerdFontMono-Regular.ttf').getBestCmap(); \
-  print('YES' if 0xF126 in cmap else 'NO')"
-```
-
-Replace the font path + codepoint as needed.
+- Configs: ASCII tokens (`__CAP_L__`, `__DIR__`, …) + `~/.config/tmux/scripts/glyphs.sh` substitutes bytes in place. Token map at top of `glyphs.sh`.
+- Shell scripts: emit via `printf %b '\xHH\xHH\xHH'`. Source stays ASCII.
