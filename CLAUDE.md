@@ -15,17 +15,18 @@ stow -n -v .    # dry run
 
 ```
 ~/dotfiles/
-├── .zshrc                        # Zsh config (oh-my-posh, keybinds, aliases)
+├── .zshrc                        # Zsh config (starship init + bootstrap, keybinds, aliases)
 ├── .swaylock/                    # Swaylock config
 ├── .stow-local-ignore            # Stow ignore patterns (regex)
 ├── .config/
 │   ├── ghostty/                  # Ghostty terminal
 │   ├── networkmanager-dmenu/     # Network manager dmenu
 │   ├── nvim/                     # Neovim (Kickstart-based, has own CLAUDE.md)
-│   ├── omp/                      # Oh My Posh prompt themes
+│   ├── omp/                      # Oh My Posh prompt themes (inactive, kept for reference)
 │   ├── opencode/                 # OpenCode + Claude Code skills
 │   ├── qt6ct/                    # Qt6 theming (qt6ct.conf)
-│   ├── starship.toml             # Starship prompt (currently disabled)
+│   ├── starship.toml             # Starship prompt — committed default (bootstrap source)
+│   ├── starship.toml.tmpl        # Starship template; set-theme.sh substitutes ##PALETTE##
 │   ├── sway/                     # Sway WM (config, modules, themes, scripts)
 │   ├── waybar/                   # Waybar (themes/<name>/ + user-overrides.css)
 │   └── wofi/                     # Wofi launcher (config only, CSS is runtime)
@@ -35,7 +36,7 @@ stow -n -v .    # dry run
 
 ## Stow Ignore
 
-`.stow-local-ignore` controls what stow skips (regex). Currently ignores git files, README/LICENSE, `scripts`, `.claude/settings.local.json`. Overrides stow defaults — must re-add defaults manually.
+`.stow-local-ignore` controls what stow skips (regex). Currently ignores git files, README/LICENSE, `scripts`, `.claude/settings.local.json`, `.config/starship.toml` (tracked default but managed at runtime by `set-theme.sh` / zshrc bootstrap — must not symlink). Overrides stow defaults — must re-add defaults manually.
 ## Agent & Skill Files
 
 `.claude/agents/` and `.claude/skills/` are the editable source of truth.
@@ -60,9 +61,9 @@ Non-sway files (CSS, INI) live under `themes/<name>/data/` to avoid sway's inclu
 
 Configurable values MUST use template system. `.tmpl` extension, `set-theme.sh` does `sed` substitution.
 
-Two placeholder syntaxes (to avoid Go template conflicts in oh-my-posh TOML):
+Two placeholder syntaxes (to avoid Go template conflicts in TOML):
 - `{{PLACEHOLDER}}` — CSS templates (waybar, wofi)
-- `##PLACEHOLDER##` — TOML templates (oh-my-posh)
+- `##PLACEHOLDER##` — TOML templates (oh-my-posh, starship)
 
 | Variable | Defined in | Placeholder | Used by |
 |----------|-----------|-------------|---------|
@@ -70,6 +71,7 @@ Two placeholder syntaxes (to avoid Go template conflicts in oh-my-posh TOML):
 | `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
 | `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<name>/` (currently `minimal`) |
 | OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
+| Starship palette | `themes/*/data/starship-palette` | `##PALETTE##` | `.config/starship.toml.tmpl` → `~/.config/starship.toml` |
 
 Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
 
@@ -86,13 +88,26 @@ themes/<name>/
     ├── waybar-colors.css   # Waybar @define-color block
     ├── wofi.css            # Wofi CSS with {{FONT}} placeholder
     ├── omp-colors          # Shell vars for oh-my-posh ##PLACEHOLDER## substitution
+    ├── starship-palette    # Shell var STARSHIP_PALETTE for starship ##PALETTE## sub
     ├── tmux-theme.conf     # Full tmux style overlay (status, window list, panes)
     └── icon-theme          # Icon theme name (e.g. Papirus-Dark)
 ```
 
 ## Runtime Files (generated, NOT tracked)
 
-`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config,scripts/}`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`
+`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config,scripts/}`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`, `~/.config/starship.toml`.
+
+### Starship cross-system bootstrap
+
+Starship is the active prompt (`.zshrc:24`). Runtime config `~/.config/starship.toml` is owned by two paths:
+
+- **Sway systems**: `set-theme.sh:79-83` regenerates it from `.config/starship.toml.tmpl` + `themes/<name>/starship-palette` on every sway theme switch.
+- **Non-sway systems** (or first shell before sway runs): `.zshrc` bootstrap stanza copies the committed `dotfiles/.config/starship.toml` to `~/.config/starship.toml` if missing.
+
+The committed `.config/starship.toml` is a frozen snapshot — a portable default. It is explicitly stow-ignored (`\.config/starship\.toml` in `.stow-local-ignore`) so set-theme.sh never writes through a symlink back into the repo. Refresh the snapshot manually when the desired default changes:
+```bash
+cp ~/.config/starship.toml ~/dotfiles/.config/starship.toml
+```
 
 # Docs
 
@@ -103,7 +118,7 @@ Human-facing per-component docs live in `docs/`. Repo-only — the dir is in `.s
 | Component | Doc file |
 |-----------|----------|
 | sway, waybar, wofi, swaylock, networkmanager-dmenu | `docs/desktop.md` |
-| zsh, oh-my-posh, ghostty | `docs/shell.md` |
+| zsh, starship, ghostty | `docs/shell.md` |
 | nvim, opencode, systemd/user | `docs/tooling.md` |
 | theming pipeline (companion to "Theming System" above) | `docs/theming.md` |
 
