@@ -125,7 +125,10 @@ When a component is added, removed, or materially changed (new module, new keybi
 
 # NerdFont Glyphs
 
-Tooling strips high-codepoint UTF-8 on write. Never paste raw glyphs.
+Tooling strips high-codepoint UTF-8 on write. Never paste raw glyphs. Use `~/dotfiles/scripts/nerd-glyph`:
 
-- Configs: ASCII tokens (`__CAP_L__`, `__DIR__`, …) + `~/.config/tmux/scripts/glyphs.sh` substitutes bytes in place. Token map at top of `glyphs.sh`.
-- Shell scripts: emit via `printf %b '\xHH\xHH\xHH'`. Source stays ASCII.
+- `nerd-glyph emit U+F126` — print bytes (for command substitution / pipes).
+- `nerd-glyph sub FILE __TOK__=F126 __TOK2__=E0B6` — replace ASCII tokens in FILE w/ glyph bytes.
+- `nerd-glyph check U+F126 [FONT]` — verify codepoint exists in font.
+
+In configs, write tokens (`__GIT__`, `__CAP_L__`, …) then run `nerd-glyph sub`. In shell scripts emit via `printf %b '\xHH\xHH\xHH'`.

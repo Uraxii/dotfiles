@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# nerd-glyph — write NerdFont (or any) UTF-8 glyphs into files without
+# pasting raw high-codepoint bytes through tooling that strips them.
+#
+# Lives in ~/dotfiles/scripts/ (repo-only, not stowed into $HOME). Invoke via
+# absolute path: `~/dotfiles/scripts/nerd-glyph ...`.
+#
+# Subcommands:
+#
+#   emit  CODEPOINT [...]
+#       Print the literal UTF-8 bytes for one or more codepoints to stdout.
+#       Codepoints accept `U+F126`, `F126`, `0xF126`, or decimal. Concatenated
+#       w/ no separator. Use w/ redirection or command substitution.
+#
+#   sub   FILE TOKEN=CODEPOINT [TOKEN=CODEPOINT ...]
+#       Replace each ASCII TOKEN in FILE with the glyph for CODEPOINT.
+#       In-place, idempotent. Multiple pairs allowed in one call.
+#
+#   check CODEPOINT [FONT_PATH]
+#       Probe whether CODEPOINT exists in FONT_PATH. Default font is the
+#       active fc-match for `monospace`. Exits 0 yes, 1 no, 2 lookup error.
+#
+# Examples:
+#
+#   nerd-glyph emit U+F126                            # →
+#   nerd-glyph emit F126 F0E7                         # →
+#   nerd-glyph sub tmux.conf __GIT__=F126 __BOLT__=F0E7
+#   printf 'left cap: '; nerd-glyph emit E0B6; echo   # interactive lookup
+#   nerd-glyph check F126                             # probe default font
+
+set -eu
+
+usage() {
+    sed -n '/^# nerd-glyph/,/^$/{s/^# \{0,1\}//;p;}' "$0" >&2
+    exit 64
+}
+
+# Normalize a codepoint spec → decimal integer.
+parse_cp() {
+    local raw=$1
+    case "$raw" in
+        U+*|u+*) raw=${raw#?+} ;;
+        0x*|0X*) raw=${raw#0[xX]} ;;
+    esac
+    # Hex if it has any a-f, else assume decimal-or-hex; force hex parse via 16#.
+    case "$raw" in
+        *[a-fA-F]*) printf '%d' "$((16#$raw))" ;;
+        *)          # Pure digits: ambiguous — assume hex (NerdFont convention).
+                    printf '%d' "$((16#$raw))" ;;
+    esac
+}
+
+# Emit UTF-8 bytes for a single decimal codepoint via Python (portable across
+# shells; avoids assuming printf supports \uHHHH).
+emit_one() {
+    local cp=$1
+    python3 -c "import sys; sys.stdout.write(chr($cp))"
+}
+
+cmd_emit() {
+    [ $# -ge 1 ] || usage
+    for arg in "$@"; do
+        emit_one "$(parse_cp "$arg")"
+    done
+}
+
+cmd_sub() {
+    [ $# -ge 2 ] || usage
+    local file=$1; shift
+    [ -f "$file" ] || { echo "nerd-glyph: file not found: $file" >&2; exit 2; }
+    local tmp; tmp=$(mktemp)
+    cp "$file" "$tmp"
+    for pair in "$@"; do
+        case "$pair" in
+            *=*) ;;
+            *)   echo "nerd-glyph: bad pair (need TOKEN=CODEPOINT): $pair" >&2; rm "$tmp"; exit 64 ;;
+        esac
+        local token=${pair%%=*}
+        local spec=${pair#*=}
+        local glyph; glyph=$(emit_one "$(parse_cp "$spec")")
+        # Use python for the substitution too — sed chokes on patterns
+        # containing special chars; python handles literal text replace.
+        python3 -c "
+import sys
+path = sys.argv[1]; tok = sys.argv[2]; rep = sys.argv[3]
+with open(path, 'r', encoding='utf-8') as f: data = f.read()
+data = data.replace(tok, rep)
+with open(path, 'w', encoding='utf-8') as f: f.write(data)
+" "$tmp" "$token" "$glyph"
+    done
+    mv "$tmp" "$file"
+    echo "nerd-glyph: patched $file"
+}
+
+cmd_check() {
+    [ $# -ge 1 ] || usage
+    local cp; cp=$(parse_cp "$1")
+    local font=${2:-$(fc-match -f '%{file}' monospace 2>/dev/null || true)}
+    [ -n "$font" ] && [ -f "$font" ] || { echo "nerd-glyph: font not found" >&2; exit 2; }
+    python3 - "$font" "$cp" <<'PY'
+import sys
+try:
+    from fontTools.ttLib import TTFont
+except ImportError:
+    sys.stderr.write("nerd-glyph: python3-fonttools not installed\n"); sys.exit(2)
+font_path, cp = sys.argv[1], int(sys.argv[2])
+cmap = TTFont(font_path).getBestCmap()
+if cp in cmap:
+    print(f"U+{cp:04X} present in {font_path} → {cmap[cp]}")
+    sys.exit(0)
+print(f"U+{cp:04X} MISSING from {font_path}")
+sys.exit(1)
+PY
+}
+
+[ $# -ge 1 ] || usage
+sub=$1; shift
+case "$sub" in
+    emit)  cmd_emit  "$@" ;;
+    sub)   cmd_sub   "$@" ;;
+    check) cmd_check "$@" ;;
+    -h|--help|help) usage ;;
+    *) echo "nerd-glyph: unknown subcommand: $sub" >&2; usage ;;
+esac
