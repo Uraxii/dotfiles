@@ -38,3 +38,6 @@ messages\.md
 \.config/opencode/projects
 \.config/opencode/models\.local
 ^tests
+
+# tpm-installed tmux plugins — never symlink into $HOME
+\.config/tmux/plugins
