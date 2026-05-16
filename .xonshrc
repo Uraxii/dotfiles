@@ -1,0 +1,61 @@
+# Xonsh config
+
+# tmux quick-attach / switch.
+#   tm        → "main" session (default).
+#   tm name   → named session.
+#   tp        → session named after current dir basename (per-project).
+# Outside tmux: attach if session exists, else create + attach.
+# Inside tmux:  switch-client to the session (creating it detached if missing),
+#               since tmux refuses to nest by default.
+
+def _tmux_go(name):
+    import subprocess
+    # Always ensure the session exists detached first. Splitting create from
+    # attach avoids the nest-refusal that `tmux new -A` triggers from inside.
+    has = subprocess.run(['tmux', 'has-session', '-t', name],
+                         capture_output=True).returncode == 0
+    if not has:
+        $[tmux new-session -d -s @(name)]
+    if 'TMUX' in ${...}:
+        $[tmux switch-client -t @(name)]
+    else:
+        $[tmux attach -t @(name)]
+
+def _tm(args, stdin=None):
+    _tmux_go(args[0] if args else 'main')
+aliases['tm'] = _tm
+
+def _tp(args, stdin=None):
+    import os
+    _tmux_go(os.path.basename($PWD))
+aliases['tp'] = _tp
+
+# tr [name] → attach/switch to an existing session (default "main").
+# Refuses to create. Fails loud if server or session missing.
+def _tr(args, stdin=None):
+    import sys, subprocess
+    name = args[0] if args else 'main'
+    tty = sys.stderr.isatty()
+    red  = '\033[1;31m' if tty else ''
+    dim  = '\033[2m'    if tty else ''
+    bold = '\033[1m'    if tty else ''
+    rst  = '\033[0m'    if tty else ''
+    err  = lambda m: print(f'{red}tr:{rst} {bold}error:{rst} {m}', file=sys.stderr)
+    hint = lambda m: print(f'{dim}tr: hint: {m}{rst}', file=sys.stderr)
+    if subprocess.run(['tmux', 'has-session'], capture_output=True).returncode != 0:
+        err('tmux not running')
+        hint('use detach to exit a session without killing it')
+        return 1
+    if subprocess.run(['tmux', 'has-session', '-t', f'={name}'],
+                      capture_output=True).returncode != 0:
+        ls = subprocess.run(['tmux', 'list-sessions', '-F', '#S'],
+                            capture_output=True, text=True)
+        avail = ', '.join(l for l in ls.stdout.splitlines() if l) or '<none>'
+        err(f"session '{name}' does not exist")
+        hint(f'available: {avail}')
+        return 1
+    if 'TMUX' in ${...}:
+        $[tmux switch-client -t @(name)]
+    else:
+        $[tmux attach -t @(name)]
+aliases['tr'] = _tr
