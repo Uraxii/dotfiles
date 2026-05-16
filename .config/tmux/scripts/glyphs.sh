@@ -30,6 +30,7 @@ PAIRS=(
     __USER__=F007      # user (fa)
     __HOST__=F233      # server (fa)
     __CLOCK__=F017     # clock-o (fa)
+    __SESSION__=F2D0   # window-maximize (fa) — session pill icon
 )
 
 "$NERD_GLYPH" sub "$target" "${PAIRS[@]}"
