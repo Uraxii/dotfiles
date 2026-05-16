@@ -255,6 +255,11 @@ pkg = "xonsh[full]"
 bin = "xonsh"
 description = "Python-powered shell. Python syntax + shell operators in one prompt (xon.sh)."
 source = "pip"
+# NixOS: install natively. A login shell + xontrib ecosystem don't belong in a
+# uv-tool venv (would isolate from system python and force `uv tool install
+# --with xontrib-*` rebuilds). nixpkgs `xonsh` is the full distribution.
+nixos.source = "native"
+nixos.pkg = "xonsh"
 
 [jq]
 pkg = "jq"

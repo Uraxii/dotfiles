@@ -135,6 +135,26 @@ def resolve(pkg_id: str, entry: dict, distro: str, defaults: dict) -> Resolved:
 # --------------------------------------------------------------------------- #
 
 _OP_RE = re.compile(r"^\s*(>=|<=|==|=|>|<|~=)?\s*([0-9][0-9A-Za-z.\-_+]*)\s*$")
+_VER_RE = re.compile(r"\b(\d+(?:\.\d+){1,3})\b")
+
+
+def probe_bin_version(bin_name: str) -> str | None:
+    """Run `<bin> --version` and parse first `N.N[.N[.N]]` sequence.
+
+    Used by the driver when a declared binary is on PATH but the adapter's
+    presence query returns None (e.g. binary installed outside the active
+    package manager). Returns None on timeout, missing binary, or no parse.
+    """
+    try:
+        r = subprocess.run(
+            [bin_name, "--version"],
+            check=False, text=True, capture_output=True, timeout=3,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return None
+    text = (r.stdout or "") + "\n" + (r.stderr or "")
+    m = _VER_RE.search(text)
+    return m.group(1) if m else None
 
 
 def _parse_ver(s: str) -> tuple[int, ...]:
@@ -150,11 +170,21 @@ def satisfies(installed_ver: str | None, constraint: str | None) -> bool:
 
     Constraint = "" / None → True. Multi-clause = comma-separated AND.
     Operators: =, ==, >=, <=, >, <, ~= (compatible-release: same major).
+
+    Sentinel `"external"` (set by the driver when a declared binary is on
+    PATH but no version could be probed) is accepted as satisfying any
+    constraint — presence beats unknown version.
     """
     if not constraint:
         return True
     if installed_ver is None:
         return False
+    if installed_ver == "external":
+        log.warning(
+            "  ! version unknown for external install — accepting pin %r on trust",
+            constraint,
+        )
+        return True
     inst = _parse_ver(installed_ver)
     for clause in constraint.split(","):
         m = _OP_RE.match(clause)
@@ -210,7 +240,13 @@ class Adapter:
 
     # --- helpers ------------------------------------------------------------
 
-    def _run(self, argv: list[str], *, capture: bool = False) -> tuple[int, str]:
+    def _run(
+        self,
+        argv: list[str],
+        *,
+        capture: bool = False,
+        env_extra: dict[str, str] | None = None,
+    ) -> tuple[int, str]:
         log.debug("exec: %s", shlex.join(argv))
         if self.dry_run and argv[0] not in ("pacman", "dpkg", "rpm", "nix-env", "nix", "cargo", "tldr", "fc-cache", "sh", "bash"):
             # always allow read-only queries to run in dry-run too — those use `capture=True`
@@ -218,6 +254,9 @@ class Adapter:
         if self.dry_run and not capture:
             log.info("[dry-run] %s", shlex.join(argv))
             return 0, ""
+        env = None
+        if env_extra:
+            env = {**os.environ, **env_extra}
         try:
             r = subprocess.run(
                 argv,
@@ -225,6 +264,7 @@ class Adapter:
                 text=True,
                 stdout=subprocess.PIPE if capture else None,
                 stderr=subprocess.PIPE if capture else None,
+                env=env,
             )
         except FileNotFoundError as e:
             return 127, str(e)
@@ -300,22 +340,53 @@ class DnfAdapter(Adapter):
 # --- nix profile --------------------------------------------------------------
 
 class NixAdapter(Adapter):
+    """nix profile add against the configured channel.
+
+    Requires experimental features `nix-command` + `flakes`. Passed inline via
+    `--extra-experimental-features` so the system nix.conf doesn't need to opt
+    in. Attribute path uses dot syntax (e.g. `nerd-fonts._0xproto`) — passed
+    verbatim to nix.
+    """
+
     name = "nix"
     channel = "nixpkgs"
+    _FLAGS = ["--extra-experimental-features", "nix-command flakes"]
 
     def installed_version(self, name: str) -> str | None:
+        # nix-env still works for declarative profiles; for the new profile
+        # format, fall back to `nix profile list --json`.
         rc, out = self._run(["nix-env", "-q", name], capture=True)
+        if rc == 0 and out.strip():
+            m = re.match(rf"{re.escape(name)}-([0-9].*)$", out.strip().splitlines()[0])
+            if m:
+                return m.group(1)
+            return "present"
+        import json
+        rc, out = self._run(
+            ["nix", *self._FLAGS, "profile", "list", "--json"], capture=True,
+        )
         if rc != 0 or not out.strip():
             return None
-        # output: "<name>-<version>"
-        m = re.match(rf"{re.escape(name)}-([0-9].*)$", out.strip().splitlines()[0])
-        return m.group(1) if m else "present"
+        try:
+            data = json.loads(out)
+        except json.JSONDecodeError:
+            return None
+        elems = data.get("elements") or {}
+        # Newer nix returns dict {id: entry}; older returns list.
+        iter_elems = elems.values() if isinstance(elems, dict) else elems
+        for el in iter_elems:
+            attr = el.get("attrPath") or ""
+            if attr == name or attr.endswith(f".{name}"):
+                return el.get("originalUrl") or "present"
+        return None
 
     def install(self, name: str, version: str | None) -> RunResult:
-        # Use `nix profile install` against the configured channel. Attribute path
-        # must use dots (e.g. nerd-fonts._0xproto) — passed verbatim.
         target = f"{self.channel}#{name}"
-        rc, _ = self._run(["nix", "profile", "install", target])
+        # Priority 4 (< default 5) so the new pkg wins file-collision resolution
+        # against an existing `home-manager-path` aggregate in the profile.
+        # Without this, any file overlap (locales, man pages) aborts the add.
+        argv = ["nix", *self._FLAGS, "profile", "add", "--priority", "4", target]
+        rc, _ = self._run(argv)
         return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"nix profile exit {rc}")
 
 
@@ -389,7 +460,26 @@ class NpmAdapter(Adapter):
         spec = name
         if version:
             spec = f"{name}@{version}"
-        rc, _ = self._run(["npm", "install", "-g", spec])
+
+        # Nix-store-installed node has an immutable global prefix
+        # (`/nix/store/...-nodejs-X/lib/node_modules`). `npm install -g` will
+        # ENOENT trying to mkdir there. Redirect to a user-writable prefix.
+        env_extra: dict[str, str] | None = None
+        rc, prefix_out = self._run(
+            ["npm", "config", "get", "prefix"], capture=True,
+        )
+        prefix = prefix_out.strip()
+        if rc == 0 and prefix.startswith("/nix/store"):
+            user_prefix = str(Path.home() / ".npm-global")
+            (Path(user_prefix) / "bin").mkdir(parents=True, exist_ok=True)
+            env_extra = {"NPM_CONFIG_PREFIX": user_prefix}
+            log.info(
+                "  • npm prefix in nix store (%s) — redirecting to %s "
+                "(ensure %s/bin is on PATH)",
+                prefix, user_prefix, user_prefix,
+            )
+
+        rc, _ = self._run(["npm", "install", "-g", spec], env_extra=env_extra)
         return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"npm exit {rc}")
 
 
@@ -613,13 +703,19 @@ def process_one(
     inst = adapter.installed_version(spec.install_name)
     if inst is None and spec.bins:
         # Fallback: any declared binary on PATH = treat as externally installed.
-        # Sentinel "external" causes pin-bearing entries to reinstall via declared
-        # source; pin-less entries match satisfies(None) → True and skip.
+        # Probe `<bin> --version` to extract a real version when possible; if the
+        # probe fails we drop to the "external" sentinel, which `satisfies()`
+        # accepts as matching any pin (presence-on-trust).
         for b in spec.bins:
             path = shutil.which(b)
             if path:
                 log.info("  ✓ detected external install: %s", path)
-                inst = "external"
+                probed = probe_bin_version(b)
+                if probed:
+                    log.info("    probed version: %s", probed)
+                    inst = probed
+                else:
+                    inst = "external"
                 break
     if inst is not None:
         if satisfies(inst, spec.version):

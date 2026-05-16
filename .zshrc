@@ -8,6 +8,8 @@
 
 export CHROME_EXECUTABLE=google-chrome-stable
 export PATH="$HOME/.local/bin:$PATH"
+# npm global prefix redirect (nix-store node has read-only default prefix).
+export PATH="$HOME/.npm-global/bin:$PATH"
 
 # Command Line Prompt
 

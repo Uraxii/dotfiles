@@ -1,5 +1,92 @@
 # Xonsh config
 
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+
+$CHROME_EXECUTABLE = 'google-chrome-stable'
+
+# zoxide doctor noise off; matches .zshrc.
+$_ZO_DOCTOR = '0'
+
+# PATH prepends — order matters (first wins). Mirror of .zshrc layout.
+#   ~/.local/bin            user-installed scripts + uv-tool shims
+#   ~/.npm-global/bin       npm global redirect (nix node has RO store prefix)
+#   ~/.opencode/bin         opencode CLI
+#   ~/dev/flutter/bin       flutter SDK
+#   Android SDK tools       platform-tools, emulator, cmdline-tools
+import os as _os
+for _p in (
+    _os.path.expanduser('~/Android/Sdk/cmdline-tools/latest/bin'),
+    _os.path.expanduser('~/Android/Sdk/emulator'),
+    _os.path.expanduser('~/Android/Sdk/platform-tools'),
+    _os.path.expanduser('~/dev/flutter/bin'),
+    _os.path.expanduser('~/.opencode/bin'),
+    _os.path.expanduser('~/.npm-global/bin'),
+    _os.path.expanduser('~/.local/bin'),
+):
+    if _p not in $PATH:
+        $PATH.insert(0, _p)
+del _p, _os
+
+# ---------------------------------------------------------------------------
+# Prompt + nav (starship, zoxide)
+# ---------------------------------------------------------------------------
+
+import shutil as _shutil
+if _shutil.which('starship'):
+    execx($(starship init xonsh))
+if _shutil.which('zoxide'):
+    execx($(zoxide init --cmd cd xonsh))
+del _shutil
+
+# ---------------------------------------------------------------------------
+# Suffix-style alias: `foo.py` → `python3 foo.py`. Xonsh has no native suffix
+# alias; emulate via a callable alias dispatching on extension.
+# ---------------------------------------------------------------------------
+
+# (skipped — xonsh runs python natively; just call `python3 foo.py`)
+
+# ---------------------------------------------------------------------------
+# Sway logout alias
+# ---------------------------------------------------------------------------
+
+if 'SWAYSOCK' in ${...}:
+    aliases['logout'] = ['swaymsg', 'exit']
+
+# ---------------------------------------------------------------------------
+# tmux per-pane venv tracker — mirror of .zshrc precmd hook.
+# Publishes active venv basename to tmux user option @venv; tmux.conf reads
+# #{@venv} to render the venv pill. Only active inside a tmux pane.
+# ---------------------------------------------------------------------------
+
+if 'TMUX' in ${...}:
+    from xonsh.built_ins import XSH as _XSH
+
+    @_XSH.builtins.events.on_pre_prompt
+    def _tmux_publish_venv():
+        import subprocess
+        pane = ${...}.get('TMUX_PANE', '')
+        if not pane:
+            return
+        venv = ${...}.get('VIRTUAL_ENV', '')
+        if venv:
+            subprocess.run(
+                ['tmux', 'set-option', '-p', '-t', pane, '@venv',
+                 venv.rsplit('/', 1)[-1]],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        else:
+            subprocess.run(
+                ['tmux', 'set-option', '-p', '-t', pane, '-u', '@venv'],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+    del _XSH
+
+# ---------------------------------------------------------------------------
+# tmux helpers
+# ---------------------------------------------------------------------------
+
 # tmux quick-attach / switch.
 #   tm        → "main" session (default).
 #   tm name   → named session.
