@@ -1,5 +1,8 @@
 # Dotfiles
 
+## Dos
+- Recommend safety commits/branches for large changes.
+
 GNU Stow-managed dotfiles. Flat/single-package mode — repo root IS the package, target is `$HOME`.
 
 ```bash

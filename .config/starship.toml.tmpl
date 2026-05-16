@@ -7,11 +7,11 @@
 
 add_newline = false
 
-# Minimal left prompt: just cwd + character.
+# Minimal prompt: directory + char only. All status info (git branch, user,
+# battery, clock) lives in the tmux top status bar — see ~/.config/tmux/tmux.conf.
+# right_format intentionally empty.
 format = """$directory$character"""
-
-# Everything else goes on the right side of the prompt line.
-right_format = """$all"""
+right_format = ""
 
 # Palette selected by sway theme via set-theme.sh template substitution.
 palette = "##PALETTE##"
