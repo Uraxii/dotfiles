@@ -1,5 +1,8 @@
 # Dotfiles
 
+## Dos
+- Recommend safety commits/branches for large changes.
+
 GNU Stow-managed dotfiles. Flat/single-package mode — repo root IS the package, target is `$HOME`.
 
 ```bash
@@ -122,3 +125,13 @@ When a component is added, removed, or materially changed (new module, new keybi
 
 - Theming pipeline lives in this file's "Theming System" section. `docs/theming.md` links here, then adds howto recipes only.
 - Neovim internals live in `.config/nvim/CLAUDE.md` and `.config/nvim/README.md`. `docs/tooling.md` links — never copies.
+
+# NerdFont Glyphs
+
+Tooling strips high-codepoint UTF-8 on write. Never paste raw glyphs. Use `~/dotfiles/scripts/nerd-glyph`:
+
+- `nerd-glyph emit U+F126` — print bytes (for command substitution / pipes).
+- `nerd-glyph sub FILE __TOK__=F126 __TOK2__=E0B6` — replace ASCII tokens in FILE w/ glyph bytes.
+- `nerd-glyph check U+F126 [FONT]` — verify codepoint exists in font.
+
+In configs, write tokens (`__GIT__`, `__CAP_L__`, …) then run `nerd-glyph sub`. In shell scripts emit via `printf %b '\xHH\xHH\xHH'`.

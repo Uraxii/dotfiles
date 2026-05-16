@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""nerd-glyph — write NerdFont (or any) UTF-8 glyphs into files without
+pasting raw high-codepoint bytes through tooling that strips them.
+
+Lives in ~/dotfiles/scripts/ (repo-only, not stowed into $HOME). Invoke via
+absolute path: `~/dotfiles/scripts/nerd-glyph ...`.
+
+Subcommands:
+
+    emit   CODEPOINT [...]
+        Print literal UTF-8 bytes for one or more codepoints to stdout.
+        Codepoints accept `U+F126`, `F126`, `0xF126`. Concatenated w/ no
+        separator. Use w/ redirection or command substitution.
+
+    sub    FILE TOKEN=CODEPOINT [TOKEN=CODEPOINT ...]
+        Replace each ASCII TOKEN in FILE with the glyph for CODEPOINT.
+        In-place, idempotent. Multiple pairs in one call.
+
+    check  CODEPOINT [FONT_PATH]
+        Probe whether CODEPOINT exists in FONT_PATH. Default font is the
+        active fc-match for `monospace`. Exits 0 yes, 1 no, 2 lookup error.
+
+Examples:
+
+    nerd-glyph emit U+F126                          # →
+    nerd-glyph emit F126 F0E7                       # →
+    nerd-glyph sub tmux.conf __GIT__=F126 __BOLT__=F0E7
+    nerd-glyph check F126                           # probe default font
+"""
+from __future__ import annotations
+
+import argparse
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+def parse_codepoint(raw: str) -> int:
+    """Accept U+F126, u+f126, 0xF126, or bare hex F126. Always hex."""
+    s = raw.strip()
+    if s[:2].lower() in ("u+", "0x"):
+        s = s[2:]
+    try:
+        return int(s, 16)
+    except ValueError as e:
+        raise SystemExit(f"nerd-glyph: bad codepoint: {raw!r}") from e
+
+
+def cmd_emit(args: argparse.Namespace) -> int:
+    out = "".join(chr(parse_codepoint(cp)) for cp in args.codepoints)
+    sys.stdout.write(out)
+    return 0
+
+
+def cmd_sub(args: argparse.Namespace) -> int:
+    path = Path(args.file)
+    if not path.is_file():
+        print(f"nerd-glyph: file not found: {path}", file=sys.stderr)
+        return 2
+
+    pairs: list[tuple[str, str]] = []
+    for raw in args.pairs:
+        if "=" not in raw:
+            print(f"nerd-glyph: bad pair (need TOKEN=CODEPOINT): {raw!r}", file=sys.stderr)
+            return 64
+        token, spec = raw.split("=", 1)
+        pairs.append((token, chr(parse_codepoint(spec))))
+
+    data = path.read_text(encoding="utf-8")
+    for token, glyph in pairs:
+        data = data.replace(token, glyph)
+    path.write_text(data, encoding="utf-8")
+    print(f"nerd-glyph: patched {path}")
+    return 0
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    cp = parse_codepoint(args.codepoint)
+    font = args.font
+    if font is None:
+        if not shutil.which("fc-match"):
+            print("nerd-glyph: fc-match not installed; pass FONT explicitly", file=sys.stderr)
+            return 2
+        font = subprocess.run(
+            ["fc-match", "-f", "%{file}", "monospace"],
+            capture_output=True, text=True, check=False,
+        ).stdout.strip()
+    if not font or not Path(font).is_file():
+        print(f"nerd-glyph: font not found: {font!r}", file=sys.stderr)
+        return 2
+
+    try:
+        from fontTools.ttLib import TTFont
+    except ImportError:
+        print("nerd-glyph: python3-fonttools not installed", file=sys.stderr)
+        return 2
+
+    cmap = TTFont(font).getBestCmap()
+    if cp in cmap:
+        print(f"U+{cp:04X} present in {font} → {cmap[cp]}")
+        return 0
+    print(f"U+{cp:04X} MISSING from {font}")
+    return 1
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="nerd-glyph",
+        description="Write NerdFont UTF-8 glyphs into files via ASCII tokens.",
+    )
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_emit = sub.add_parser("emit", help="print UTF-8 bytes for codepoints")
+    p_emit.add_argument("codepoints", nargs="+", help="e.g. U+F126 F0E7")
+    p_emit.set_defaults(func=cmd_emit)
+
+    p_sub = sub.add_parser("sub", help="replace ASCII tokens in FILE w/ glyphs")
+    p_sub.add_argument("file")
+    p_sub.add_argument("pairs", nargs="+", help="TOKEN=CODEPOINT pairs")
+    p_sub.set_defaults(func=cmd_sub)
+
+    p_check = sub.add_parser("check", help="probe font for a codepoint")
+    p_check.add_argument("codepoint")
+    p_check.add_argument("font", nargs="?", default=None)
+    p_check.set_defaults(func=cmd_check)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

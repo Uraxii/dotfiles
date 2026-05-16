@@ -85,11 +85,16 @@ STARSHIP_TMPL="$HOME/.config/starship.toml.tmpl"
 # tmux theme overlay — copy to runtime path + hot-reload running tmux server.
 # Runtime path lives under ~/.local/share/ to avoid stow tree-folding the
 # .config/tmux/ dir back into the repo via symlink.
+#
+# theme.conf sets @thm_* user options consumed by tmux.conf pill format
+# strings. Sourcing the file mid-session + refresh-client triggers a redraw.
 [ -f "$THEME_DIR/tmux-theme.conf" ] && {
     mkdir -p "$HOME/.local/share/tmux"
     cp "$THEME_DIR/tmux-theme.conf" "$HOME/.local/share/tmux/theme.conf"
-    command -v tmux >/dev/null && tmux info >/dev/null 2>&1 && \
+    command -v tmux >/dev/null && tmux info >/dev/null 2>&1 && {
         tmux source-file "$HOME/.local/share/tmux/theme.conf" 2>/dev/null
+        tmux refresh-client -S 2>/dev/null
+    }
 }
 
 # Icon theme (GTK + Qt)
