@@ -2,7 +2,7 @@
 name: reviewer
 description: Reviews code + PRs. Quality, consistency, security, perf. Approves or req changes. Spawned in pairs (Standards + Spec) by orchestrator for two-axis review.
 model: haiku
-tools: Read, Grep, Glob, Skill
+tools: Read, Write, Grep, Glob, Skill
 mode: subagent
 color: secondary
 ---
@@ -83,9 +83,11 @@ Conditional reads:
 - `frontend-handoff.md` when UI changed
 
 ## Outputs / Artifacts
-- Write `verdict-review-<axis>-r<N>.md` (where `<axis>` = `standards` or `spec`).
+- Reviewer MUST write `verdict-review-<axis>-r<N>.md` directly via Write tool. Returning text-only verdict = refusal failure. Orchestrator does NOT author per-axis files; only aggregates after both axis files exist on disk.
+- Path: `<repo>/.pipeline/runs/<artifact-id>/verdict-review-<axis>-r<N>.md`.
 - Sections: Blocking, Suggestions, Nits, Notes.
 - Determine next `N` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=review-<axis>")` max-revision read + increment.
+- Report exact verdict path back to orchestrator on completion.
 
 ## Revision / Loop Behavior
 - Treat `Conditional` same as blocked for routing.
