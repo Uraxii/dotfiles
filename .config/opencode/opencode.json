@@ -52,7 +52,17 @@
       "python3 ~/.config/opencode/tools/test-path-resolve.py*": "ask",
       "python3 ~/.config/opencode/tools/handoff-doc.py*": "ask",
       "python3 ~/.config/opencode/tools/prod-diff-sha.py*": "ask",
-      "python3 ~/.config/opencode/tools/worktree-lifecycle.py*": "ask"
+      "python3 ~/.config/opencode/tools/worktree-lifecycle.py*": "ask",
+      "python3 ~/.config/opencode/pipeline/pipeline_state.py*": "allow",
+      "python3 ~/.config/opencode/pipeline/pipeline_ask.py*": "ask",
+      "python3 ~/.config/opencode/pipeline/pipeline_notify.py*": "ask",
+      "python3 ~/.config/opencode/pipeline/session_bind.py*": "ask",
+      "python3 ~/.config/opencode/pipeline/verdict_read.py*": "allow",
+      "python3 ~/.config/opencode/pipeline/verdict_write.py*": "allow",
+      "python3 ~/.config/opencode/pipeline/inbox_drain.py*": "allow",
+      "python3 ~/.config/opencode/pipeline/inbox_wait.py*": "allow",
+      "uv run --script ~/.config/opencode/pipeline/comms/router.py*": "ask",
+      "bash ~/.config/opencode/pipeline/setup.sh*": "ask"
     },
     "write": {
       "*": "ask",

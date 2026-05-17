@@ -28,6 +28,7 @@ _darcs
 ^/scripts/?$
 
 \.claude/.*local.*
+\.config/opencode/pipeline/.*local.*
 
 \.pipeline
 

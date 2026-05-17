@@ -1,0 +1,45 @@
+# Slack app manifest for pipeline decision listener.
+# Paste at https://api.slack.com/apps -> Create New App -> From a manifest -> YAML tab.
+#
+# After create:
+#   1. Install to Workspace -> copy Bot User OAuth Token (xoxb-...).
+#   2. Basic Information -> App-Level Tokens -> Generate Token and Scopes:
+#        Name: pipeline-socket
+#        Scope: connections:write
+#      Copy token (xapp-...).
+#   3. Save both into ~/.config/opencode/pipeline/slack.env.local (chmod 600).
+#   4. Per channel: /invite @pipeline in each #pipeline-<project> channel.
+#
+# See docs/pipeline/Pipeline Slack Setup.md for full setup.
+
+display_information:
+  name: Pipeline Decisions
+  description: Async decision-point listener for pipeline runs
+  background_color: "#1a1a1a"
+
+features:
+  bot_user:
+    display_name: pipeline
+    always_online: true
+
+oauth_config:
+  scopes:
+    bot:
+      - chat:write          # post messages
+      - chat:write.public   # post to public channels w/o being member
+      - channels:history    # read public-channel msgs (session-bound inbox capture)
+      - groups:history      # read private-channel msgs (session-bound inbox capture)
+      - files:read          # read file metadata (permalink etc) after upload
+      - files:write         # upload question attachments to thread
+
+settings:
+  interactivity:
+    is_enabled: true
+  event_subscriptions:
+    bot_events:
+      - message.channels     # required for session-bound inbox capture (public channels)
+      - message.groups       # required for session-bound inbox capture (private channels)
+  org_deploy_enabled: false
+  socket_mode_enabled: true
+  is_hosted: false
+  token_rotation_enabled: false
