@@ -79,7 +79,7 @@ Glob regex for evidence/prebuild discovery: `^build-evidence-r(?P<rev>\d+)(?:-s(
 
 ## Verdict Schema
 ```yaml
-verdict: Approved | Blocked | Conditional
+verdict: Approved | Approved with notes | Blocked
 role: skeptic
 review_type: <design|code|ops|review|test-audit>
 loops: <N>
@@ -87,7 +87,14 @@ revision: r<N>
 prod_diff_sha: <sha>  # required for review_type=code, test-audit; enables orchestrator pin validation
 ```
 
+**Enum is hard-locked.** `Conditional` / `Approved with conditions` / other variants are not accepted by orchestrator and will be coerced to `Blocked` — emit Blocked w/ blocker-citations instead, OR `Approved with notes` w/ non-blocking notes.
+
+**Trailing verdict line**: emit one of these literals at end of verdict file:
+- `## Verdict\nApproved`
+- `## Verdict\nApproved with notes`
+- `## Verdict\nBlocked`
+
 ## Re-review Framing
-1. Verify prior blockers/conditionals resolved.
+1. Verify prior blockers/notes resolved.
 2. Review current artifact for new issues.
 3. Keep remediation actionable, scoped to listed blockers.

@@ -20,6 +20,7 @@ Implement design into prod code. Clean, testable, maintainable.
 - No implementation before upstream gate (design when present, skeptic-design) approved.
 - When orchestrator provides Shard block: cwd = worktree path. Do not `cd` outside worktree. All edits constrained to declared `scope` globs.
 - Never pass AI slop.
+- **Build is NOT complete at scope-check, gdformat/lint pass, local-test pass, or commit.** Project's `CLAUDE.md` may declare a full delivery chain (push + PR + CI watch + evidence). When such a chain exists, executing every step is mandatory. Stopping early = build refusal; orchestrator re-spawns or completes manually.
 
 ## TDD doctrine
 

@@ -68,6 +68,8 @@ Common required:
 - All shard evidence artifacts (`build-evidence-r<N>-s*.md`).
 - Prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=review-<axis>")`.
 
+**File reads MUST target worktree HEAD, not main repo.** When pipeline.md declares `shards.s<K>.worktree: <path>`, reviewer reads files from that path. Reading the same relative path from main repo (`/home/nikki/Git/<project>/CLAUDE.md`) returns base-SHA state, which has NOT yet received the build's changes — leads to false-positive "<change> not applied" findings. Always read `<worktree>/<file>` when verifying the PR diff.
+
 Standards-axis required:
 - project `CLAUDE.md`
 - applicable rules files (any language in diff)
@@ -90,8 +92,7 @@ Conditional reads:
 - Report exact verdict path back to orchestrator on completion.
 
 ## Revision / Loop Behavior
-- Treat `Conditional` same as blocked for routing.
-- Re-review: verify prior blockers/conditionals resolved first, then scan for new issues.
+- Re-review: verify prior blockers/notes resolved first, then scan for new issues.
 - If UI changed and `frontend-handoff.md` missing, block: missing frontend handoff artifact.
 
 ## Completion / Reporting
@@ -99,10 +100,17 @@ Conditional reads:
 
 ## Verdict Schema (per-axis)
 ```yaml
-verdict: Approved | Blocked | Conditional
+verdict: Approved | Approved with notes | Blocked
 role: reviewer
 review_type: review
 axis: standards | spec
 loops: <N>
 revision: r<N>
 ```
+
+**Enum hard-locked.** `Conditional` / other variants coerce to `Blocked` at orchestrator. Emit Blocked with citations OR `Approved with notes` with non-blocking notes.
+
+**Trailing verdict line**: emit one of these literals at end of axis file:
+- `## Verdict\nApproved`
+- `## Verdict\nApproved with notes`
+- `## Verdict\nBlocked`

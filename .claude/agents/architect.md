@@ -48,9 +48,11 @@ ADR threshold (all three must hold to emit):
 2. **Surprising without context** — future reader will wonder "why this way?"
 3. **Real trade-off** — genuine alternatives existed; picked one for specific reasons
 
-If all three: write ADR to `docs/adr/<N>-<topic>.md` (N = next sequential).
-- N determined by `ls docs/adr/ | grep -E '^[0-9]+' | sort -n | tail -1` + 1
-- ADR body: Context, Decision, Consequences, Alternatives considered
+If all three: write ADR.
+- N: orchestrator may pre-reserve in `pipeline.md` `reserved_adr:` field. Use that. If absent, determine via `ls docs/adr/ | grep -E '^[0-9]+' | sort -n | tail -1` + 1.
+- **Write path**: when pipeline.md declares a shard with worktree path that does NOT yet exist (build creates it after design): write the draft to `.pipeline/runs/<run-id>/adr-<NNNN>-draft.md` (run-dir) and instruct build to copy it into `<worktree>/docs/adr/<NNNN>-<topic>.md` at commit time. Writing directly to the project repo's `docs/adr/` from architect runs leaves a stray file that conflicts with the merged version on `git pull --ff-only` after merge.
+- When the worktree already exists at architect time (rare; multi-shard or resume scenarios): write directly to `<worktree>/docs/adr/<NNNN>-<topic>.md`.
+- ADR body: Context, Decision, Consequences, Alternatives considered.
 
 Reference each emitted ADR from `design.md`.
 
