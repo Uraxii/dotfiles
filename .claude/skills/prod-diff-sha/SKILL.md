@@ -15,24 +15,27 @@ Claude: `Skill(skill: "prod-diff-sha", args: "base-sha=<sha>, head=<ref|HEAD>, t
 
 OC: `prod-diff-sha` custom tool with `{base_sha, head, test_paths_file}` args.
 
-## Algorithm
+Script: `python3 .claude/skills/prod-diff-sha/prod-diff-sha.py --base-sha <sha> --head <ref>`
 
-```bash
-# Build :!<glob> excludes from test-path-resolve default or test-paths.txt
-EXCLUDES=""
-for glob in $TEST_GLOBS; do
-  EXCLUDES="$EXCLUDES :!${glob}"
-done
+## Args
 
-# Diff prod-only
-PROD_DIFF=$(git diff <base-sha> <head> -- $EXCLUDES)
-
-# SHA1
-prod_diff_sha=$(printf '%s' "$PROD_DIFF" | sha1sum | cut -c1-40)
-```
-
-Empty diff → returns `0000000000000000000000000000000000000000`.
+| Arg | Type | Required | Description |
+|-----|------|----------|-------------|
+| `--base-sha` | sha | yes | Base commit SHA |
+| `--head` | ref | no | HEAD ref (default: `HEAD`) |
+| `--test-paths-file` | path | no | Path to test-paths.txt override; uses DEFAULT_GLOBS if absent |
 
 ## Returns
 
-40-char hex SHA string.
+Single 40-char hex SHA1 string (no JSON). Empty diff → `0000000000000000000000000000000000000000`.
+
+Shell-chain pattern: `pin=$(python3 prod-diff-sha.py --base-sha $SHA --head HEAD)`
+
+## Exit codes
+
+- 0: success
+- 1: git diff failed
+
+## See also
+
+`test-path-resolve`, `verdict-parse`.

@@ -15,7 +15,7 @@ Root agent. Triage direct answer vs pipeline execution. Root-agent carve-out: no
 No pre-load of rules or ADRs. `CLAUDE.md` auto-injected by harness every turn.
 Per-role reads happen inside each role, only when relevant:
 - `.claude/rules/<lang>.md` — build (per file extensions), reviewer Standards, architect (if code touched).
-- `docs/adr/**` — architect, skeptic-design, reviewer Standards, security-auditor.
+- `~/.pipeline/adr/**` — architect, skeptic-design, reviewer Standards, security-auditor.
 - `.claude/agents/<role>.md` (self) — auto-loaded at spawn by harness.
 
 Orchestrator surfaces rule paths via spawn template `## Read` block; role decides whether to fetch.
@@ -106,7 +106,7 @@ On resume (sentinel, `paused_on_decision:` or `paused_on_drift:` set):
 4. Two-pass: (a) scope pass — union shard globs (`"."` → `"**"`), match via `glob_to_regex`
    (Appendix), tag `scope:<p>`; (b) doctrine pass — match `HALT_ANYWHERE_PATHS`, tag `doctrine:<p>`.
    `HALT_ANYWHERE_PATHS`: `.claude/rules/**` `.claude/agents/**` `.claude/skills/**`
-   `docs/adr/**` `**/CLAUDE.md` `pipeline.toml` `.gitignore` `.claude/settings.json`.
+   `~/.pipeline/adr/**` `**/CLAUDE.md` `pipeline.toml` `.gitignore` `.claude/settings.json`.
 5. Union = `intersecting_paths`. Empty → resume. Non-empty → step 6.
 6. `AskUserQuestion` drift menu (sync; locked format in Appendix). Record pick →
    `resume-drift-r<N>.md` (N = max revision + 1). Write `paused_on_drift:` sentinel block. Route:
@@ -125,7 +125,7 @@ Findings never block PR merge — inform pipeline-improvement backlog grooming o
 ### Two-axis Reviewer Spawn
 
 Orchestrator spawns 2 reviewer subagents in single message (parallel):
-- Standards axis: reads CLAUDE.md, `.claude/rules/`, `docs/adr/`, `CONTRIBUTING.md`.
+- Standards axis: reads CLAUDE.md, `.claude/rules/`, `~/.pipeline/adr/`, `CONTRIBUTING.md`.
 - Spec axis: reads brief.md, plan, design.md.
 
 Each writes `verdict-review-<axis>-r<N>.md`. Orchestrator aggregates into `verdict-review-r<N>.md`:
@@ -187,7 +187,7 @@ Enforce only for included roles.
 |------|------------|-------|
 | researcher | brief.md | brief.md |
 | plan | brief.md | brief.md, research.md |
-| architect | plan.ref or brief.md | plan.ref, brief.md; `docs/adr/<topic>.md` only if related prior decision exists. CLAUDE.md auto-injected. |
+| architect | plan.ref or brief.md | plan.ref, brief.md; `~/.pipeline/adr/<NNNN>-<topic>.md` only if related prior decision exists. CLAUDE.md auto-injected. |
 | ui-ux-designer | plan.ref or brief.md (after architect if ran) | plan.ref, brief.md, design.md (if architect ran) |
 | decision-elicitation | declared in `decision_points:`; inserted after `after:` role. Orchestrator-owned. | options-r<N>.md (from options_source), brief.md |
 | skeptic-design | architect complete | design.md, prior verdict |
@@ -226,7 +226,7 @@ Dir: <repo>/.pipeline/runs/<artifact-id>/
 [artifact files]
 # Conditional (read only if applicable to this role's scope):
 # - .claude/rules/<lang>.md — only if role writes/reviews code in <lang>
-# - docs/adr/<topic>.md — only if role makes/audits architectural decisions
+# - ~/.pipeline/adr/<NNNN>-<topic>.md — only if role makes/audits architectural decisions
 # Project CLAUDE.md auto-injected by harness; no explicit read needed.
 
 ## Write
@@ -380,7 +380,10 @@ friction findings path (informational; non-gating).
 
 ## Appendix — Scope-match algorithm + Drift menu
 
-Vendored `glob_to_regex` (stdlib `re`). Used by §Resume handler. K=1 `"."` → `"**"` via `normalize_scope`.
+`glob_to_regex` + `normalize_scope` + `compute_drift_intersection` canonical
+implementation lives in `.claude/skills/worktree-lifecycle/worktree-lifecycle.py`
+(ops: `scope-check`, `drift-intersect`). Resume-drift handler invokes
+`Skill(skill: "worktree-lifecycle", args: "op=drift-intersect, changed-paths-file=<path>, scope-globs=<g1> <g2>...")`.
 
 Drift menu (locked; AskUserQuestion call at step 6):
 ```yaml
@@ -391,60 +394,6 @@ options:
   - {label: "Rebase shard onto new base", description: "Record pick + halt. Manual rebase required."}
   - {label: "Abort run + halt",           description: "Stop pipeline. No further roles spawn."}
   - {label: "Proceed on original base_sha", description: "Continue. Drift not applied. Operator owns risk."}
-```
-
-```python
-import re
-
-def normalize_scope(scope: list[str]) -> list[str]:
-    return ["**" if g == "." else g for g in scope]
-
-def glob_to_regex(g: str) -> re.Pattern[str]:
-    """Segment-walk + NUL-sentinel. * -> [^/]* | ? -> [^/] | ** position-dependent:
-    leading **/x -> (?:.*/)?x | x/** -> x/.+ | a/**/b -> a/(?:.*/)?b | standalone -> .*"""
-    if g == "**":
-        return re.compile(r"\A.*\Z")
-    SENTINEL = "\x00DS\x00"
-    parts: list[str] = []
-    for seg in g.split("/"):
-        if seg == "**":
-            parts.append(SENTINEL)
-        else:
-            out: list[str] = []
-            j = 0
-            while j < len(seg):
-                c = seg[j]
-                if c == "*":
-                    out.append("[^/]*")
-                elif c == "?":
-                    out.append("[^/]")
-                else:
-                    out.append(re.escape(c))
-                j += 1
-            parts.append("".join(out))
-    glued = "/".join(parts)
-    if glued.startswith(SENTINEL + "/"):
-        glued = "(?:.*/)?" + glued[len(SENTINEL) + 1:]
-    if glued.endswith("/" + SENTINEL):
-        glued = glued[:-(len(SENTINEL) + 1)] + "/.+"
-    glued = glued.replace("/" + SENTINEL + "/", "/(?:.*/)?")
-    glued = glued.replace(SENTINEL, ".*")
-    return re.compile(r"\A" + glued + r"\Z")
-
-def glob_match(path: str, globs: list[str]) -> bool:
-    return any(glob_to_regex(g).match(path) is not None for g in globs)
-
-def compute_drift_intersection(changed_paths: list[str], shards: dict) -> list[str]:
-    HALT_ANYWHERE_PATHS = [
-        "**/CLAUDE.md", ".claude/rules/**", ".claude/agents/**", ".claude/skills/**",
-        "docs/adr/**", "pipeline.toml", ".gitignore", ".claude/settings.json",
-    ]
-    scope_union: list[str] = []
-    for s in shards.values():
-        scope_union.extend(normalize_scope(s["scope"]))
-    scope_hits = [f"scope:{p}" for p in changed_paths if glob_match(p, scope_union)]
-    doctrine_hits = [f"doctrine:{p}" for p in changed_paths if glob_match(p, HALT_ANYWHERE_PATHS)]
-    return scope_hits + doctrine_hits
 ```
 
 Tester regression fence: 10 rows in design.md §"Revision r3 — NB1" mini-table. All required.

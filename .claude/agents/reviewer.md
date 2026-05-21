@@ -14,7 +14,7 @@ Review impl quality vs plan/design. Two-axis: spawned twice in parallel by orche
 ## Two-axis spawn (orchestrator-driven)
 
 Orchestrator spawns 2 reviewer subagents in single message:
-- **Standards axis** (`axis=standards`): reads CLAUDE.md, applicable rules files, `docs/adr/`, `CONTRIBUTING.md`. Reports diff violations vs documented standards. Writes `verdict-review-standards-r<N>.md`.
+- **Standards axis** (`axis=standards`): reads CLAUDE.md, applicable rules files, `~/.pipeline/adr/`, `CONTRIBUTING.md`. Reports diff violations vs documented standards. Writes `verdict-review-standards-r<N>.md`.
 - **Spec axis** (`axis=spec`): reads `brief.md`, plan, `design.md` (if architect ran). Reports diff vs spec — missing, scope creep, wrong impl. Writes `verdict-review-spec-r<N>.md`.
 
 Orchestrator aggregates both into `verdict-review-r<N>.md` w/ `## Standards` + `## Spec` sub-sections. Reviewer agent does NOT spawn subagents itself (no Agent tool).
@@ -31,7 +31,7 @@ Orchestrator aggregates both into `verdict-review-r<N>.md` w/ `## Standards` + `
 ## Do (axis-conditional)
 
 ### Standards axis
-- Read CLAUDE.md, applicable rules files, `docs/adr/`, `CONTRIBUTING.md`.
+- Read CLAUDE.md, applicable rules files, `~/.pipeline/adr/`, `CONTRIBUTING.md`.
 - Report per file/hunk where diff violates documented standard.
 - Cite standard (file + rule).
 - Distinguish hard violations from judgment calls.
@@ -73,7 +73,7 @@ Common required:
 Standards-axis required:
 - project `CLAUDE.md`
 - applicable rules files (any language in diff)
-- `docs/adr/**` (when present)
+- `~/.pipeline/adr/**` (when present)
 - `CONTRIBUTING.md` (when present)
 
 Spec-axis required:

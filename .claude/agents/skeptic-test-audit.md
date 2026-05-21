@@ -43,7 +43,7 @@ Post-tester audit of test design quality. Static diff. Detects bulk-tests, shape
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=test-audit")`
 - Conditional reads (read ONLY when relevant):
   - `.claude/rules/<lang>.md` — only when reviewing test code in `<lang>`
-  - `docs/adr/<topic>.md` — only when artifact touches a prior decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when artifact touches a prior decision
 
 ## Outputs / Artifacts
 - Write `verdict-test-audit-r<N>.md` with YAML frontmatter.

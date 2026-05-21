@@ -45,7 +45,7 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 - Conditional reads (read ONLY when relevant):
   - `research.md`
   - reused plan references
-  - `docs/adr/<topic>.md` — only when scope explicitly touches a prior architectural decision (don't bulk-read the directory)
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when scope explicitly touches a prior architectural decision (don't bulk-read the directory)
 - Doctrine NOT read by plan:
   - project `CLAUDE.md` — auto-injected by harness; no explicit Read needed
   - `.claude/rules/<lang>.md` — plan composes tasks, doesn't write code; language rules irrelevant at this stage

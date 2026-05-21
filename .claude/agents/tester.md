@@ -45,10 +45,10 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
   - build evidence artifacts as needed
   - For smuggling scan: `git diff <base_sha>...pipeline/<artifact-id>/s<K>` union across all declared shards — scope is diff vs `base_sha` only (not arbitrary prior-commit history).
   - `.claude/rules/<lang>.md` — only when investigating a language-specific test-pattern violation
-  - `docs/adr/<topic>.md` — only when test surfaces conflict with documented decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when test surfaces conflict with documented decision
 - Doctrine NOT read by tester:
   - project `CLAUDE.md` — auto-injected by harness
-  - bulk `docs/adr/` — tester runs tests; doesn't audit doctrine
+  - bulk `~/.pipeline/adr/` — tester runs tests; doesn't audit doctrine
 - Test-path resolution: `Skill(skill: "test-path-resolve", args: "run-dir=<path>")` returns canonical glob set. Reads `test-paths.txt` if build-emitted; else falls back to default.
 
 ## Outputs / Artifacts

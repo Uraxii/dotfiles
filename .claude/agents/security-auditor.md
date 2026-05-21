@@ -44,7 +44,7 @@ Find security blocking issues in design/code artifacts.
 - Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
   - `.claude/rules/<lang>.md` — only when diff touches code in `<lang>` AND language has security-relevant rules (e.g. memory-unsafe patterns)
-  - `docs/adr/<topic>.md` — only when diff touches a security-relevant prior decision (auth, crypto, data boundary)
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when diff touches a security-relevant prior decision (auth, crypto, data boundary)
 - Doctrine NOT read by security-auditor:
   - project `CLAUDE.md` — auto-injected by harness
 

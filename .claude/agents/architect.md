@@ -49,9 +49,8 @@ ADR threshold (all three must hold to emit):
 3. **Real trade-off** — genuine alternatives existed; picked one for specific reasons
 
 If all three: write ADR.
-- N: orchestrator may pre-reserve in `pipeline.md` `reserved_adr:` field. Use that. If absent, determine via `ls docs/adr/ | grep -E '^[0-9]+' | sort -n | tail -1` + 1.
-- **Write path**: when pipeline.md declares a shard with worktree path that does NOT yet exist (build creates it after design): write the draft to `.pipeline/runs/<run-id>/adr-<NNNN>-draft.md` (run-dir) and instruct build to copy it into `<worktree>/docs/adr/<NNNN>-<topic>.md` at commit time. Writing directly to the project repo's `docs/adr/` from architect runs leaves a stray file that conflicts with the merged version on `git pull --ff-only` after merge.
-- When the worktree already exists at architect time (rare; multi-shard or resume scenarios): write directly to `<worktree>/docs/adr/<NNNN>-<topic>.md`.
+- N: orchestrator may pre-reserve in `pipeline.md` `reserved_adr:` field. Use that. If absent, determine via `ls ~/.pipeline/adr/ | grep -E '^[0-9]+' | sort -n | tail -1` + 1.
+- **Write path**: write directly to `~/.pipeline/adr/<NNNN>-<topic>.md` at design time. ADRs live machine-locally out-of-repo (per ADR-0007), so no merge-conflict-on-rebase risk; no draft-and-copy step needed.
 - ADR body: Context, Decision, Consequences, Alternatives considered.
 
 Reference each emitted ADR from `design.md`.
@@ -65,7 +64,7 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
 - Conditional reads (read ONLY when relevant):
   - `research.md`
   - prior verdict files via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=design")`
-  - `docs/adr/<topic>.md` — only when the design touches a prior decision's domain; do NOT bulk-read `docs/adr/**`. Use `ls docs/adr/` to discover N for new ADR sequencing only.
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when the design touches a prior decision's domain; do NOT bulk-read `~/.pipeline/adr/**`. Use `ls ~/.pipeline/adr/` to discover N for new ADR sequencing only.
   - `.claude/rules/<lang>.md` — only when design surfaces code patterns in that language
 - Doctrine NOT read by architect:
   - project `CLAUDE.md` — auto-injected by harness
@@ -73,7 +72,7 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
 ## Outputs / Artifacts
 - Write `<repo>/.pipeline/runs/<artifact-id>/design.md`.
 - Include: decisions, file/module map, contracts, downstream notes, references to emitted ADRs.
-- Write `docs/adr/<N>-<topic>.md` per emitted ADR (criteria above).
+- Write `~/.pipeline/adr/<NNNN>-<topic>.md` per emitted ADR (criteria above).
 
 ## Revision / Loop Behavior
 - Rework only blocked/conditional design findings first.

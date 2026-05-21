@@ -41,7 +41,7 @@ Assumptions, failure modes, over-engineering, security surface.
   - current artifact: `design.md`
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=design")`
 - Conditional reads (read ONLY when relevant):
-  - `docs/adr/<topic>.md` — only when artifact touches a prior decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when artifact touches a prior decision
 
 ## Outputs / Artifacts
 - Write `verdict-design-r<N>.md` with YAML frontmatter.

@@ -9,7 +9,7 @@ output-style: caveman:ultra
 
 Persistence-rotation summary template. Pipeline-internal.
 
-## Per-role thresholds (config in role file, NOT this skill)
+## Per-role thresholds
 
 | Role | Threshold | task_id key |
 |---|---|---|
@@ -22,7 +22,7 @@ Persistence-rotation summary template. Pipeline-internal.
 | ui-ux-designer | 80% | role |
 | content-designer | 80% | role |
 
-One-shot roles (researcher, plan, friction-reviewer) do not rotate — they complete in a single spawn.
+One-shot roles (researcher, plan, friction-reviewer) do not rotate.
 
 ## Invocation
 
@@ -30,25 +30,25 @@ Claude: `Skill(skill: "handoff-doc", args: "role=<agent>, run-dir=<path>, next-f
 
 OC: `handoff-doc` custom tool with `{role, run_dir, next_focus}` args.
 
-## Output path
+Script: `python3 .claude/skills/handoff-doc/handoff-doc.py --role <role> --run-dir <path> --next-focus <text>`
 
-`<run-dir>/handoff-<role>-<iso8601>.md`
+## Args
 
-## Template
+| Arg | Type | Required | Description |
+|-----|------|----------|-------------|
+| `--role` | str | yes | Role name (e.g. `architect`, `build`) |
+| `--run-dir` | path | yes | Pipeline run directory |
+| `--next-focus` | str | yes | What the next session should do first |
 
-```markdown
-# Handoff: <role> → fresh session
+## Returns
 
-**Run**: <artifact-id>
-**Timestamp**: <ISO8601>
+Writes `<run-dir>/handoff-<role>-<YYYYMMDDTHHMMSSz>.md`; prints absolute path to stdout.
 
-## Next session focus
-<next-focus arg>
+## Exit codes
 
-## Referenced artifacts (by path)
-- pipeline: <run-dir>/pipeline.md
-- brief: <run-dir>/brief.md
+- 0: success
+- 1: run-dir not found
 
-## State summary
-Session rotated at context threshold. Resume in fresh session using task_id if supported by harness; otherwise spawn fresh + read referenced artifacts.
-```
+## See also
+
+`verdict-parse`.

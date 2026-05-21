@@ -57,7 +57,7 @@ Gatekeeper. Approve only when blocking risk absent.
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<review-type>")`
 - Conditional reads (read ONLY when relevant):
   - `.claude/rules/<lang>.md` — only when reviewing code in `<lang>` (`review_type: code` w/ language-specific concerns)
-  - `docs/adr/<topic>.md` — only for `review_type: design` when current artifact touches a prior decision; OR for `review_type: code` when diff conflicts with documented decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only for `review_type: design` when current artifact touches a prior decision; OR for `review_type: code` when diff conflicts with documented decision
 - Additional review-type-specific conditional reads:
   - `frontend-handoff.md` when UI changed
   - For `review_type: code`:

@@ -11,46 +11,44 @@ Git worktree primitives for pipeline shards. Pipeline-internal.
 
 ## Invocation
 
-Claude: `Skill(skill: "worktree-lifecycle", args: "op=<create|probe|cleanup|scope-check>, ...")`
+Claude: `Skill(skill: "worktree-lifecycle", args: "op=<op>, ...")`
 
 OC: `worktree-lifecycle` custom tool with `{op, ...}` args.
 
-## Operations
+Script: `python3 .claude/skills/worktree-lifecycle/worktree-lifecycle.py --op <op> ...`
 
-### create
+## Args
 
-Args: `op=create, run_id=<artifact-id>, shard_id=s<K>, base_sha=<sha>, repo_root=<path>`
-
-```bash
-WT_PATH=<repo>/.pipeline/runs/<run-id>/worktrees/<shard-id>/
-BRANCH=pipeline/<run-id>/<shard-id>
-git worktree add "$WT_PATH" -b "$BRANCH" <base-sha>
-```
-
-### probe (stale check)
-
-Args: `op=probe, worktree_path=<path>`
-
-```bash
-if test -d <path> && ! git worktree list | grep -q <path>; then
-  echo STALE  # halt; surface to user; no auto-delete
-fi
-```
-
-### cleanup
-
-Args: `op=cleanup, worktree_path=<path>`
-
-```bash
-git worktree remove --force <path>
-```
-
-### scope-check
-
-Args: `op=scope-check, base_sha=<sha>, head=<ref>, scope_globs=<globs>`
-
-Diffs `base_sha..head`, checks each changed file is within declared scope globs. Returns `OK` or `LEAK` with offending paths.
+| Arg | Type | Required | Description |
+|-----|------|----------|-------------|
+| `--op` | enum | yes | `create\|probe\|cleanup\|scope-check\|drift-intersect` |
+| `--run-id` | str | create | Pipeline artifact-id |
+| `--shard-id` | str | create | Shard id (e.g. `s1`) |
+| `--base-sha` | sha | create, scope-check | Base commit SHA |
+| `--repo-root` | path | create | Repo root path |
+| `--worktree-path` | path | probe, cleanup | Absolute worktree path |
+| `--head` | ref | scope-check | HEAD ref (default: `HEAD`) |
+| `--scope-globs` | str+ | scope-check, drift-intersect | Space-separated glob list |
+| `--changed-paths-file` | path | drift-intersect | File w/ one repo-relative path per line |
 
 ## Returns
 
-JSON: `{status, ...}`. Non-zero exit on error.
+Per op (JSON):
+
+- `create`: `{worktree_path, branch}`
+- `probe`: `{status: ok|missing|STALE, path}`
+- `cleanup`: `{status: removed, path}`
+- `scope-check`: `{status: OK|LEAK, files: [...], leaks: [...]}`
+- `drift-intersect`: `{intersecting_paths: ["scope:<p>", "doctrine:<p>", ...]}`
+
+`glob_to_regex` canonical impl (segment-walk, `**` position-dependent) lives in
+`worktree-lifecycle.py`. Orchestrator Appendix cross-refs here.
+
+## Exit codes
+
+- 0: success
+- 1: missing required arg, git failure, file not found
+
+## See also
+
+`verdict-parse`, `prod-diff-sha`.
