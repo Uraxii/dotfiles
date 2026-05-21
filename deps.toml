@@ -447,6 +447,35 @@ description = "Foreign function interface library. weasyprint / cffi runtime dep
 ubuntu.pkg = "libffi8"
 
 # ============================================================
+# Containers
+# ============================================================
+
+[docker]
+pkg = "docker"
+bin = "docker"
+description = "Container runtime + CLI (docker-ce w/ buildx + compose plugin on ubuntu/fedora)."
+# Add current user to docker group + start service. Fires only after a real
+# install (manual/unsupported short-circuit before post_install). systemctl
+# may no-op on non-systemd hosts — best-effort, errors are warnings only.
+post_install = "sudo usermod -aG docker \"$USER\" && sudo systemctl enable --now docker.service && echo 'log out + back in for docker group to take effect'"
+# Ubuntu/Fedora: upstream convenience script. Sets up apt|dnf repo, installs
+# docker-ce + buildx + compose plugin, enables + starts the service. The
+# script self-elevates via sudo internally.
+ubuntu.source = "script"
+ubuntu.install_cmd = "curl -fsSL https://get.docker.com | sudo sh"
+ubuntu.sudo = true
+fedora.source = "script"
+fedora.install_cmd = "curl -fsSL https://get.docker.com | sudo sh"
+fedora.sudo = true
+# NixOS: imperative install would bypass declarative config + violate FHS
+# expectations. Enable via configuration.nix and rebuild.
+nixos.source = "manual"
+nixos.url = "https://nixos.wiki/wiki/Docker (set virtualisation.docker.enable = true; nixos-rebuild switch)"
+# No kernel namespace/cgroup support on stock Android.
+termux.source = "unsupported"
+termux.reason = "no kernel container support on android"
+
+# ============================================================
 # Games
 # ============================================================
 
@@ -482,8 +511,9 @@ editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard"
 fonts    = ["nerd-fonts-0xproto"]
 dotfiles = ["stow", "git", "gh", "jq"]
 ai       = ["claude-code", "opencode", "pi", "hermes"]
-pipeline = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
-games    = ["godots"]
+pipeline   = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
+containers = ["docker"]
+games      = ["godots"]
 
 # ============================================================
 # Profiles (opt-in via --profile <name>)
