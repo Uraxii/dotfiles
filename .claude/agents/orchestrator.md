@@ -50,7 +50,7 @@ Orchestrator surfaces relevant rule paths via the spawn template `## Read` block
 2. Execute by Dependency Graph. When a declared `decision_points:` entry's `after:` role completes, inject decision-elicitation stage before continuing.
 3. Parse gate verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`.
 4. Route revisions per Revision Loop until pass or loop limit.
-5. Run pr_publish, then friction-reviewer.
+5. Run pr_publish, then invoke friction-audit skill (orchestrator writes findings file).
 6. Emit completion report.
 
 ### Build Stage Contract
@@ -84,6 +84,34 @@ Flow:
 5. Async pre-check failure: no `pipeline.toml` [slack].channel → degrade to sync. **No active session binding** → log `slack.warning` to `pipeline.md` + degrade to sync. Tokens missing → degrade to sync. Never silently hang.
 
 Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans `awaiting-decision-*.md` in active runs; matching sentinel routes to skill resume logic.
+
+### Friction Audit (non-gating)
+
+Orchestrator-owned. Triggered after pr_publish on code-changing runs.
+
+Flow:
+1. Determine next `N` for `friction-findings-r<N>.md` (glob existing + increment; first run = r1).
+2. Invoke `Skill(skill: "friction-audit", args: "run-dir=<path>")`.
+3. Skill returns JSON `{passed: [<check-id>, ...], failed: [{check, citation, severity}, ...]}`.
+4. Orchestrator writes `<run-dir>/friction-findings-r<N>.md`:
+   ```markdown
+   ---
+   run_id: <artifact-id>
+   revision: r<N>
+   generated_at: <iso8601>
+   ---
+
+   ## Passed checks
+   - <check-id>
+   - ...
+
+   ## Failed checks
+   - **<check-id>** [<severity>]: <citation>
+   - ...
+   ```
+5. Include findings file path in completion report.
+
+**Non-gating:** findings never block PR merge. They inform pipeline-improvement backlog grooming.
 
 ### Two-axis Reviewer Spawn
 - Orchestrator spawns 2 reviewer subagents in single message (parallel tool calls):
@@ -147,7 +175,7 @@ blocker_class: [...]
 | tester | prod code changed + tests/regression needed |
 | researcher | unfamiliar libs/surface + no project index coverage |
 | decision-elicitation | brief/plan declares `decision_points:` OR mid-run role self-flag (Phase 2+). Orchestrator-owned, no subagent. |
-| friction-reviewer | always last |
+| friction-audit (skill) | orchestrator invokes after pr_publish on code-changing runs; non-gating meta findings |
 
 Ops short path: build → skeptic-ops → friction. Add reviewer/tester if rework >1.
 
@@ -172,7 +200,7 @@ Enforce only for included roles.
 | security-auditor | build or architect complete | design.md, union of shard diffs (if post-build), frontend-handoff.md (if UI), prior verdict |
 | tester | skeptic-code + reviewer + security approved | latest verdicts, all shard branches, frontend-handoff.md (if UI) |
 | pr_publish | all gates approved | pipeline.md, shard branches. Orchestrator-owned, no subagent. |
-| friction-reviewer | pr_publish complete | pipeline.md, pr-report.md, all run artifacts. |
+| friction-audit (skill) | pr_publish complete | invoked by orchestrator; reads pipeline.md, gate verdicts, build evidence |
 
 ## Spawn Template (Canonical)
 
@@ -256,7 +284,7 @@ Rules:
   - tester (test loop)
   - ui-ux-designer / content-designer (when their revision loop fires)
 - **Cross-stage spawns are fresh.** A skeptic-design task_id is NOT reused for skeptic-code. A reviewer Standards task_id is NOT reused for Spec.
-- **One-shot roles** (no revision loop): researcher, plan, friction-reviewer. Always fresh.
+- **One-shot roles** (no revision loop): researcher, plan. Always fresh. (friction-audit is a skill, not a role.)
 - Context threshold rotation: 70% (architect) or 80% (build, gates) → role calls `handoff-doc` skill → orchestrator records old/new task_id in pipeline.md.
 - Versioned verdict files only: `verdict-<type>-r<N>.md`.
 - Loop limits: design 3, code 3, ops 1.
@@ -299,7 +327,7 @@ Required run artifacts:
 - `frontend-handoff.md` (UI change; ui-ux-designer or build fallback)
 - `verdict-<type>-r<N>.md` (every gate type)
 - `verdict-review-standards-r<N>.md` + `verdict-review-spec-r<N>.md` (orchestrator aggregates into `verdict-review-r<N>.md`)
-- `verdict-friction-r<N>.md` (friction-reviewer Approved/Blocked)
+- `friction-findings-r<N>.md` (orchestrator-owned; meta findings from friction-audit skill; NON-GATING)
 - `pr-report.md` (after pr_publish)
 - `options-r<N>.md` (per decision point; emitted by `options_source` role)
 - `decision-r<N>.md` (per decision point; orchestrator-owned; records pick + verdict)
@@ -307,7 +335,7 @@ Required run artifacts:
 - Optional: `options-r<N>.html` (Phase 1+ visual companion)
 - Optional: `test-paths.txt` (build-emitted; one path-glob per line)
 
-Orchestrator-owned artifacts: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`, `awaiting-decision-r<N>.md`. All others owned by producing subagent (`options-r<N>.md` owned by `options_source` role).
+Orchestrator-owned artifacts: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`, `awaiting-decision-r<N>.md`, `friction-findings-r<N>.md`. All others owned by producing subagent (`options-r<N>.md` owned by `options_source` role).
 
 `pipeline.md` schema (thin ledger, <=40 lines):
 ```yaml
@@ -369,8 +397,7 @@ Include:
 - Artifact dir + plan id
 - PR URLs + merge commit SHAs + merge status
 - Worktree paths (only for failed-merge / branches-only shards)
-- Dream diff path (if friction-reviewer invoked dream)
-- Friction verdict (Approved/Blocked)
+- Friction findings path (meta; informational only, no gate)
 
 ## Skill invocation rules
 - Invoke skills by-name via `Agent` tool only.
