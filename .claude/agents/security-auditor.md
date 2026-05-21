@@ -13,9 +13,9 @@ Find security blocking issues in design/code artifacts.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=security-auditor, run-dir=<path>, next-focus=<text>")`.
+- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=security-auditor, run-dir=<path>, next-focus=<text>")`.
 - Cross-`review_type` spawns are fresh (security-design instance ≠ security-code instance).
-- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Review Types
 - `security-design`: threat modeling, trust boundaries, auth/data-flow risks before build.
@@ -41,7 +41,7 @@ Find security blocking issues in design/code artifacts.
   - run `pipeline.md`
   - relevant design/build artifacts for current review type
   - For post-build review: per-shard git diff `git diff <base_sha>...pipeline/<artifact-id>/s<K>` for each declared shard (K=1 = single `s1` diff); review union. Per-shard security-surface enumeration when shards touch different attack surfaces (auth, input boundary, crypto, network, storage).
-  - prior skeptic/security verdicts (read via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=security")`).
+  - prior skeptic/security verdicts (read via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=security")`).
 - Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
   - `.claude/rules/<lang>.md` — only when diff touches code in `<lang>` AND language has security-relevant rules (e.g. memory-unsafe patterns)
@@ -51,7 +51,7 @@ Find security blocking issues in design/code artifacts.
 
 ## Outputs / Artifacts
 - Write `verdict-security-r<N>.md` with YAML frontmatter and sections: Blocking, Conditions, Suggestions, Notes.
-- Determine next `N` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=security")` max-revision read + increment.
+- Determine next `N` via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=security")` max-revision read + increment.
 
 ## Revision / Loop Behavior
 - Re-review prior blockers/conditionals first, then scan new issues.

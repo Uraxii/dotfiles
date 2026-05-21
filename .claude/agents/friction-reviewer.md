@@ -10,7 +10,7 @@ status: retired
 
 # Role: Friction Reviewer (RETIRED)
 
-> **Retired.** Friction is now **meta, not gating** (see PR-3 grilling decisions). Logic moved to deterministic skill: `.claude/skills/friction-audit/`.
+> **Retired.** Friction is now **meta, not gating** (see PR-3 grilling decisions). Logic moved to deterministic skill: `.claude/skills/pipeline-friction-audit/`.
 >
 > Orchestrator invokes the skill at end of code-changing runs and writes `friction-findings-r<N>.md` (NOT a verdict file). Findings inform pipeline improvement; PR merge proceeds regardless.
 >
@@ -50,7 +50,7 @@ friction-reviewer Phase 4 audit checks:
 ## Inputs
 - Required reads:
   - run `pipeline.md`
-  - latest `verdict-test-r<N>.md` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=test")`
+  - latest `verdict-test-r<N>.md` via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=test")`
   - latest gate verdicts (all types)
   - latest `build-evidence-r<N>-s<K>.md` (all shards, K≥1)
 - Conditional reads (read ONLY when relevant):

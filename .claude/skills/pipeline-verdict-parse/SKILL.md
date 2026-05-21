@@ -1,21 +1,21 @@
 ---
-name: verdict-parse
+name: pipeline-verdict-parse
 description: Glob verdict-<type>-r<N>.md files in pipeline run dir, pick max N, parse YAML frontmatter. Returns verdict + role + revision + loops. Use when orchestrator routes or any gate reads prior verdict.
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# verdict-parse
+# pipeline-verdict-parse
 
 Parse pipeline gate verdicts. Pipeline-internal.
 
 ## Invocation
 
-Claude: `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`
+Claude: `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=<type>")`
 
-OC: `verdict-parse` custom tool with `{run_dir, type}` args.
+OC: `pipeline-verdict-parse` custom tool with `{run_dir, type}` args.
 
-Script: `python3 .claude/skills/verdict-parse/verdict-parse.py --run-dir <path> --type <type>`
+Script: `python3 .claude/skills/pipeline-verdict-parse/verdict-parse.py --run-dir <path> --type <type>`
 
 ## Args
 
@@ -53,4 +53,4 @@ verifies before proceeding.**
 
 ## See also
 
-`revision-route`, `worktree-lifecycle`.
+`pipeline-revision-route`, `pipeline-worktree-lifecycle`.

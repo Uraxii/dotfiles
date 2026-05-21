@@ -1,21 +1,21 @@
 ---
-name: prod-diff-sha
+name: pipeline-prod-diff-sha
 description: Compute SHA1 of production-code diff vs base_sha, excluding test paths. Used by orchestrator for test-only revision pin validation on skeptic-code/reviewer/security verdicts.
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# prod-diff-sha
+# pipeline-prod-diff-sha
 
 Compute prod-code diff SHA. Pipeline-internal.
 
 ## Invocation
 
-Claude: `Skill(skill: "prod-diff-sha", args: "base-sha=<sha>, head=<ref|HEAD>, test-paths-file=<path|none>")`
+Claude: `Skill(skill: "pipeline-prod-diff-sha", args: "base-sha=<sha>, head=<ref|HEAD>, test-paths-file=<path|none>")`
 
-OC: `prod-diff-sha` custom tool with `{base_sha, head, test_paths_file}` args.
+OC: `pipeline-prod-diff-sha` custom tool with `{base_sha, head, test_paths_file}` args.
 
-Script: `python3 .claude/skills/prod-diff-sha/prod-diff-sha.py --base-sha <sha> --head <ref>`
+Script: `python3 .claude/skills/pipeline-prod-diff-sha/prod-diff-sha.py --base-sha <sha> --head <ref>`
 
 ## Args
 
@@ -38,4 +38,4 @@ Shell-chain pattern: `pin=$(python3 prod-diff-sha.py --base-sha $SHA --head HEAD
 
 ## See also
 
-`test-path-resolve`, `verdict-parse`.
+`pipeline-test-path-resolve`, `pipeline-verdict-parse`.

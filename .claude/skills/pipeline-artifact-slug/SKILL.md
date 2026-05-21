@@ -1,19 +1,19 @@
 ---
-name: artifact-slug
+name: pipeline-artifact-slug
 description: Generate canonical pipeline artifact-id (adjective-middle-noun-hex6 slug). Used by orchestrator at intake to bind run dir + plan id. Wraps artifact-slug tool.
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# artifact-slug
+# pipeline-artifact-slug
 
 Generate pipeline artifact-id. Pipeline-internal.
 
 ## Invocation
 
-Claude: `Skill(skill: "artifact-slug", args: "seed=<int|none>")`
+Claude: `Skill(skill: "pipeline-artifact-slug", args: "seed=<int|none>")`
 
-OC: `artifact-slug` custom tool with `{seed?}` arg.
+OC: `pipeline-artifact-slug` custom tool with `{seed?}` arg.
 
 ## Algorithm
 

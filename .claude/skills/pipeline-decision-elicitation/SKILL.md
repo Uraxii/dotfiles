@@ -1,17 +1,17 @@
 ---
-name: decision-elicitation
+name: pipeline-decision-elicitation
 description: Pipeline decision-point stage. Elicits human pick between N options (N ≤ 4). Sync delivery via AskUserQuestion or async via Slack (requires active session binding). Records pick in decision-r<N>.md. Use when brief/plan declares decision_points or a role flags ambiguity.
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# decision-elicitation
+# pipeline-decision-elicitation
 
 Pipeline stage. Elicits human decision between option set. Sync or async. Orchestrator-owned (no subagent). Pipeline-internal.
 
 ## Invocation
 
-Claude: `Skill(skill: "decision-elicitation", args: "run-dir=<path>, decision-id=d<N>, mode=<sync|async>")`
+Claude: `Skill(skill: "pipeline-decision-elicitation", args: "run-dir=<path>, decision-id=d<N>, mode=<sync|async>")`
 
 `mode` default = `sync`. `async` requires an active session binding (`slack-bind` first), `<project>/.pipeline/pipeline.toml` w/ `[slack].channel`, and Slack creds at `~/.claude/pipeline/slack.env.local`; else skill falls back to `sync` and warns.
 

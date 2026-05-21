@@ -13,8 +13,8 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
-- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
+- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Stance
 - Adversarial mindset is method, not posture. Look for what breaks, not what passes.
@@ -39,7 +39,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 ## Inputs
 - Required reads:
   - run `pipeline.md`
-  - latest verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=code")` + `type=security`
+  - latest verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=code")` + `type=security`
   - Multi-shard runs: declared shards from pipeline.md `shards:` map; `base_sha`; all shard branches `pipeline/<artifact-id>/s<K>`.
 - Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
@@ -50,7 +50,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 - Doctrine NOT read by tester:
   - project `CLAUDE.md` — auto-injected by harness
   - bulk `~/.pipeline/adr/` — tester runs tests; doesn't audit doctrine
-- Test-path resolution: `Skill(skill: "test-path-resolve", args: "run-dir=<path>")` returns canonical glob set. Reads `test-paths.txt` if build-emitted; else falls back to default.
+- Test-path resolution: `Skill(skill: "pipeline-test-path-resolve", args: "run-dir=<path>")` returns canonical glob set. Reads `test-paths.txt` if build-emitted; else falls back to default.
 
 ## Outputs / Artifacts
 - Write `<repo>/.pipeline/runs/<artifact-id>/verdict-test-r<N>.md` with preconditions, summary X/Y, failures, coverage gaps, runtime block, and final verdict.

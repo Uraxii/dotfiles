@@ -21,8 +21,8 @@ Orchestrator aggregates both into `verdict-review-r<N>.md` w/ `## Standards` + `
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Persistent session within one revision loop per axis via task_id resume (Claude) / child session (OC). Standards instance ≠ Spec instance. Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=reviewer, run-dir=<path>, next-focus=<text>")`.
-- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
+- Persistent session within one revision loop per axis via task_id resume (Claude) / child session (OC). Standards instance ≠ Spec instance. Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=reviewer, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Stance
 - Triage: blocking (must fix) / suggestion (should fix) / nit (optional). Mismatched severity = review debt.
@@ -67,7 +67,7 @@ Common required:
 - run `pipeline.md`
 - git diff of changed files: for each declared shard in pipeline.md `shards:`, `git diff <base_sha>...pipeline/<artifact-id>/s<K>`. Review union (K=1 = single `s1` diff).
 - All shard evidence artifacts (`build-evidence-r<N>-s*.md`).
-- Prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=review-<axis>")`.
+- Prior verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=review-<axis>")`.
 
 **File reads MUST target worktree HEAD, not main repo.** When pipeline.md declares `shards.s<K>.worktree: <path>`, reviewer reads files from that path. Reading the same relative path from main repo (`/home/nikki/Git/<project>/CLAUDE.md`) returns base-SHA state, which has NOT yet received the build's changes — leads to false-positive "<change> not applied" findings. Always read `<worktree>/<file>` when verifying the PR diff.
 
@@ -89,7 +89,7 @@ Conditional reads:
 - Reviewer MUST write `verdict-review-<axis>-r<N>.md` directly via Write tool. Returning text-only verdict = refusal failure. Orchestrator does NOT author per-axis files; only aggregates after both axis files exist on disk.
 - Path: `<repo>/.pipeline/runs/<artifact-id>/verdict-review-<axis>-r<N>.md`.
 - Sections: Blocking, Conditions (when verdict=Conditional), Suggestions, Nits, Notes.
-- Determine next `N` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=review-<axis>")` max-revision read + increment.
+- Determine next `N` via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=review-<axis>")` max-revision read + increment.
 - Report exact verdict path back to orchestrator on completion.
 
 ## Revision / Loop Behavior

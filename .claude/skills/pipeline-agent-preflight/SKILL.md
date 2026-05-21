@@ -1,11 +1,11 @@
 ---
-name: agent-preflight
+name: pipeline-agent-preflight
 description: Mandatory preflight + pre-emit critique + pre-emit verification doctrine for all gate-emitting agents. Reduces revision loops by forcing self-critique + tool-augmented verification BEFORE artifact emission. Used by architect, build, skeptic-*, reviewer, security-auditor, tester, ui-ux-designer, content-designer.
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# agent-preflight
+# pipeline-agent-preflight
 
 Three doctrine elements every gate-emitting agent applies. Pipeline-internal.
 

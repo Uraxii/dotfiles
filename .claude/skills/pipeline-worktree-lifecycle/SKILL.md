@@ -1,21 +1,21 @@
 ---
-name: worktree-lifecycle
+name: pipeline-worktree-lifecycle
 description: Pipeline shard worktree primitives — create, stale-probe, cleanup, scope-check. Wraps git worktree commands. Use by orchestrator for shard management + build for self-verify scope check.
 source: pipeline-native
 output-style: caveman:ultra
 ---
 
-# worktree-lifecycle
+# pipeline-worktree-lifecycle
 
 Git worktree primitives for pipeline shards. Pipeline-internal.
 
 ## Invocation
 
-Claude: `Skill(skill: "worktree-lifecycle", args: "op=<op>, ...")`
+Claude: `Skill(skill: "pipeline-worktree-lifecycle", args: "op=<op>, ...")`
 
-OC: `worktree-lifecycle` custom tool with `{op, ...}` args.
+OC: `pipeline-worktree-lifecycle` custom tool with `{op, ...}` args.
 
-Script: `python3 .claude/skills/worktree-lifecycle/worktree-lifecycle.py --op <op> ...`
+Script: `python3 .claude/skills/pipeline-worktree-lifecycle/worktree-lifecycle.py --op <op> ...`
 
 ## Args
 
@@ -51,4 +51,4 @@ Per op (JSON):
 
 ## See also
 
-`verdict-parse`, `prod-diff-sha`.
+`pipeline-verdict-parse`, `pipeline-prod-diff-sha`.

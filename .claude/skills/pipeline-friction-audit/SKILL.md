@@ -1,25 +1,25 @@
 ---
-name: friction-audit
+name: pipeline-friction-audit
 description: Deterministic post-run audit of pipeline doctrine adherence. Emits findings list (non-gating, meta-only). Used by orchestrator at end of code-changing runs to capture process drift for pipeline improvement. Does NOT gate PR merge.
 source: pipeline-native
 output-style: caveman:ultra
 disable-model-invocation: true
 ---
 
-# friction-audit
+# pipeline-friction-audit
 
 Pipeline post-run doctrine audit. Pipeline-internal. **Non-gating** — output is meta-findings for pipeline improvement, not a PR-merge gate.
 
 ## Invocation
 
-Claude: `Skill(skill: "friction-audit", args: "run-dir=<path>")`
+Claude: `Skill(skill: "pipeline-friction-audit", args: "run-dir=<path>")`
 
-OC: `friction-audit` custom tool with `{run_dir}` arg.
+OC: `pipeline-friction-audit` custom tool with `{run_dir}` arg.
 
 ## Algorithm
 
 ```bash
-python3 ~/.claude/skills/friction-audit/friction-audit.py --run-dir <path>
+python3 ~/.claude/skills/pipeline-friction-audit/friction-audit.py --run-dir <path>
 ```
 
 Returns JSON: `{passed: [<check-id>, ...], failed: [{check: <id>, citation: <path-or-detail>, severity: low|med|high}, ...]}`.

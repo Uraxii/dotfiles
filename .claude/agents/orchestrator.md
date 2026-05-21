@@ -31,9 +31,9 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 2. Plan reuse check: parse `use plan <id>` via `\buse plan (?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})\b`.
    - Exists at `~/.pipeline/plans/-home-nikki-dotfiles/<id>.md` → reuse.
    - Missing → hard error, list available plan files.
-3. Resolve canonical artifact-id: Generate slug via `Skill(skill: "artifact-slug", args: "seed=none")` (Claude) or `artifact-slug` custom tool (OC). Bind once; reuse same value for run dir + plan id everywhere in intake.
+3. Resolve canonical artifact-id: Generate slug via `Skill(skill: "pipeline-artifact-slug", args: "seed=none")` (Claude) or `artifact-slug` custom tool (OC). Bind once; reuse same value for run dir + plan id everywhere in intake.
 4. Create `<repo>/.pipeline/runs/<artifact-id>/`.
-5. Write `brief.md` via `Skill(skill: "agent-brief-format", args: "run-dir=<RUN_DIR>, raw-request=<RAW_REQUEST>")`. Template enforces durable-over-precise framing.
+5. Write `brief.md` via `Skill(skill: "pipeline-agent-brief-format", args: "run-dir=<RUN_DIR>, raw-request=<RAW_REQUEST>")`. Template enforces durable-over-precise framing.
 6. Init `pipeline.md` (orchestrator-only ledger). Capture `base_ref` + `base_sha = git rev-parse <base_ref>` into frontmatter. Set `phase: intake`.
 7. If plan exists, write `plan.ref` (id + absolute plan path).
 8. Spawn `plan` only when needed:
@@ -42,7 +42,7 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`. Set `phase: compose`.
 9.5. Open-question scan: parse `brief.md` `## Open questions` section for unresolved OQs.
      For each:
-     - If brief offers options → invoke `Skill(skill: "decision-elicitation", args: "run-dir=<path>, decision-id=oq<N>, mode=sync")` BEFORE Phase 2.
+     - If brief offers options → invoke `Skill(skill: "pipeline-decision-elicitation", args: "run-dir=<path>, decision-id=oq<N>, mode=sync")` BEFORE Phase 2.
      - If freeform → `AskUserQuestion` BEFORE Phase 2.
      - Record resolution in `brief.md` under new `## Resolved questions` section.
      DO NOT spawn architect until all OQs resolved. Unresolved OQs = primary revision-loop driver per pipeline-friction analysis.
@@ -50,21 +50,21 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 
 ### Phase 2: Compose + Execute
 1. Compose role list + dep graph:
-   `Skill(skill: "dep-graph-compose", args: "payload-json=<JSON>")`.
+   `Skill(skill: "pipeline-dep-graph-compose", args: "payload-json=<JSON>")`.
    Output: `{ordered_roles, decision_inject_points, K, warnings}`. Set `phase: execute`.
 2. Execute by Dependency Graph. When a declared `decision_points:` entry's `after:` role
    completes, inject decision-elicitation stage before continuing.
-3. Parse gate verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`.
-4. Route each verdict: `Skill(skill: "revision-route", args: "verdict-path=<abs-path>")`.
+3. Parse gate verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=<type>")`.
+4. Route each verdict: `Skill(skill: "pipeline-revision-route", args: "verdict-path=<abs-path>")`.
    Output: `{action, target_role, revision_n, reason, loop_cap_hit, verdict_summary}`.
    Loop until `action=approved` or `action=halt`.
-5. Publish PRs: `Skill(skill: "pr-publish", args: "pipeline-md=<abs-path>")`.
+5. Publish PRs: `Skill(skill: "pipeline-pr-publish", args: "pipeline-md=<abs-path>")`.
    Execute returned `commands` fields via Bash (plan-only default; orchestrator runs git/gh).
    Set `phase: close`. Then invoke friction-audit skill (orchestrator writes findings file).
 6. Emit completion report.
 
 ### Build Stage Contract
-- Every build runs in worktree (K=1 min). Worktree primitives via `Skill(skill: "worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
+- Every build runs in worktree (K=1 min). Worktree primitives via `Skill(skill: "pipeline-worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
 - Every build revision produces `build-evidence-r<N>-s<K>.md` + `prebuild-skeptic-code-r<N>-s<K>.md` per shard.
 - If UI/UX scope present and `ui-ux-designer` did not run, build writes fallback `frontend-handoff.md`.
 - Skeptic code gate (skeptic with review_type=code) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
@@ -82,7 +82,7 @@ Re-spawn failing shard. Check position: Phase 2 step 2 (after all build evidence
 - Trigger: every build. If plan declares `parallel_shards:` w/ ≥2 entries → K shards parallel. Absent → orchestrator synthesizes implicit `s1` (`scope: ["."]`, `tasks: <all>`, `depends_on: []`).
 - Intake validation: K ≤ 8, scope globs disjoint (K≥2), `depends_on` resolvable.
 - GitHub preconditions (when PR delivery expected): `command -v gh`; `gh auth status` clean; `git remote get-url origin` matches `github.com[:/]`. Failure: continue in branches-only mode.
-- Worktree lifecycle: `Skill(skill: "worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
+- Worktree lifecycle: `Skill(skill: "pipeline-worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
 - Spawn: K=1 → single build into `s1`. K≥2 → independent shards launched in single message (parallel tool calls). Dependent shards wait until all `depends_on` shards `passed`. Any dep `failed` → dependent shard `skipped_due_to_dep`.
 - Failure (fail-deferred): shard non-zero exit → `failed`; siblings continue. Wait all terminal. ≥1 failed → revision loop on failed shards only.
 - Gate stage (single spawn per gate type): reads union of `git diff <base_sha>...pipeline/<artifact-id>/s<K>` + union of evidence + prebuild artifacts.
@@ -91,7 +91,7 @@ Re-spawn failing shard. Check position: Phase 2 step 2 (after all build evidence
 ### Decision Elicitation Stage
 
 Orchestrator-owned (no subagent). Triggered when brief/plan declares `decision_points:` block.
-`Skill(skill: "decision-elicitation", args: "run-dir=<path>, decision-id=d<N>, mode=<sync|async>")`.
+`Skill(skill: "pipeline-decision-elicitation", args: "run-dir=<path>, decision-id=d<N>, mode=<sync|async>")`.
 
 Flow:
 1. Spawn `options_source` role w/ `decision_emission: d<N>` flag → emits `options-r<N>.md` (N ≤ 4 options).
@@ -125,7 +125,7 @@ On resume (sentinel, `paused_on_decision:` or `paused_on_drift:` set):
 ### Friction Audit (non-gating)
 
 Orchestrator-owned. Triggered after pr_publish on code-changing runs.
-`Skill(skill: "friction-audit", args: "run-dir=<path>")` → JSON `{passed, failed}`.
+`Skill(skill: "pipeline-friction-audit", args: "run-dir=<path>")` → JSON `{passed, failed}`.
 Orchestrator writes `friction-findings-r<N>.md` (frontmatter + passed/failed sections).
 Findings never block PR merge — inform pipeline-improvement backlog grooming only.
 
@@ -156,13 +156,13 @@ verdict: <verdict>
 ANY axis Blocked → revision loop. Both Approved → continue.
 
 ### PR creation (orchestrator-owned, no subagent)
-1. `Skill(skill: "pr-publish", args: "pipeline-md=<path>")` → plan JSON.
+1. `Skill(skill: "pipeline-pr-publish", args: "pipeline-md=<path>")` → plan JSON.
    `base_sha_stable: false` → abort + surface to user.
 2. For each shard in `merge_order`: execute `commands.recommit`, `commands.push`,
    `commands.pr_create`, `commands.pr_merge` via Bash in sequence.
 3. Merge failure: halt remaining; already-merged stay.
 4. `mode: branches-only`: write `pr-report.md` w/ manual commands from `commands.push`.
-5. Worktree cleanup: `Skill(skill: "worktree-lifecycle", args: "op=cleanup, ...")` per shard.
+5. Worktree cleanup: `Skill(skill: "pipeline-worktree-lifecycle", args: "op=cleanup, ...")` per shard.
 6. Write `pr-report.md` w/ per-shard: PR URL, merge SHA, status.
 
 ## Role Inclusion Rules
@@ -224,7 +224,7 @@ Dir: <repo>/.pipeline/runs/<artifact-id>/
 
 ## Preflight (mandatory per agent-preflight skill)
 First line of your return: `Preflight: role=<name>, verdict-enum=Approved|Conditional|Blocked, doctrine-loaded-from=<path>.`
-Apply pre-emit verification + pre-emit critique before returning. See `.claude/skills/agent-preflight/SKILL.md`.
+Apply pre-emit verification + pre-emit critique before returning. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Read
 [artifact files]
@@ -370,7 +370,7 @@ PRs: <count> opened
 ## Persistence
 
 - Architect threshold 70% context. Build threshold 80%.
-- On threshold hit: invoked role uses `Skill(skill: "handoff-doc", args: "role=<role>, run-dir=<path>, next-focus=<text>")` to emit rotation summary; orchestrator records old/new task_id in pipeline.md.
+- On threshold hit: invoked role uses `Skill(skill: "pipeline-handoff-doc", args: "role=<role>, run-dir=<path>, next-focus=<text>")` to emit rotation summary; orchestrator records old/new task_id in pipeline.md.
 
 ## Completion Report
 
@@ -384,9 +384,9 @@ friction findings path (informational; non-gating).
 ## Appendix — Scope-match algorithm + Drift menu
 
 `glob_to_regex` + `normalize_scope` + `compute_drift_intersection` canonical
-implementation lives in `.claude/skills/worktree-lifecycle/worktree-lifecycle.py`
+implementation lives in `.claude/skills/pipeline-worktree-lifecycle/worktree-lifecycle.py`
 (ops: `scope-check`, `drift-intersect`). Resume-drift handler invokes
-`Skill(skill: "worktree-lifecycle", args: "op=drift-intersect, changed-paths-file=<path>, scope-globs=<g1> <g2>...")`.
+`Skill(skill: "pipeline-worktree-lifecycle", args: "op=drift-intersect, changed-paths-file=<path>, scope-globs=<g1> <g2>...")`.
 
 Drift menu (locked; AskUserQuestion call at step 6):
 ```yaml

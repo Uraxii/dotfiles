@@ -1,12 +1,12 @@
 ---
-name: revision-route
+name: pipeline-revision-route
 description: Map a verdict file to its next pipeline action (respawn/approved/halt). Keys on (review_type, role) tuple. Drift-guards against orchestrator.md Revision Loop table on every invocation.
 source: pipeline-native
 output-style: caveman:ultra
 disable-model-invocation: true
 ---
 
-# revision-route
+# pipeline-revision-route
 
 Route a gate verdict to the next pipeline action. Emits JSON to stdout.
 Validates internal ROUTING_TABLE against orchestrator.md Revision Loop table
@@ -15,9 +15,9 @@ on every invocation (drift guard — exits 2 on mismatch).
 ## Invocation
 
 ```
-Claude:  Skill(skill: "revision-route", args: "verdict-path=<abs-path>")
-OC:      revision-route --verdict-path <abs-path>
-Script:  python3 ~/.claude/skills/revision-route/revision-route.py --verdict-path <abs-path>
+Claude:  Skill(skill: "pipeline-revision-route", args: "verdict-path=<abs-path>")
+OC:      pipeline-revision-route --verdict-path <abs-path>
+Script:  python3 ~/.claude/skills/pipeline-revision-route/revision-route.py --verdict-path <abs-path>
          # Testing override:
          python3 ... --verdict-path <path> --orch-path <alt-orchestrator.md>
 ```

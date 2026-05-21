@@ -1,12 +1,12 @@
 ---
-name: pr-publish
+name: pipeline-pr-publish
 description: Generate per-shard PR publication plan from pipeline.md. Default plan-only JSON. --apply executes git/gh subprocesses. K-agnostic. Graceful branches-only degradation when gh unavailable.
 source: pipeline-native
 output-style: caveman:ultra
 disable-model-invocation: true
 ---
 
-# pr-publish
+# pipeline-pr-publish
 
 Generate per-shard PR publication plan from `pipeline.md` ledger.
 Default: plan-only JSON (no subprocess side effects). `--apply` opt-in executes.
@@ -14,9 +14,9 @@ Default: plan-only JSON (no subprocess side effects). `--apply` opt-in executes.
 ## Invocation
 
 ```
-Claude:  Skill(skill: "pr-publish", args: "pipeline-md=<abs-path>")
-OC:      pr-publish --pipeline-md <abs-path> [--apply]
-Script:  python3 ~/.claude/skills/pr-publish/pr-publish.py --pipeline-md <abs-path>
+Claude:  Skill(skill: "pipeline-pr-publish", args: "pipeline-md=<abs-path>")
+OC:      pipeline-pr-publish --pipeline-md <abs-path> [--apply]
+Script:  python3 ~/.claude/skills/pipeline-pr-publish/pr-publish.py --pipeline-md <abs-path>
          python3 ... --pipeline-md <path> [--apply] [--artifact-id <id>] [--task-summary <str>]
 ```
 

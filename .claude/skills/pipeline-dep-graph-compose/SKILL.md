@@ -1,12 +1,12 @@
 ---
-name: dep-graph-compose
+name: pipeline-dep-graph-compose
 description: Compose ordered role execution graph for a pipeline run. Emits ordered_roles array + decision inject points as JSON. K-agnostic.
 source: pipeline-native
 output-style: caveman:ultra
 disable-model-invocation: true
 ---
 
-# dep-graph-compose
+# pipeline-dep-graph-compose
 
 Compose role execution order (topological sort over dependency edges) for a pipeline run.
 Returns ordered role list + decision inject points as JSON to stdout.
@@ -14,10 +14,10 @@ Returns ordered role list + decision inject points as JSON to stdout.
 ## Invocation
 
 ```
-Claude:  Skill(skill: "dep-graph-compose", args: "payload-json=<json-blob>")
-OC:      dep-graph-compose --payload <json-blob>
-Script:  python3 ~/.claude/skills/dep-graph-compose/dep-graph-compose.py --payload <json>
-         python3 ~/.claude/skills/dep-graph-compose/dep-graph-compose.py --payload-file <path>
+Claude:  Skill(skill: "pipeline-dep-graph-compose", args: "payload-json=<json-blob>")
+OC:      pipeline-dep-graph-compose --payload <json-blob>
+Script:  python3 ~/.claude/skills/pipeline-dep-graph-compose/dep-graph-compose.py --payload <json>
+         python3 ~/.claude/skills/pipeline-dep-graph-compose/dep-graph-compose.py --payload-file <path>
 ```
 
 ## Input schema

@@ -1,11 +1,11 @@
 ---
-name: agent-brief-format
+name: pipeline-agent-brief-format
 description: Pipeline brief.md template. Durable-over-precise (no file paths, no line numbers). Behavioral not procedural. Complete acceptance criteria. Explicit out-of-scope. Use by orchestrator at intake.
 source: mattpocock/skills:skills/engineering/triage/AGENT-BRIEF.md
 output-style: caveman:ultra
 ---
 
-# agent-brief-format
+# pipeline-agent-brief-format
 
 Pipeline brief.md template. Pipeline-internal. Used by orchestrator intake.
 
@@ -13,9 +13,9 @@ Pipeline brief.md template. Pipeline-internal. Used by orchestrator intake.
 
 ## Invocation
 
-Claude: `Skill(skill: "agent-brief-format", args: "run-dir=<path>, raw-request=<user text>")`
+Claude: `Skill(skill: "pipeline-agent-brief-format", args: "run-dir=<path>, raw-request=<user text>")`
 
-OC: `skill({ name: "agent-brief-format" })` — caller provides `run-dir` and `raw-request` inline in calling prompt.
+OC: `skill({ name: "pipeline-agent-brief-format" })` — caller provides `run-dir` and `raw-request` inline in calling prompt.
 
 Writes `<run-dir>/brief.md`.
 

@@ -14,9 +14,9 @@ Gatekeeper. Approve only when blocking risk absent. Two `review_type` modes:
 - `code` — review build's evidence + diff post-build
 
 ## Startup / Runtime Policy
-- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`. (Skill lands in PR #94; this PR depends on #94 merging first.)
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`. (Skill lands in PR #94; this PR depends on #94 merging first.)
 - Output style: caveman:ultra.
-- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=skeptic, run-dir=<path>, next-focus=<text>")`.
+- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=skeptic, run-dir=<path>, next-focus=<text>")`.
 - Cross-`review_type` spawns are fresh (skeptic design instance ≠ skeptic code instance).
 
 ## Stance
