@@ -108,6 +108,10 @@ pkg = "swaylock-effects"
 bin = "swaylock"
 description = "Sway screen locker with blur and clock effects."
 arch.source = "aur"
+# Ubuntu/Fedora: source build (meson + scdoc + pam-dev + many wlroots headers).
+# Too heavy + version-fragile to script reliably here. Manual install or fall
+# back to stock `swaylock` apt/dnf pkg (loses blur+clock effects). Server
+# profile excludes this anyway.
 ubuntu.source = "manual"
 ubuntu.url = "https://github.com/jirutka/swaylock-effects"
 fedora.source = "manual"
@@ -138,10 +142,15 @@ pkg = "networkmanager-dmenu"
 bin = "networkmanager_dmenu"
 description = "dmenu/wofi front-end for NetworkManager."
 arch.source = "aur"
-ubuntu.source = "manual"
-ubuntu.url = "https://github.com/firecat53/networkmanager-dmenu"
-fedora.source = "manual"
-fedora.url = "https://github.com/firecat53/networkmanager-dmenu"
+# Ubuntu/Fedora: single python script in the upstream repo. Clone, install to
+# /usr/local/bin (sudo), drop temp clone. bin probe in install.py skips re-run
+# when /usr/local/bin/networkmanager_dmenu already exists.
+ubuntu.source = "script"
+ubuntu.install_cmd = "tmp=$(mktemp -d) && git clone --depth 1 https://github.com/firecat53/networkmanager-dmenu \"$tmp\" && sudo install -m 755 \"$tmp/networkmanager_dmenu\" /usr/local/bin/networkmanager_dmenu && rm -rf \"$tmp\""
+ubuntu.sudo = true
+fedora.source = "script"
+fedora.install_cmd = "tmp=$(mktemp -d) && git clone --depth 1 https://github.com/firecat53/networkmanager-dmenu \"$tmp\" && sudo install -m 755 \"$tmp/networkmanager_dmenu\" /usr/local/bin/networkmanager_dmenu && rm -rf \"$tmp\""
+fedora.sudo = true
 termux.source = "unsupported"
 termux.reason = "no NetworkManager on android (use Android settings)"
 
@@ -161,6 +170,10 @@ pkg = "ghostty"
 bin = "ghostty"
 description = "GPU-accelerated terminal emulator."
 arch.source = "aur"
+# Ubuntu/Fedora: no upstream prebuilt binary. Source build requires zig 0.13+
+# and is brittle across distro versions. Leaving manual; desktop users follow
+# https://ghostty.org/download (often via flatpak / 3rd-party PPA). Server
+# profile excludes ghostty so this never fires on headless installs.
 ubuntu.source = "manual"
 ubuntu.url = "https://ghostty.org/download"
 fedora.source = "manual"
@@ -251,10 +264,13 @@ description = "0xProto patched Nerd Font. Used by ghostty, waybar, wofi."
 post_install = "fc-cache -f"
 arch.source = "aur"
 nixos.pkg = "nerd-fonts._0xproto"
-ubuntu.source = "manual"
-ubuntu.url = "https://github.com/ryanoasis/nerd-fonts/releases"
-fedora.source = "manual"
-fedora.url = "https://github.com/ryanoasis/nerd-fonts/releases"
+# Ubuntu/Fedora: download zip from upstream release → ~/.local/share/fonts.
+# Idempotency: skip download if a 0xProtoNerdFont*.ttf already present.
+# Per-user install (no sudo). post_install runs fc-cache to refresh font cache.
+ubuntu.source = "script"
+ubuntu.install_cmd = "if ls ~/.local/share/fonts/0xProto/*.ttf >/dev/null 2>&1; then echo 'already installed'; else mkdir -p ~/.local/share/fonts/0xProto && curl -fLo /tmp/0xProto.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip && unzip -o /tmp/0xProto.zip -d ~/.local/share/fonts/0xProto && rm /tmp/0xProto.zip; fi"
+fedora.source = "script"
+fedora.install_cmd = "if ls ~/.local/share/fonts/0xProto/*.ttf >/dev/null 2>&1; then echo 'already installed'; else mkdir -p ~/.local/share/fonts/0xProto && curl -fLo /tmp/0xProto.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip && unzip -o /tmp/0xProto.zip -d ~/.local/share/fonts/0xProto && rm /tmp/0xProto.zip; fi"
 # Termux: drop the ttf at ~/.termux/font.ttf then `termux-reload-settings`.
 # fontconfig isn't the loader on Android — fc-cache is a no-op for the
 # Termux app's terminal renderer.
@@ -320,10 +336,12 @@ description = "Anthropic Claude Code CLI. Ships ~weekly; track upstream cadence.
 arch.source = "aur"
 arch.pkg = "claude-code-bin"
 nixos.source = "nix-unstable"
-ubuntu.source = "manual"
-ubuntu.url = "https://docs.claude.com/install"
-fedora.source = "manual"
-fedora.url = "https://docs.claude.com/install"
+# Ubuntu/Fedora: official npm package (same as termux). Requires nodejs declared
+# earlier; install.py's declaration-order processing guarantees nodejs runs first.
+ubuntu.source = "npm"
+ubuntu.pkg = "@anthropic-ai/claude-code"
+fedora.source = "npm"
+fedora.pkg = "@anthropic-ai/claude-code"
 # Termux: no AUR, no nix-unstable, no rpm. npm is the only sane upstream.
 termux.source = "npm"
 termux.pkg = "@anthropic-ai/claude-code"
