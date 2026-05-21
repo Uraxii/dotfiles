@@ -40,6 +40,12 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
 9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`. Set `phase: compose`.
+9.5. Open-question scan: parse `brief.md` `## Open questions` section for unresolved OQs.
+     For each:
+     - If brief offers options → invoke `Skill(skill: "decision-elicitation", args: "run-dir=<path>, decision-id=oq<N>, mode=sync")` BEFORE Phase 2.
+     - If freeform → `AskUserQuestion` BEFORE Phase 2.
+     - Record resolution in `brief.md` under new `## Resolved questions` section.
+     DO NOT spawn architect until all OQs resolved. Unresolved OQs = primary revision-loop driver per pipeline-friction analysis.
 10. Resume check: if invocation prompt matches `<<resume-pipeline-(?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})>>` sentinel OR contains literal `resume <artifact-id>`, skip steps 3-9; read `awaiting-decision-*.md` in matching run dir; route to decision-elicitation resume logic.
 
 ### Phase 2: Compose + Execute
@@ -63,6 +69,7 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 - If UI/UX scope present and `ui-ux-designer` did not run, build writes fallback `frontend-handoff.md`.
 - Skeptic code gate (skeptic with review_type=code) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
 - When UI changed and `ui-ux-designer` did not run, skeptic/reviewer/security/tester must read fallback `frontend-handoff.md`; missing artifact = Blocked.
+- Orchestrator validates `steps_completed: [1, 2, 3, 4, 5]` in build-evidence frontmatter before accepting build verdict. Missing or partial → mark shard `failed` + re-spawn build w/ "complete delivery chain" instruction.
 
 ### Skeptic spawn preconditions (review_type=code)
 
@@ -214,6 +221,10 @@ Not spawned as subagents. Invoked by orchestrator at specific phase steps. No ve
 ## Pipeline
 Run: <artifact-id>
 Dir: <repo>/.pipeline/runs/<artifact-id>/
+
+## Preflight (mandatory per agent-preflight skill)
+First line of your return: `Preflight: role=<name>, verdict-enum=Approved|Conditional|Blocked, doctrine-loaded-from=<path>.`
+Apply pre-emit verification + pre-emit critique before returning. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Read
 [artifact files]

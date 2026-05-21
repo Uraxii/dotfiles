@@ -115,6 +115,25 @@ def check_phase_field(run_dir: Path) -> dict | None:
     return None
 
 
+def check_preflight(run_dir: Path) -> dict | None:
+    """Check verdict files cite preflight + pre-emit critique sections per agent-preflight doctrine."""
+    verdicts = list(run_dir.glob("verdict-*.md"))
+    if not verdicts:
+        return None
+    missing_critique = []
+    for v in verdicts:
+        text = v.read_text(encoding="utf-8", errors="replace")
+        if not re.search(r"##\s*Pre-emit critique", text, re.IGNORECASE):
+            missing_critique.append(v.name)
+    if missing_critique:
+        return {
+            "check": "preflight-critique",
+            "citation": f"verdicts missing ## Pre-emit critique section: {', '.join(missing_critique)}",
+            "severity": "low",
+        }
+    return None
+
+
 def check_skill_invocation(run_dir: Path, repo_root: Path) -> dict | None:
     agents_dir = repo_root / ".claude" / "agents"
     skills_dir = repo_root / ".claude" / "skills"
@@ -150,6 +169,7 @@ CHECKS = [
     ("adr-assertion", check_adr_assertion),
     ("task-id-continuity", check_task_id_continuity),
     ("phase-field", check_phase_field),
+    ("preflight-critique", check_preflight),
 ]
 
 

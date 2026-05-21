@@ -14,6 +14,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
 - Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
 - Adversarial mindset is method, not posture. Look for what breaks, not what passes.

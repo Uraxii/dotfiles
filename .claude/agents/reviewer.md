@@ -22,6 +22,7 @@ Orchestrator aggregates both into `verdict-review-r<N>.md` w/ `## Standards` + `
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
 - Persistent session within one revision loop per axis via task_id resume (Claude) / child session (OC). Standards instance ≠ Spec instance. Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=reviewer, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
 - Triage: blocking (must fix) / suggestion (should fix) / nit (optional). Mismatched severity = review debt.
