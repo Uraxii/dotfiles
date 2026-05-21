@@ -51,11 +51,17 @@ DISTRO_ALIASES: dict[str, str] = {
     "nixos": "nixos",
     "ubuntu": "ubuntu", "debian": "ubuntu", "linuxmint": "ubuntu", "pop": "ubuntu",
     "fedora": "fedora", "rhel": "fedora", "centos": "fedora", "rocky": "fedora",
+    "termux": "termux",
 }
 
 
 def detect_distro() -> str:
-    """Return a canonical distro id from /etc/os-release."""
+    """Return a canonical distro id from /etc/os-release (or termux env)."""
+    # Termux is Android — no /etc/os-release on the Android root; the termux
+    # one lives at $PREFIX/etc/os-release. $TERMUX_VERSION is always exported
+    # in a termux shell, so use it as the authoritative signal.
+    if os.environ.get("TERMUX_VERSION"):
+        return "termux"
     osr = Path("/etc/os-release")
     if not osr.exists():
         raise SystemExit("cannot detect distro: /etc/os-release missing")
@@ -91,6 +97,7 @@ class Resolved:
     post_install: str | None
     enabled: bool
     bins: tuple[str, ...] = ()
+    reason: str | None = None  # populated when source = "unsupported"
 
     def __str__(self) -> str:
         v = f" {self.version}" if self.version else ""
@@ -127,6 +134,7 @@ def resolve(pkg_id: str, entry: dict, distro: str, defaults: dict) -> Resolved:
         post_install=entry.get("post_install"),
         enabled=bool(override.get("enabled", entry.get("enabled", defaults.get("enabled", True)))),
         bins=_normalise_bins(override.get("bin", entry.get("bin"))),
+        reason=override.get("reason", entry.get("reason")),
     )
 
 
@@ -320,6 +328,23 @@ class AptAdapter(Adapter):
         target = f"{name}={version}" if version and version.replace(".", "").isdigit() else name
         rc, _ = self._run(["sudo", "apt-get", "install", "-y", target])
         return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"apt-get exit {rc}")
+
+
+# --- pkg (termux) -------------------------------------------------------------
+
+class TermuxAdapter(Adapter):
+    """termux `pkg` (apt wrapper). No sudo on Android (single-user)."""
+
+    name = "pkg"
+
+    def installed_version(self, name: str) -> str | None:
+        rc, out = self._run(["dpkg-query", "-W", "-f=${Version}", name], capture=True)
+        return out.strip() if rc == 0 and out.strip() else None
+
+    def install(self, name: str, version: str | None) -> RunResult:
+        target = f"{name}={version}" if version and version.replace(".", "").isdigit() else name
+        rc, _ = self._run(["pkg", "install", "-y", target])
+        return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"pkg exit {rc}")
 
 
 # --- dnf (fedora/rhel) --------------------------------------------------------
@@ -598,6 +623,24 @@ class SkipAdapter(Adapter):
         return RunResult(installed=False, already_present=False, skipped_reason="declared skip")
 
 
+class UnsupportedAdapter(Adapter):
+    """Platform doesn't ship this package. Distinct from `skip` (user-deferred).
+
+    Reason comes from spec.reason; process_one short-circuits to surface it
+    in the report so this adapter is largely a marker. installed_version
+    still probes via bins fallback so an externally-installed binary can
+    satisfy the dep even on an unsupported platform.
+    """
+
+    name = "unsupported"
+
+    def installed_version(self, name: str) -> str | None:
+        return None
+
+    def install(self, name: str, version: str | None) -> RunResult:
+        return RunResult(installed=False, already_present=False, skipped_reason="unsupported on this platform")
+
+
 # --- dispatch -----------------------------------------------------------------
 
 NATIVE_BY_DISTRO: dict[str, type[Adapter]] = {
@@ -605,6 +648,7 @@ NATIVE_BY_DISTRO: dict[str, type[Adapter]] = {
     "ubuntu": AptAdapter,
     "fedora": DnfAdapter,
     "nixos": NixAdapter,
+    "termux": TermuxAdapter,
 }
 
 
@@ -617,7 +661,7 @@ def get_adapter(source: str, distro: str, dry_run: bool) -> Adapter:
     table: dict[str, type[Adapter]] = {
         "aur": AurAdapter, "nix": NixAdapter, "nix-unstable": NixUnstableAdapter,
         "cargo": CargoAdapter, "pip": PipAdapter, "uv-tool": UvToolAdapter, "npm": NpmAdapter,
-        "manual": ManualAdapter, "skip": SkipAdapter,
+        "manual": ManualAdapter, "skip": SkipAdapter, "unsupported": UnsupportedAdapter,
     }
     cls = table.get(source)
     if cls is None:
@@ -730,6 +774,17 @@ def process_one(
         report.manual.append((pkg_id, spec.url))
         return
 
+    if spec.source == "unsupported":
+        reason = spec.reason or "platform doesn't ship this package"
+        log.info("  ⊘ unsupported on %s: %s", distro, reason)
+        report.skipped.append((pkg_id, f"unsupported on {distro}: {reason}"))
+        return
+
+    if spec.source == "skip":
+        log.info("  ⊘ declared skip")
+        report.skipped.append((pkg_id, "declared skip"))
+        return
+
     if dry_run:
         log.info("  [dry-run] would install %s via %s", spec.install_name, spec.source)
         report.installed.append(pkg_id)
@@ -737,7 +792,12 @@ def process_one(
 
     result = adapter.install(spec.install_name, spec.version)
     if result.skipped_reason:
-        report.skipped.append((pkg_id, result.skipped_reason))
+        # For `unsupported` source, prefer the per-pkg reason from deps.toml
+        # over the generic adapter message ("unsupported on this platform").
+        reason = result.skipped_reason
+        if spec.source == "unsupported" and spec.reason:
+            reason = f"unsupported on {distro}: {spec.reason}"
+        report.skipped.append((pkg_id, reason))
         return
     if not result.installed:
         log.error("  ✗ install failed: %s", result.error)
@@ -908,7 +968,7 @@ def main(argv: list[str] | None = None) -> int:
             log.error("unknown package: %s", args.show)
             return 2
         spec = resolve(args.show, config[args.show], distro, defaults)
-        for f in ("pkg_id", "install_name", "source", "version", "description", "url", "post_install", "enabled"):
+        for f in ("pkg_id", "install_name", "source", "version", "description", "url", "post_install", "enabled", "reason"):
             print(f"  {f}: {getattr(spec, f)}")
         return 0
 

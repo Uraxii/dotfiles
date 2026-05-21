@@ -8,11 +8,19 @@
 #   - version          = optional pin (operator syntax). Omitted = latest;
 #                        installed-if-absent; no upgrade chase.
 #   - source           = native (default) | aur | nix-unstable | cargo | uv-tool
-#                        | pip | npm | manual | skip
+#                        | pip | npm | manual | skip | unsupported
 #                        Prefer `uv-tool` over `pip` for python CLIs on systems
 #                        with PEP 668 externally-managed-environment (Arch,
 #                        Fedora ≥39, Debian ≥12). uv-tool puts each tool in its
 #                        own isolated venv and exposes the binary on PATH.
+#                        `unsupported` = platform doesn't ship this pkg (e.g.
+#                        Wayland tooling on termux/Android). Distinct from
+#                        `skip` (user-deferred) in the install report. Pair
+#                        with `reason = "..."` so logs explain the gap.
+#   - reason           = optional one-line explanation. Surfaced in the install
+#                        report when source = "unsupported". Per-distro override
+#                        encouraged so the message names the platform-specific
+#                        cause (e.g. "no wayland on android").
 #   - bin              = optional binary name (string) OR list of names. If the
 #                        pkg-manager presence check returns absent but any
 #                        declared binary is on $PATH, the pkg is treated as
@@ -24,7 +32,14 @@
 # Version operators: "3.13", "=3.13", ">=3.13", "<4", "~=3.13", ">=3.13,<3.14".
 
 version = 1
-supported_distros = ["arch", "nixos", "ubuntu", "fedora"]
+supported_distros = ["arch", "nixos", "ubuntu", "fedora", "termux"]
+# Termux notes:
+#   - Native pkg mgr = `pkg` (apt wrapper). No sudo (single-user Android).
+#   - Wayland/GUI desktop ecosystem unavailable → all sway/waybar/wofi/swaylock
+#     entries set termux.source = "skip".
+#   - No gcc on termux — Mason/native-builds use clang (gcc entry remaps).
+#   - claude-code is npm-only on termux (no AUR, no nix-unstable, no rpm).
+#   - Nerd font: manual install to ~/.termux/font.ttf then `termux-reload-settings`.
 
 [defaults]
 source  = "native"
@@ -46,16 +61,22 @@ default = "xonsh"
 pkg = "sway"
 bin = "sway"
 description = "Wayland tiling window manager."
+termux.source = "unsupported"
+termux.reason = "no wayland on android"
 
 [swayidle]
 pkg = "swayidle"
 bin = "swayidle"
 description = "Sway idle inhibitor and screen-lock trigger."
+termux.source = "unsupported"
+termux.reason = "no wayland on android"
 
 [swaybg]
 pkg = "swaybg"
 bin = "swaybg"
 description = "Sway wallpaper daemon."
+termux.source = "unsupported"
+termux.reason = "no wayland on android"
 
 [swaylock-effects]
 pkg = "swaylock-effects"
@@ -66,6 +87,8 @@ ubuntu.source = "manual"
 ubuntu.url = "https://github.com/jirutka/swaylock-effects"
 fedora.source = "manual"
 fedora.url = "https://github.com/jirutka/swaylock-effects"
+termux.source = "unsupported"
+termux.reason = "no wayland on android"
 
 # ============================================================
 # Status bar & launcher
@@ -75,11 +98,15 @@ fedora.url = "https://github.com/jirutka/swaylock-effects"
 pkg = "waybar"
 bin = "waybar"
 description = "Status bar for Wayland compositors."
+termux.source = "unsupported"
+termux.reason = "no wayland on android"
 
 [wofi]
 pkg = "wofi"
 bin = "wofi"
 description = "Application launcher for Wayland (rofi-style)."
+termux.source = "unsupported"
+termux.reason = "no wayland on android"
 
 [networkmanager-dmenu]
 pkg = "networkmanager-dmenu"
@@ -90,11 +117,15 @@ ubuntu.source = "manual"
 ubuntu.url = "https://github.com/firecat53/networkmanager-dmenu"
 fedora.source = "manual"
 fedora.url = "https://github.com/firecat53/networkmanager-dmenu"
+termux.source = "unsupported"
+termux.reason = "no NetworkManager on android (use Android settings)"
 
 [pavucontrol]
 pkg = "pavucontrol"
 bin = "pavucontrol"
 description = "PulseAudio volume control GUI."
+termux.source = "unsupported"
+termux.reason = "no pulseaudio GUI on android (termux uses termux-api audio)"
 
 # ============================================================
 # Applications
@@ -109,6 +140,8 @@ ubuntu.source = "manual"
 ubuntu.url = "https://ghostty.org/download"
 fedora.source = "manual"
 fedora.url = "https://ghostty.org/download"
+termux.source = "unsupported"
+termux.reason = "GPU terminal needs X/Wayland (use Termux app itself as terminal)"
 
 [tmux]
 pkg = "tmux"
@@ -126,6 +159,11 @@ ubuntu.version = ">=0.9"
 pkg = "gcc"
 bin = "gcc"
 description = "C compiler. Required by treesitter and native LSPs."
+# Termux dropped gcc years ago; ships clang only. clang provides `cc` wrapper
+# which treesitter and Mason native builds invoke. Bin remap so the external-
+# install detection accepts a clang-only environment.
+termux.pkg = "clang"
+termux.bin = ["clang", "cc"]
 
 [gnumake]
 pkg = "make"
@@ -154,6 +192,11 @@ fedora.pkg = "fd-find"
 pkg = "wl-clipboard"
 bin = ["wl-copy", "wl-paste"]
 description = "Wayland clipboard CLI (wl-copy / wl-paste). Used by nvim and tmux-yank."
+# Termux: use `termux-clipboard-get` / `termux-clipboard-set` from termux-api
+# package instead. Nvim/tmux integrations need a wrapper script — out of scope
+# for this manifest.
+termux.source = "unsupported"
+termux.reason = "no wayland on android (use termux-api: termux-clipboard-set/get)"
 
 [nodejs]
 pkg = "nodejs"
@@ -163,6 +206,9 @@ version = ">=22"
 nixos.pkg = "nodejs_22"
 ubuntu.pkg = "nodejs"
 fedora.pkg = "nodejs"
+# Termux ships current node in `nodejs`; `nodejs-lts` is also available if a
+# pinned LTS is needed. Default to rolling.
+termux.pkg = "nodejs"
 
 # ============================================================
 # Fonts
@@ -178,6 +224,11 @@ ubuntu.source = "manual"
 ubuntu.url = "https://github.com/ryanoasis/nerd-fonts/releases"
 fedora.source = "manual"
 fedora.url = "https://github.com/ryanoasis/nerd-fonts/releases"
+# Termux: drop the ttf at ~/.termux/font.ttf then `termux-reload-settings`.
+# fontconfig isn't the loader on Android — fc-cache is a no-op for the
+# Termux app's terminal renderer.
+termux.source = "manual"
+termux.url = "https://github.com/ryanoasis/nerd-fonts/releases (save as ~/.termux/font.ttf, then termux-reload-settings)"
 
 # ============================================================
 # Shell tooling
@@ -233,6 +284,9 @@ ubuntu.source = "manual"
 ubuntu.url = "https://docs.claude.com/install"
 fedora.source = "manual"
 fedora.url = "https://docs.claude.com/install"
+# Termux: no AUR, no nix-unstable, no rpm. npm is the only sane upstream.
+termux.source = "npm"
+termux.pkg = "@anthropic-ai/claude-code"
 
 [opencode]
 pkg = "opencode-ai"
@@ -283,6 +337,10 @@ description = "Python interpreter. Required by pipeline_ask, hooks, and inline-s
 version = ">=3.11"
 arch.pkg = "python"
 nixos.pkg = "python313"
+# Termux ships a single `python` package (rolling 3.x, currently 3.12).
+# No per-minor variants. bin probe via `python` covers both python/python3.
+termux.pkg = "python"
+termux.bin = ["python", "python3"]
 
 [pango]
 pkg = "pango"
