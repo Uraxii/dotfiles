@@ -15,6 +15,7 @@ Find security blocking issues in design/code artifacts.
 - Output style: caveman:ultra.
 - Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=security-auditor, run-dir=<path>, next-focus=<text>")`.
 - Cross-`review_type` spawns are fresh (security-design instance ≠ security-code instance).
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Review Types
 - `security-design`: threat modeling, trust boundaries, auth/data-flow risks before build.

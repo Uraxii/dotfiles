@@ -15,6 +15,7 @@ Implement design into prod code. Clean, testable, maintainable.
 - Output caveman:ultra.
 - Persistent session via task_id resume (Claude) / child session (OC). Threshold 80% context.
 - Rotate via `Skill(skill: "handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
 - No implementation before upstream gate (design when present, skeptic-design) approved.
@@ -94,6 +95,20 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - If gate blocks or conditional, fix exactly cited findings first.
 - Re-run relevant tests before handing back.
 - Preserve artifact versioning per revision.
+
+## Delivery step counter (F6 anti-refusal)
+
+Every build spawn declares 5 mandatory steps:
+
+1. Read inputs (brief, design, shard block, prior verdicts)
+2. Implement per shard scope globs
+3. Self-verify scope-check (worktree-lifecycle op=scope-check)
+4. Write prebuild-skeptic-code-r<N>-s<K>.md + build-evidence-r<N>-s<K>.md to MAIN repo run-dir (NOT worktree)
+5. Commit changes to shard branch (`git add <scope-paths>` + `git commit`)
+
+build-evidence frontmatter MUST include `steps_completed: [1, 2, 3, 4, 5]`. Returning before step 5 = build refusal; orchestrator re-spawns OR finishes manually + flags via friction.
+
+**Scope-check (step 3) clean JSON is NOT terminal** — it gates emission of evidence (step 4). Common refusal pattern: agent treats scope-check JSON return as task-done. Doctrine: scope-check is mid-step verification; full chain continues.
 
 ## Completion / Reporting
 - Report exact code/test commands in evidence artifact.

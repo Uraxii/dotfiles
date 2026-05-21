@@ -34,6 +34,7 @@ Returns JSON: `{passed: [<check-id>, ...], failed: [{check: <id>, citation: <pat
 | `adr-assertion` | architect verdict frontmatter has `adr_emitted:` key | frontmatter parse |
 | `task-id-continuity` | pipeline.md ledger records task_id field on persistent roles | YAML parse |
 | `phase-field` | pipeline.md has `phase:` field (PR-5+ check; gracefully no-ops if absent) | YAML parse |
+| `preflight-critique` | All verdict files contain `## Pre-emit critique` section per agent-preflight doctrine | grep |
 | `skill-invocation` | Skills referenced in agents are actually invoked (no inline duplication regression) | grep agent files for `Skill(skill: ` patterns + cross-ref skills dir |
 
 ## Output
