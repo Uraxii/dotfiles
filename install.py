@@ -861,6 +861,41 @@ def _build_rows(config: dict) -> list[_Row]:
     return rows
 
 
+def _curses_start_with_fallback(run_fn) -> None:
+    """Call curses.wrapper(run_fn). If TERM has no terminfo entry on this host
+    (e.g. SSH from a ghostty client onto a server w/o ghostty terminfo), retry
+    with common fallbacks. Raises the last curses.error if all attempts fail.
+    """
+    import curses
+    original = os.environ.get("TERM")
+    try:
+        curses.wrapper(run_fn)
+        return
+    except curses.error as e:
+        last_err = e
+
+    for fallback in ("xterm-256color", "xterm", "vt100", "ansi"):
+        if fallback == original:
+            continue
+        os.environ["TERM"] = fallback
+        try:
+            curses.wrapper(run_fn)
+            log.info(
+                "curses ran with TERM=%s (host TERM=%r had no terminfo)",
+                fallback, original,
+            )
+            return
+        except curses.error as e:
+            last_err = e
+            continue
+        finally:
+            if original is not None:
+                os.environ["TERM"] = original
+            else:
+                os.environ.pop("TERM", None)
+    raise last_err
+
+
 def interactive_select(
     config: dict,
     distro: str,
@@ -871,6 +906,9 @@ def interactive_select(
 
     selected_ids = None  → user cancelled (q/esc).
     dry_run_requested True iff user pressed `d` to submit as dry-run.
+
+    Raises RuntimeError if curses can't init under any TERM fallback (host
+    has no usable terminfo). Caller should catch and degrade to non-interactive.
     """
     import curses
 
@@ -993,7 +1031,13 @@ def interactive_select(
                 state["submit"] = True
                 return
 
-    curses.wrapper(_run)
+    try:
+        _curses_start_with_fallback(_run)
+    except curses.error as e:
+        raise RuntimeError(
+            f"curses unavailable: {e} (TERM={os.environ.get('TERM')!r}; "
+            "install terminfo for your terminal or use --no-interactive)"
+        ) from e
     if not state["submit"]:
         return None, False
     return selected, state["dry"]
@@ -1373,36 +1417,49 @@ def main(argv: list[str] | None = None) -> int:
         log.warning("interactive requested but stdin/stdout not a tty — falling back")
         use_tui = False
 
+    fallback_profile: str | None = None  # set if TUI was attempted but failed
     if use_tui:
         auto_profile = default_profile_for(distro, config)
         if auto_profile:
             log.info("interactive: preselecting profile %r (headless detected)", auto_profile)
-        result_ids, dry_from_tui = interactive_select(config, distro, defaults, auto_profile)
-        if result_ids is None:
-            log.info("interactive: cancelled — nothing installed")
-            return 0
-        if not result_ids:
-            log.info("interactive: no packages selected — nothing to do")
-            return 0
-        if dry_from_tui:
-            args.dry_run = True
-        # Preserve declaration order so install ordering (e.g. nodejs before
-        # opencode, uv before xonsh) is respected.
-        selected = [
-            (k, v) for k, v in config.items()
-            if k not in RESERVED_KEYS and k in result_ids
-        ]
-    else:
+        try:
+            result_ids, dry_from_tui = interactive_select(
+                config, distro, defaults, auto_profile,
+            )
+        except RuntimeError as e:
+            log.warning("%s", e)
+            log.warning("falling back to non-interactive install")
+            use_tui = False
+            fallback_profile = auto_profile
+        else:
+            if result_ids is None:
+                log.info("interactive: cancelled — nothing installed")
+                return 0
+            if not result_ids:
+                log.info("interactive: no packages selected — nothing to do")
+                return 0
+            if dry_from_tui:
+                args.dry_run = True
+            # Preserve declaration order so install ordering (e.g. nodejs
+            # before opencode, uv before xonsh) is respected.
+            selected = [
+                (k, v) for k, v in config.items()
+                if k not in RESERVED_KEYS and k in result_ids
+            ]
+
+    if not use_tui:
         selected = select_packages(config, distro, args.group, only)
-        if args.profile:
+        effective_profile = args.profile or fallback_profile
+        if effective_profile:
             if only:
-                log.info("profile %r ignored: --only takes precedence", args.profile)
+                log.info("profile %r ignored: --only takes precedence", effective_profile)
             else:
-                selected, dropped = apply_profile(selected, args.profile, config)
+                selected, dropped = apply_profile(selected, effective_profile, config)
                 if dropped:
+                    profile_src = "fallback" if effective_profile == fallback_profile and not args.profile else "explicit"
                     log.info(
-                        "profile %r excludes %d pkg(s): %s",
-                        args.profile, len(dropped), ", ".join(dropped),
+                        "profile %r (%s) excludes %d pkg(s): %s",
+                        effective_profile, profile_src, len(dropped), ", ".join(dropped),
                     )
 
     log.info("selected: %d package(s)", len(selected))
