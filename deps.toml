@@ -219,7 +219,11 @@ bin = ["node", "npm"]
 description = "JavaScript runtime. Required by Mason-installed JS/TS LSPs (tsserver, vtsls)."
 version = ">=22"
 nixos.pkg = "nodejs_22"
-ubuntu.pkg = "nodejs"
+# Ubuntu apt nodejs is stale (v18 on 24.04) AND does not bundle npm — opencode/pi
+# downstream then fail with "npm not in PATH". NodeSource setup script adds the
+# nodesource apt repo + installs current major; package bundles npm.
+ubuntu.source = "script"
+ubuntu.install_cmd = "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs"
 fedora.pkg = "nodejs"
 # Termux ships current node in `nodejs`; `nodejs-lts` is also available if a
 # pinned LTS is needed. Default to rolling.
@@ -258,7 +262,12 @@ description = "Z shell. Login shell for this user."
 pkg = "starship"
 bin = "starship"
 description = "Cross-shell prompt (config: .config/starship.toml.tmpl via set-theme.sh)."
-ubuntu.source = "cargo"
+# Ubuntu/Fedora apt|dnf ship outdated starship; cargo path needs rustup.
+# Upstream install.sh handles arch detection + sudo + /usr/local/bin install.
+ubuntu.source = "script"
+ubuntu.install_cmd = "curl -sS https://starship.rs/install.sh | sh -s -- -y"
+fedora.source = "script"
+fedora.install_cmd = "curl -sS https://starship.rs/install.sh | sh -s -- -y"
 
 [zoxide]
 pkg = "zoxide"
@@ -270,7 +279,8 @@ pkg = "tealdeer"
 bin = "tldr"
 description = "Fast tldr client (Rust). Offline man-page-style summaries."
 post_install = "tldr --update"
-ubuntu.source = "cargo"
+# Ubuntu ships tealdeer in universe (22.04+). Fedora ships in default repos.
+# Falls back to native apt/dnf — no rustup required.
 
 [stow]
 pkg = "stow"
@@ -325,6 +335,21 @@ post_install = "hermes setup"
 url = "https://hermes-agent.nousresearch.com/"
 
 # ============================================================
+# Bootstrap toolchain — must precede pkgs that use `source = "uv-tool"`.
+# ============================================================
+
+[uv]
+pkg = "uv"
+bin = "uv"
+description = "Python package runner. Drives `uv run --script`, `uvx weasyprint`, and uv-tool installs."
+# Ubuntu/Fedora: astral install.sh drops static binary at ~/.local/bin/uv —
+# no rustup, no system python build deps. Idempotent (no-ops if uv on PATH).
+ubuntu.source = "script"
+ubuntu.install_cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+fedora.source = "script"
+fedora.install_cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+
+# ============================================================
 # Python-CLI tools (uv tool install — PEP 668 safe)
 # ============================================================
 
@@ -332,7 +357,9 @@ url = "https://hermes-agent.nousresearch.com/"
 pkg = "xonsh[full]"
 bin = "xonsh"
 description = "Python-powered shell. Python syntax + shell operators in one prompt (xon.sh)."
-source = "pip"
+# uv-tool gives isolated venv per CLI; sidesteps PEP 668 + cryptography wheel
+# build issues that broke `source = "pip"` on minimal ubuntu server.
+source = "uv-tool"
 # NixOS: install natively. A login shell + xontrib ecosystem don't belong in a
 # uv-tool venv (would isolate from system python and force `uv tool install
 # --with xontrib-*` rebuilds). nixpkgs `xonsh` is the full distribution.
@@ -347,12 +374,6 @@ description = "JSON parser CLI. Used by pipeline scripts and setup.sh."
 # ============================================================
 # Pipeline runtime (uv + python + weasyprint system libs)
 # ============================================================
-
-[uv]
-pkg = "uv"
-bin = "uv"
-description = "Python package runner. Drives `uv run --script` and `uvx weasyprint`."
-ubuntu.source = "cargo"
 
 [python]
 pkg = "python3.13"
