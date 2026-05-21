@@ -34,18 +34,18 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 3. Resolve canonical artifact-id: Generate slug via `Skill(skill: "artifact-slug", args: "seed=none")` (Claude) or `artifact-slug` custom tool (OC). Bind once; reuse same value for run dir + plan id everywhere in intake.
 4. Create `<repo>/.pipeline/runs/<artifact-id>/`.
 5. Write `brief.md` via `Skill(skill: "agent-brief-format", args: "run-dir=<RUN_DIR>, raw-request=<RAW_REQUEST>")`. Template enforces durable-over-precise framing.
-6. Init `pipeline.md` (orchestrator-only ledger). Capture `base_ref` + `base_sha = git rev-parse <base_ref>` into frontmatter.
+6. Init `pipeline.md` (orchestrator-only ledger). Capture `base_ref` + `base_sha = git rev-parse <base_ref>` into frontmatter. Set `phase: intake`.
 7. If plan exists, write `plan.ref` (id + absolute plan path).
 8. Spawn `plan` only when needed:
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
-9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`.
+9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`. Set `phase: compose`.
 10. Resume check: if invocation prompt matches `<<resume-pipeline-(?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})>>` sentinel OR contains literal `resume <artifact-id>`, skip steps 3-9; read `awaiting-decision-*.md` in matching run dir; route to decision-elicitation resume logic.
 
 ### Phase 2: Compose + Execute
 1. Compose role list + dep graph:
    `Skill(skill: "dep-graph-compose", args: "payload-json=<JSON>")`.
-   Output: `{ordered_roles, decision_inject_points, K, warnings}`.
+   Output: `{ordered_roles, decision_inject_points, K, warnings}`. Set `phase: execute`.
 2. Execute by Dependency Graph. When a declared `decision_points:` entry's `after:` role
    completes, inject decision-elicitation stage before continuing.
 3. Parse gate verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`.
@@ -54,7 +54,7 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
    Loop until `action=approved` or `action=halt`.
 5. Publish PRs: `Skill(skill: "pr-publish", args: "pipeline-md=<abs-path>")`.
    Execute returned `commands` fields via Bash (plan-only default; orchestrator runs git/gh).
-   Then invoke friction-audit skill (orchestrator writes findings file).
+   Set `phase: close`. Then invoke friction-audit skill (orchestrator writes findings file).
 6. Emit completion report.
 
 ### Build Stage Contract
@@ -63,6 +63,13 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 - If UI/UX scope present and `ui-ux-designer` did not run, build writes fallback `frontend-handoff.md`.
 - Skeptic code gate (skeptic-code agent) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
 - When UI changed and `ui-ux-designer` did not run, skeptic/reviewer/security/tester must read fallback `frontend-handoff.md`; missing artifact = Blocked.
+
+### Skeptic-code spawn preconditions
+
+Before spawning `skeptic-code`: if any `build-evidence-r<N>-s<K>.md` declares `inline_tests: true`,
+verify `test-paths.txt` exists in run dir. Missing → block spawn w/ citation:
+`Block: skeptic-code precondition unmet. inline_tests: true in <file>; test-paths.txt absent.`
+Re-spawn failing shard. Check position: Phase 2 step 2 (after all build evidence, before skeptic-code).
 
 ### Build Shards (Worktree-Based)
 - Trigger: every build. If plan declares `parallel_shards:` w/ ≥2 entries → K shards parallel. Absent → orchestrator synthesizes implicit `s1` (`scope: ["."]`, `tasks: <all>`, `depends_on: []`).
@@ -89,6 +96,24 @@ Flow:
 4. Async wake: check for `decision-r<N>.md`; absent → re-wake (timeout 7d → halt).
 
 Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Scan `awaiting-decision-*.md` on startup.
+
+### Resume handler — base_sha drift recheck
+
+On resume (sentinel, `paused_on_decision:` or `paused_on_drift:` set):
+1. **Priority**: if BOTH set, drift recheck first; decision-elicitation defers.
+2. Read `base_ref` + `base_sha` from `pipeline.md`. `git rev-parse <base_ref>` → `new_sha`. Equal → resume.
+3. Else: `git diff --name-only <base_sha>..<new_sha>` → changed paths.
+4. Two-pass: (a) scope pass — union shard globs (`"."` → `"**"`), match via `glob_to_regex`
+   (Appendix), tag `scope:<p>`; (b) doctrine pass — match `HALT_ANYWHERE_PATHS`, tag `doctrine:<p>`.
+   `HALT_ANYWHERE_PATHS`: `.claude/rules/**` `.claude/agents/**` `.claude/skills/**`
+   `docs/adr/**` `**/CLAUDE.md` `pipeline.toml` `.gitignore` `.claude/settings.json`.
+5. Union = `intersecting_paths`. Empty → resume. Non-empty → step 6.
+6. `AskUserQuestion` drift menu (sync; locked format in Appendix). Record pick →
+   `resume-drift-r<N>.md` (N = max revision + 1). Write `paused_on_drift:` sentinel block. Route:
+   - **Rebase**: record-and-halt (ADR-0006). Halt report + `git -C <worktree> rebase <new-base>`
+     + resume sentinel. On resume: invalidate pinned verdicts; re-spawn Standards-axis + security-code.
+   - **Abort**: write halted, emit report, exit.
+   - **Proceed**: Edit-delete `paused_on_drift:` block; do NOT update `base_sha`; continue.
 
 ### Friction Audit (non-gating)
 
@@ -273,6 +298,10 @@ Test-only revision (prod-diff sha unchanged): Standards-axis reviewer + security
 via `prod_diff_sha` equality. Match → reuse Approved; mismatch → re-spawn upstream.
 Spec-axis, security-design, skeptic-code, tester are NOT pinned.
 
+Rebase-resume cascade (ADR-0006): re-compute `prod_diff_sha` at new `base_sha`; mismatch → re-spawn
+Standards-axis + security-code. PR-5 normalizes `"."` → `"**"` locally; gap in build's
+`worktree-lifecycle` scope-check deferred to PR-6 script-ification. Tracking: PR-6 plan item.
+
 ## Blocker Tally (on loop-cap halt)
 
 Tally `blocker_class` across all Blocked verdicts in run dir. Include in halt report:
@@ -290,8 +319,9 @@ Required artifacts (per run): `brief.md`, `pipeline.md`, `plan.ref` (if plan), `
 `friction-findings-r<N>.md` (non-gating), `pr-report.md`, `options-r<N>.md`, `decision-r<N>.md`,
 `awaiting-decision-r<N>.md` (async; transient). Optional: `test-paths.txt`.
 
-Orchestrator-owned: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`,
-`awaiting-decision-r<N>.md`, `friction-findings-r<N>.md`.
+Optional: `awaiting-decision-r<N>.md` (cleared on pick), `resume-drift-r<N>.md` (drift menu pick;
+unified `r<N>` ns). Orchestrator-owned: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`,
+`awaiting-decision-r<N>.md`, `friction-findings-r<N>.md`, `resume-drift-r<N>.md`.
 
 `pipeline.md` schema (constrained YAML subset — scalar + one-level flow maps/seqs; no anchors):
 ```yaml
@@ -305,6 +335,7 @@ design_handoff: required|n/a
 parallel: true|false
 base_ref: <base-branch>
 base_sha: <sha-at-intake>
+phase: intake | compose | execute | close
 github_delivery: pr|branches-only
 shards:
   s1: {status: pending|running|passed|failed|skipped_due_to_dep, branch: <ref>, worktree: <path>, evidence: <file>, depends_on: [..]}
@@ -315,6 +346,14 @@ reuse_freshness:
 decision_points:
   d1: {after: <role>, options_source: <role>, delivery: sync|async, timeout_days: 7, status: pending|active|resolved|timeout|cancelled}
 paused_on_decision: {decision_id: d<N>, stage: <role>, delivery_mode: sync|async, opened_at: <iso8601>}
+# BEGIN paused_on_drift
+# paused_on_drift: true
+# drift_detected_at: <iso8601>
+# stored_base_sha: <sha>
+# new_base_sha: <sha>
+# intersecting_paths: [scope:src/foo.py, doctrine:.claude/rules/python.md]
+# drift_resolution_status: pending|rebase_pending|resolved
+# END paused_on_drift
 ---
 ## Stages
 - role: status (rN)
@@ -338,3 +377,75 @@ friction findings path (informational; non-gating).
 
 ## Skill invocation rules
 - Invoke skills by-name via `Agent` tool only.
+
+## Appendix — Scope-match algorithm + Drift menu
+
+Vendored `glob_to_regex` (stdlib `re`). Used by §Resume handler. K=1 `"."` → `"**"` via `normalize_scope`.
+
+Drift menu (locked; AskUserQuestion call at step 6):
+```yaml
+question: "Base branch moved during pause. Drift touching shard scope or doctrine detected. Action?"
+header: Drift
+multiSelect: false
+options:
+  - {label: "Rebase shard onto new base", description: "Record pick + halt. Manual rebase required."}
+  - {label: "Abort run + halt",           description: "Stop pipeline. No further roles spawn."}
+  - {label: "Proceed on original base_sha", description: "Continue. Drift not applied. Operator owns risk."}
+```
+
+```python
+import re
+
+def normalize_scope(scope: list[str]) -> list[str]:
+    return ["**" if g == "." else g for g in scope]
+
+def glob_to_regex(g: str) -> re.Pattern[str]:
+    """Segment-walk + NUL-sentinel. * -> [^/]* | ? -> [^/] | ** position-dependent:
+    leading **/x -> (?:.*/)?x | x/** -> x/.+ | a/**/b -> a/(?:.*/)?b | standalone -> .*"""
+    if g == "**":
+        return re.compile(r"\A.*\Z")
+    SENTINEL = "\x00DS\x00"
+    parts: list[str] = []
+    for seg in g.split("/"):
+        if seg == "**":
+            parts.append(SENTINEL)
+        else:
+            out: list[str] = []
+            j = 0
+            while j < len(seg):
+                c = seg[j]
+                if c == "*":
+                    out.append("[^/]*")
+                elif c == "?":
+                    out.append("[^/]")
+                else:
+                    out.append(re.escape(c))
+                j += 1
+            parts.append("".join(out))
+    glued = "/".join(parts)
+    if glued.startswith(SENTINEL + "/"):
+        glued = "(?:.*/)?" + glued[len(SENTINEL) + 1:]
+    if glued.endswith("/" + SENTINEL):
+        glued = glued[:-(len(SENTINEL) + 1)] + "/.+"
+    glued = glued.replace("/" + SENTINEL + "/", "/(?:.*/)?")
+    glued = glued.replace(SENTINEL, ".*")
+    return re.compile(r"\A" + glued + r"\Z")
+
+def glob_match(path: str, globs: list[str]) -> bool:
+    return any(glob_to_regex(g).match(path) is not None for g in globs)
+
+def compute_drift_intersection(changed_paths: list[str], shards: dict) -> list[str]:
+    HALT_ANYWHERE_PATHS = [
+        "**/CLAUDE.md", ".claude/rules/**", ".claude/agents/**", ".claude/skills/**",
+        "docs/adr/**", "pipeline.toml", ".gitignore", ".claude/settings.json",
+    ]
+    scope_union: list[str] = []
+    for s in shards.values():
+        scope_union.extend(normalize_scope(s["scope"]))
+    scope_hits = [f"scope:{p}" for p in changed_paths if glob_match(p, scope_union)]
+    doctrine_hits = [f"doctrine:{p}" for p in changed_paths if glob_match(p, HALT_ANYWHERE_PATHS)]
+    return scope_hits + doctrine_hits
+```
+
+Tester regression fence: 10 rows in design.md §"Revision r3 — NB1" mini-table. All required.
+Rows 1+3 = r2 defect fixtures. Rows 9+10 = S1 nested-CLAUDE.md fence. Any miss = design-loop reopen.
