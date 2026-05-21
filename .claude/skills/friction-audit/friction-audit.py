@@ -85,8 +85,7 @@ def check_task_id_continuity(run_dir: Path) -> dict | None:
         return {"check": "task-id-continuity", "citation": "pipeline.md missing", "severity": "high"}
     text = pipeline_md.read_text(encoding="utf-8", errors="replace")
     # Persistent roles per orchestrator doctrine
-    persistent = ["architect", "build", "skeptic-design", "skeptic-code", "skeptic-ops",
-                  "skeptic-review", "skeptic-test-audit", "reviewer", "security-auditor",
+    persistent = ["architect", "build", "skeptic", "reviewer", "security-auditor",
                   "tester", "ui-ux-designer", "content-designer"]
     # Only flag roles that ran (mentioned in Stages section)
     mentioned = [r for r in persistent if re.search(rf"^\s*-\s*{re.escape(r)}\b", text, re.MULTILINE)]

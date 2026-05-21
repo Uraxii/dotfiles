@@ -58,7 +58,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 - Verdict body MUST contain a `Smuggling scan:` section with verbatim grep output. Format:
   - Clean: `Smuggling scan: clean`
   - Findings: `Smuggling scan: findings: [file:line — pattern description, ...]`
-  - Omitting this section = incomplete verdict (skeptic-code will Blocked on missing section).
+  - Omitting this section = incomplete verdict (skeptic with review_type=code will Blocked on missing section).
 
 ## Combined-State Step (K≥2 only)
 
