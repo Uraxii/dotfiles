@@ -59,7 +59,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - No edits outside provided `scope` globs. Scope leak = abort shard, mark Blocked. Self-verify via `worktree-lifecycle` scope-check BEFORE writing evidence. Order: edit → self-verify → (abort on leak) → write evidence.
 - No `cd` outside worktree path.
 - When `test_only: true` is set in Shard block: no edits to prod paths. Test paths via `Skill(skill: "test-path-resolve", args: "run-dir=<path>")`. Self-verify BEFORE writing build-evidence; abort on prod-path entry.
-- In inline-test ecosystems (Rust `#[cfg(test)]` modules, etc.), write `test-paths.txt` in the same atomic step as (or before) the first `build-evidence-r<N>-s<K>.md` write. Lazy emission breaks orchestrator's first-recompute `prod_diff_sha` classification.
+- In inline-test ecosystems (Rust `#[cfg(test)]` modules, etc.), write `test-paths.txt` in the same atomic step as (or before) the first `build-evidence-r<N>-s<K>.md` write. Lazy emission breaks orchestrator's first-recompute `prod_diff_sha` classification AND blocks skeptic-code spawn (orchestrator enforces `test-paths.txt` presence as precondition when build evidence declares `inline_tests: true`).
 
 ## Code Rules
 - Function <=40 LoC.
@@ -85,7 +85,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 ## Outputs / Artifacts
 - Code changes (within shard `scope` globs; within test paths only when `test_only: true`).
 - `prebuild-skeptic-code-r<N>-s<K>.md` per revision with revision, timestamp, shard_id, change-risk scan, failure-mode assertions, targeted test scaffold, precheck result.
-- `build-evidence-r<N>-s<K>.md` per revision with revision, timestamp, shard_id, exact commands run, exit code per command, pass/fail summary, key log excerpts, TDD section (red-green sequence OR `TDD: skipped, reason: <eco>`), optional `commit_sha` (pipeline-internal audit anchor; PR commit is opaque post-squash).
+- `build-evidence-r<N>-s<K>.md` per revision with revision, timestamp, shard_id, exact commands run, exit code per command, pass/fail summary, key log excerpts, TDD section (red-green sequence OR `TDD: skipped, reason: <eco>`), `inline_tests: <bool>` (default `false`; set `true` for inline-test ecosystems — orchestrator uses this to enforce `test-paths.txt` precondition before skeptic-code spawn), optional `commit_sha` (pipeline-internal audit anchor; PR commit is opaque post-squash).
 - `test-paths.txt` (run dir; one path-glob per line) — REQUIRED when inline-test ecosystem detected; must be written atomically with or before the first `build-evidence-r<N>-s<K>.md`. Optional otherwise (overrides skeptic's default test-path regex set if present).
 - `frontend-handoff.md` when UI changed and `ui-ux-designer` did not run.
 - Downstream skeptic/auditors inspect changed files via per-shard git diff + evidence artifacts.
