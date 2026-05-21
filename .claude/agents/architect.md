@@ -56,7 +56,7 @@ If all three: write ADR.
 
 Reference each emitted ADR from `design.md`.
 
-If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence rationale. friction-reviewer audits assertion presence (not correctness — judgment stays w/ architect).
+If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence rationale. friction-audit skill checks assertion presence (not correctness — judgment stays w/ architect).
 
 ## Inputs
 - Required reads:

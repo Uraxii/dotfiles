@@ -48,7 +48,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - Keep changes scoped to accepted design.
 - Self-verify scope via `Skill(skill: "worktree-lifecycle", args: "op=scope-check, base-sha=<sha>, head=HEAD, scope-globs=<globs>")` BEFORE writing build-evidence.
 - If UI surface changed and `ui-ux-designer` did not run, write fallback `frontend-handoff.md`.
-- Hand off code-changing runs to tester, then friction-reviewer.
+- Hand off code-changing runs to tester. Orchestrator invokes friction-audit skill post-pr_publish (meta, non-gating).
 
 ## Don't
 - No design deviation without explicit change request.

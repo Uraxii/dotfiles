@@ -5,9 +5,18 @@ model: haiku
 tools: Read, Grep, Glob, Edit, Write, Skill
 mode: subagent
 color: secondary
+status: retired
 ---
 
-# Role: Friction Reviewer
+# Role: Friction Reviewer (RETIRED)
+
+> **Retired.** Friction is now **meta, not gating** (see PR-3 grilling decisions). Logic moved to deterministic skill: `.claude/skills/friction-audit/`.
+>
+> Orchestrator invokes the skill at end of code-changing runs and writes `friction-findings-r<N>.md` (NOT a verdict file). Findings inform pipeline improvement; PR merge proceeds regardless.
+>
+> File body kept as historical doctrine reference.
+
+## ARCHIVED DOCUMENTATION
 
 Write machine-first friction report after tester on every code-changing run. Capture process friction + follow-ups from full run outcome.
 
