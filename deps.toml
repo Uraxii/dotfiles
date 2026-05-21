@@ -278,13 +278,9 @@ termux.source = "manual"
 termux.url = "https://github.com/ryanoasis/nerd-fonts/releases (save as ~/.termux/font.ttf, then termux-reload-settings)"
 
 # ============================================================
-# Shell tooling
+# Shell utilities (prompt, history, plugins — not the shells themselves;
+# shells live in their own section after [uv] so uv-tool installs resolve).
 # ============================================================
-
-[zsh]
-pkg = "zsh"
-bin = "zsh"
-description = "Z shell. Login shell for this user."
 
 [starship]
 pkg = "starship"
@@ -383,8 +379,13 @@ fedora.source = "script"
 fedora.install_cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
 
 # ============================================================
-# Python-CLI tools (uv tool install — PEP 668 safe)
+# Shells (login + interactive — xonsh uses uv-tool, requires [uv] above)
 # ============================================================
+
+[zsh]
+pkg = "zsh"
+bin = "zsh"
+description = "Z shell. Login shell for this user."
 
 [xonsh]
 pkg = "xonsh[full]"
@@ -398,6 +399,10 @@ source = "uv-tool"
 # --with xontrib-*` rebuilds). nixpkgs `xonsh` is the full distribution.
 nixos.source = "native"
 nixos.pkg = "xonsh"
+
+# ============================================================
+# Utilities
+# ============================================================
 
 [jq]
 pkg = "jq"
@@ -442,17 +447,41 @@ description = "Foreign function interface library. weasyprint / cffi runtime dep
 ubuntu.pkg = "libffi8"
 
 # ============================================================
+# Games
+# ============================================================
+
+[godots]
+pkg = "godots"
+bin = "godots"
+description = "Godot version manager + launcher (multiple engine installs in one place)."
+# Arch: AUR. Ubuntu/Fedora/NixOS: upstream ships AppImage on GitHub releases;
+# asset name pattern unstable across versions so left manual — wire a script
+# source w/ pinned release URL when you settle on a version.
+arch.source = "aur"
+arch.pkg = "godots-bin"
+ubuntu.source = "manual"
+ubuntu.url = "https://github.com/MakovWait/Godots/releases"
+fedora.source = "manual"
+fedora.url = "https://github.com/MakovWait/Godots/releases"
+nixos.source = "manual"
+nixos.url = "https://github.com/MakovWait/Godots/releases"
+termux.source = "unsupported"
+termux.reason = "no GUI on android"
+
+# ============================================================
 # Groups (bulk install: install.py --group <name>)
 # ============================================================
 
 [groups]
 desktop  = ["sway", "swayidle", "swaybg", "swaylock-effects", "waybar", "wofi", "networkmanager-dmenu", "pavucontrol"]
 terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer"]
+shells   = ["zsh", "xonsh"]
 editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard", "nodejs"]
 fonts    = ["nerd-fonts-0xproto"]
 dotfiles = ["stow", "git", "gh", "jq"]
 ai       = ["claude-code", "opencode", "pi", "hermes"]
 pipeline = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
+games    = ["godots"]
 
 # ============================================================
 # Profiles (opt-in via --profile <name>)
@@ -462,5 +491,5 @@ pipeline = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
 # and ghostty (GPU terminal needs display). Keep terminal-shell pkgs, editor,
 # dotfiles, ai, pipeline.
 [profiles.server]
-exclude_groups = ["desktop", "fonts"]
+exclude_groups = ["desktop", "fonts", "games"]
 exclude        = ["ghostty", "wl-clipboard"]
