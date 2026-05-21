@@ -1357,6 +1357,24 @@ def main(argv: list[str] | None = None) -> int:
         format="%(message)s",
     )
 
+    # Prepend user-local bin dirs so binaries dropped during this run
+    # (astral `uv` → ~/.local/bin/uv, uv-tool venv symlinks → ~/.local/bin/<tool>,
+    # cargo → ~/.cargo/bin, etc) are findable by subsequent shutil.which()
+    # probes in the SAME process. Without this, e.g. `xonsh` (uv-tool) fails
+    # with "uv not in PATH" even after uv just installed seconds earlier,
+    # because uv's astral installer drops into ~/.local/bin which the user's
+    # login shell rc hasn't been re-sourced to pick up yet.
+    extra_path_dirs = [
+        str(Path.home() / ".local" / "bin"),
+        str(Path.home() / ".cargo" / "bin"),
+    ]
+    current_path = os.environ.get("PATH", "")
+    current_parts = current_path.split(":")
+    prepended = [d for d in extra_path_dirs if d not in current_parts]
+    if prepended:
+        os.environ["PATH"] = ":".join(prepended) + (":" + current_path if current_path else "")
+        log.info("PATH: prepended %s", ", ".join(prepended))
+
     cfg_path = Path(args.config)
     if not cfg_path.exists():
         log.error("config not found: %s", cfg_path)
