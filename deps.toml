@@ -8,7 +8,10 @@
 #   - version          = optional pin (operator syntax). Omitted = latest;
 #                        installed-if-absent; no upgrade chase.
 #   - source           = native (default) | aur | nix-unstable | cargo | uv-tool
-#                        | pip | npm | manual | skip | unsupported
+#                        | pip | npm | script | manual | skip | unsupported
+#                        `script` = run install_cmd via bash -c (upstream
+#                        curl|bash installers). Requires install_cmd field;
+#                        presence detected via `bin` PATH probe only.
 #                        Prefer `uv-tool` over `pip` for python CLIs on systems
 #                        with PEP 668 externally-managed-environment (Arch,
 #                        Fedora ≥39, Debian ≥12). uv-tool puts each tool in its
@@ -21,6 +24,10 @@
 #                        report when source = "unsupported". Per-distro override
 #                        encouraged so the message names the platform-specific
 #                        cause (e.g. "no wayland on android").
+#   - install_cmd      = REQUIRED when source = "script". Shell command run
+#                        via `bash -c`. Pipelines allowed. Idempotency is the
+#                        installer's responsibility — bin probe protects
+#                        against re-runs when the binary is already on PATH.
 #   - bin              = optional binary name (string) OR list of names. If the
 #                        pkg-manager presence check returns absent but any
 #                        declared binary is on $PATH, the pkg is treated as
@@ -30,6 +37,14 @@
 #   - <distro>.<field> = per-distro override (only fields that deviate).
 #
 # Version operators: "3.13", "=3.13", ">=3.13", "<4", "~=3.13", ">=3.13,<3.14".
+#
+# Profiles (optional, opt-in via `--profile <name>`):
+#   [profiles.<name>]
+#     exclude_groups = ["desktop", "fonts"]   # group ids — all members dropped
+#     exclude        = ["ghostty"]            # individual pkg ids
+#   Use case: server install on ubuntu — drop wayland/sway/fonts stack without
+#   touching `enabled` per pkg. `--only` overrides profile (explicit pick wins).
+#   `install.py --list-profiles` to enumerate.
 
 version = 1
 supported_distros = ["arch", "nixos", "ubuntu", "fedora", "termux"]
@@ -300,6 +315,15 @@ bin = "pi"
 description = "Pi terminal coding harness (pi.dev). Minimal agent shell."
 source = "npm"
 
+[hermes]
+pkg = "hermes"
+bin = "hermes"
+description = "Nous Research Hermes agent CLI (nousresearch.com)."
+source = "script"
+install_cmd = "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
+post_install = "hermes setup"
+url = "https://hermes-agent.nousresearch.com/"
+
 # ============================================================
 # Python-CLI tools (uv tool install — PEP 668 safe)
 # ============================================================
@@ -373,5 +397,16 @@ terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer"]
 editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard", "nodejs"]
 fonts    = ["nerd-fonts-0xproto"]
 dotfiles = ["stow", "git", "gh", "jq"]
-ai       = ["claude-code", "opencode", "pi"]
+ai       = ["claude-code", "opencode", "pi", "hermes"]
 pipeline = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
+
+# ============================================================
+# Profiles (opt-in via --profile <name>)
+# ============================================================
+
+# Server / headless install: drop wayland desktop stack, fonts (no renderer),
+# and ghostty (GPU terminal needs display). Keep terminal-shell pkgs, editor,
+# dotfiles, ai, pipeline.
+[profiles.server]
+exclude_groups = ["desktop", "fonts"]
+exclude        = ["ghostty", "wl-clipboard"]

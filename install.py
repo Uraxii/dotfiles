@@ -37,7 +37,7 @@ __all__ = ["main"]
 
 REPO_ROOT = Path(__file__).resolve().parent
 DEPS_TOML = REPO_ROOT / "deps.toml"
-RESERVED_KEYS = {"version", "supported_distros", "defaults", "groups", "shell"}
+RESERVED_KEYS = {"version", "supported_distros", "defaults", "groups", "shell", "profiles"}
 
 log = logging.getLogger("install")
 
@@ -98,6 +98,7 @@ class Resolved:
     enabled: bool
     bins: tuple[str, ...] = ()
     reason: str | None = None  # populated when source = "unsupported"
+    install_cmd: str | None = None  # populated when source = "script"
 
     def __str__(self) -> str:
         v = f" {self.version}" if self.version else ""
@@ -135,6 +136,7 @@ def resolve(pkg_id: str, entry: dict, distro: str, defaults: dict) -> Resolved:
         enabled=bool(override.get("enabled", entry.get("enabled", defaults.get("enabled", True)))),
         bins=_normalise_bins(override.get("bin", entry.get("bin"))),
         reason=override.get("reason", entry.get("reason")),
+        install_cmd=override.get("install_cmd", entry.get("install_cmd")),
     )
 
 
@@ -601,6 +603,42 @@ class PipAdapter(Adapter):
         return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"pip exit {rc}")
 
 
+# --- script (upstream curl|bash installer) -----------------------------------
+
+class ScriptAdapter(Adapter):
+    """Run an upstream-provided install command (e.g. `curl -fsSL ... | bash`).
+
+    Presence detection is bin-only — there is no package-manager registry to
+    query. The driver's `spec.bins` PATH probe handles already-installed
+    state; this adapter just shells out to the declared `install_cmd`.
+
+    `install_cmd` is REQUIRED in deps.toml; resolve-time validation rejects a
+    `source = "script"` entry without it. The command is executed via
+    `bash -c <cmd>` so pipelines and redirections work as-written upstream.
+    """
+
+    name = "script"
+
+    def installed_version(self, name: str) -> str | None:
+        return None  # bin-probe fallback in driver handles presence
+
+    def install(self, name: str, version: str | None) -> RunResult:
+        # `name` here is `spec.install_name`; the actual shell command was
+        # passed in via spec.install_cmd and is looked up by process_one,
+        # which stashes it on the adapter before calling install().
+        cmd = getattr(self, "_cmd", None)
+        if not cmd:
+            return RunResult(
+                installed=False, already_present=False,
+                error="script adapter: install_cmd not set (deps.toml missing install_cmd)",
+            )
+        rc, _ = self._run(["bash", "-c", cmd])
+        return RunResult(
+            installed=rc == 0, already_present=False,
+            error=None if rc == 0 else f"script exit {rc}",
+        )
+
+
 # --- manual / skip ------------------------------------------------------------
 
 class ManualAdapter(Adapter):
@@ -661,6 +699,7 @@ def get_adapter(source: str, distro: str, dry_run: bool) -> Adapter:
     table: dict[str, type[Adapter]] = {
         "aur": AurAdapter, "nix": NixAdapter, "nix-unstable": NixUnstableAdapter,
         "cargo": CargoAdapter, "pip": PipAdapter, "uv-tool": UvToolAdapter, "npm": NpmAdapter,
+        "script": ScriptAdapter,
         "manual": ManualAdapter, "skip": SkipAdapter, "unsupported": UnsupportedAdapter,
     }
     cls = table.get(source)
@@ -720,6 +759,51 @@ def select_packages(
     return list(all_pkgs.items())
 
 
+def apply_profile(
+    pkgs: list[tuple[str, dict]],
+    profile_name: str,
+    config: dict,
+) -> tuple[list[tuple[str, dict]], list[str]]:
+    """Filter pkgs through `[profiles.<name>]` exclude rules.
+
+    Profile fields:
+      - exclude_groups: list[str] — group names whose members are removed.
+      - exclude: list[str] — individual pkg ids removed.
+
+    Returns (kept_pkgs, excluded_pkg_ids). Excluded ids logged by caller.
+    Unknown group or pkg id in profile is a hard error (no silent drift).
+    """
+    profiles = config.get("profiles", {})
+    if profile_name not in profiles:
+        raise SystemExit(
+            f"unknown profile {profile_name!r}; available: {sorted(profiles)}"
+        )
+    prof = profiles[profile_name]
+    if not isinstance(prof, dict):
+        raise SystemExit(f"profile {profile_name!r} must be a table")
+
+    excluded_ids: set[str] = set()
+    groups = config.get("groups", {})
+    for g in prof.get("exclude_groups", []) or []:
+        if g not in groups:
+            raise SystemExit(
+                f"profile {profile_name!r}: unknown group {g!r}; "
+                f"available: {sorted(groups)}"
+            )
+        excluded_ids.update(groups[g])
+    for pid in prof.get("exclude", []) or []:
+        all_pkg_ids = {k for k in config if k not in RESERVED_KEYS}
+        if pid not in all_pkg_ids:
+            raise SystemExit(
+                f"profile {profile_name!r}: unknown package {pid!r}"
+            )
+        excluded_ids.add(pid)
+
+    kept = [(k, v) for k, v in pkgs if k not in excluded_ids]
+    dropped = sorted(k for k, _ in pkgs if k in excluded_ids)
+    return kept, dropped
+
+
 def process_one(
     pkg_id: str,
     entry: dict,
@@ -740,7 +824,14 @@ def process_one(
         report.disabled.append(pkg_id)
         return
 
+    if spec.source == "script" and not spec.install_cmd:
+        log.error("%s: source=script but install_cmd not set in deps.toml", pkg_id)
+        report.failed.append((pkg_id, "script source requires install_cmd"))
+        return
+
     adapter = get_adapter(spec.source, distro, dry_run)
+    if spec.source == "script":
+        adapter._cmd = spec.install_cmd  # type: ignore[attr-defined]
     log.info("• %s [%s] %s", pkg_id, spec.source, spec.description)
 
     # presence + pin check
@@ -786,7 +877,10 @@ def process_one(
         return
 
     if dry_run:
-        log.info("  [dry-run] would install %s via %s", spec.install_name, spec.source)
+        if spec.source == "script":
+            log.info("  [dry-run] would run script: %s", spec.install_cmd)
+        else:
+            log.info("  [dry-run] would install %s via %s", spec.install_name, spec.source)
         report.installed.append(pkg_id)
         return
 
@@ -924,6 +1018,11 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--group", help="install one group from [groups]")
     p.add_argument("--only", help="comma-separated package ids")
+    p.add_argument(
+        "--profile",
+        help="apply named profile from [profiles] (e.g. 'server' to drop desktop pkgs)",
+    )
+    p.add_argument("--list-profiles", action="store_true")
     p.add_argument("--distro", help="override detected distro (testing)")
     p.add_argument("-n", "--dry-run", action="store_true")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -957,6 +1056,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{k}: {config[k].get('description', '')}")
         return 0
 
+    if args.list_profiles:
+        for name, body in sorted(config.get("profiles", {}).items()):
+            xg = body.get("exclude_groups", []) or []
+            xp = body.get("exclude", []) or []
+            print(f"{name}: exclude_groups={xg} exclude={xp}")
+        return 0
+
     distro = args.distro or detect_distro()
     log.info("distro: %s", distro)
 
@@ -974,6 +1080,17 @@ def main(argv: list[str] | None = None) -> int:
 
     only = {s.strip() for s in args.only.split(",")} if args.only else None
     selected = select_packages(config, distro, args.group, only)
+
+    if args.profile:
+        if only:
+            log.info("profile %r ignored: --only takes precedence", args.profile)
+        else:
+            selected, dropped = apply_profile(selected, args.profile, config)
+            if dropped:
+                log.info(
+                    "profile %r excludes %d pkg(s): %s",
+                    args.profile, len(dropped), ", ".join(dropped),
+                )
 
     log.info("selected: %d package(s)", len(selected))
     report = Report()
