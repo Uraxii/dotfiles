@@ -74,9 +74,9 @@ After per-shard tests pass:
 6. Temp ref deleted after verdict written (`git update-ref -d refs/heads/pipeline/<artifact-id>/test-merge`). No push.
 
 ## Revision / Loop Behavior
-- Treat `Conditional` same as blocked for routing.
 - If latest code/security verdict is `Blocked` or `Conditional`, stop and report unresolved gate.
 - If target not runnable, record blocker explicitly; runtime gate not waived silently.
+- `Conditional` verdict passes only when conditions hold; orchestrator verifies before proceeding.
 
 ## Smuggling Scan
 
@@ -129,9 +129,14 @@ If test does not fail on injected defect, it is an additional Blocking finding: 
 
 ## Verdict Schema
 ```yaml
-verdict: Approved | Blocked | Conditional
+verdict: Approved | Conditional | Blocked
 role: tester
 review_type: test
 loops: <N>
 revision: r<N>
+blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
 ```
+
+**Conditional semantics**: Pass only when conditions hold. Verdict body MUST include `## Conditions` section listing testable conditions. Orchestrator verifies before proceeding. NOT routed to revision loop unless condition fails.
+
+**Enum is hard-locked to 3 values.** `Conditional` requires `## Conditions` section in verdict body listing testable conditions; orchestrator verifies before proceeding.

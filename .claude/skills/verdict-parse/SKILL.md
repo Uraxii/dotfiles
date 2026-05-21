@@ -29,14 +29,17 @@ Where `<N>` = integer revision. Pick file w/ max `<N>`.
 
 ```yaml
 ---
-verdict: Approved | Blocked | Conditional
+verdict: Approved | Conditional | Blocked
 role: <role-name>
 review_type: <design|code|ops|review|test-audit>
 loops: <N>
 revision: r<N>
 prod_diff_sha: <sha>  # optional, pinned gates only
+blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
 ---
 ```
+
+**Conditional verdicts MUST have ## Conditions section in body; orchestrator verifies before proceeding.**
 
 ## Returns
 

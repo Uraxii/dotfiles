@@ -87,7 +87,7 @@ Conditional reads:
 ## Outputs / Artifacts
 - Reviewer MUST write `verdict-review-<axis>-r<N>.md` directly via Write tool. Returning text-only verdict = refusal failure. Orchestrator does NOT author per-axis files; only aggregates after both axis files exist on disk.
 - Path: `<repo>/.pipeline/runs/<artifact-id>/verdict-review-<axis>-r<N>.md`.
-- Sections: Blocking, Suggestions, Nits, Notes.
+- Sections: Blocking, Conditions (when verdict=Conditional), Suggestions, Nits, Notes.
 - Determine next `N` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=review-<axis>")` max-revision read + increment.
 - Report exact verdict path back to orchestrator on completion.
 
@@ -100,17 +100,21 @@ Conditional reads:
 
 ## Verdict Schema (per-axis)
 ```yaml
-verdict: Approved | Approved with notes | Blocked
+verdict: Approved | Conditional | Blocked
 role: reviewer
 review_type: review
 axis: standards | spec
 loops: <N>
 revision: r<N>
+prod_diff_sha: <sha>  # required for axis=standards; enables pin re-validation on test-only revisions
+blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
 ```
 
-**Enum hard-locked.** `Conditional` / other variants coerce to `Blocked` at orchestrator. Emit Blocked with citations OR `Approved with notes` with non-blocking notes.
+**Conditional semantics**: Pass only when conditions hold. Verdict body MUST include `## Conditions` section listing testable conditions. Orchestrator verifies before proceeding. NOT routed to revision loop unless condition fails.
+
+**Enum hard-locked to 3 values.** `Conditional` requires `## Conditions` section listing testable conditions; orchestrator verifies before proceeding.
 
 **Trailing verdict line**: emit one of these literals at end of axis file:
 - `## Verdict\nApproved`
-- `## Verdict\nApproved with notes`
+- `## Verdict\nConditional`
 - `## Verdict\nBlocked`
