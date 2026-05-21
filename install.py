@@ -768,6 +768,237 @@ class Report:
                     log.info("    - %s", i)
 
 
+# --------------------------------------------------------------------------- #
+# Per-system defaults / interactive selector
+# --------------------------------------------------------------------------- #
+
+def is_headless() -> bool:
+    """No graphical session detected (no $DISPLAY and no $WAYLAND_DISPLAY)."""
+    return not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
+def default_profile_for(distro: str, config: dict) -> str | None:
+    """Pick a sensible default profile for the running system.
+
+    Returns profile name or None. Auto-preselection rules:
+      - termux: None (per-pkg `unsupported` overrides already cover desktop gap).
+      - headless + `[profiles.server]` declared: "server".
+      - graphical session OR no server profile: None (install everything).
+    """
+    profiles = config.get("profiles", {})
+    if distro == "termux":
+        return None
+    if "server" in profiles and is_headless():
+        return "server"
+    return None
+
+
+def _initial_selection(
+    config: dict,
+    distro: str,
+    defaults: dict,
+    profile: str | None,
+) -> set[str]:
+    """Pkgs preselected in interactive mode: enabled + not profile-excluded
+    + source not in {skip, unsupported, manual}.
+    """
+    excluded: set[str] = set()
+    if profile:
+        prof = config.get("profiles", {}).get(profile, {})
+        groups = config.get("groups", {})
+        for g in prof.get("exclude_groups", []) or []:
+            excluded.update(groups.get(g, []))
+        for pid in prof.get("exclude", []) or []:
+            excluded.add(pid)
+
+    selected: set[str] = set()
+    for k, entry in config.items():
+        if k in RESERVED_KEYS:
+            continue
+        try:
+            spec = resolve(k, entry, distro, defaults)
+        except ValueError:
+            continue
+        if not spec.enabled or spec.source in ("skip", "unsupported", "manual"):
+            continue
+        if k in excluded:
+            continue
+        selected.add(k)
+    return selected
+
+
+class _Row:
+    __slots__ = ("kind", "pkg_id", "group")
+
+    def __init__(self, kind: str, pkg_id: str | None = None, group: str | None = None) -> None:
+        self.kind = kind  # "group" or "pkg"
+        self.pkg_id = pkg_id
+        self.group = group
+
+
+def _build_rows(config: dict) -> list[_Row]:
+    """Flat scrollable rows: group header line + pkg lines, declaration order.
+
+    Pkgs not in any group go in trailing 'other' section. Group ordering
+    follows [groups] declaration; pkg ordering inside a group follows the
+    group's id list.
+    """
+    rows: list[_Row] = []
+    groups = config.get("groups", {})
+    all_pkg_ids = {k for k in config if k not in RESERVED_KEYS}
+    assigned: set[str] = set()
+    for gname, members in groups.items():
+        rows.append(_Row("group", group=gname))
+        for pid in members:
+            if pid in all_pkg_ids:
+                rows.append(_Row("pkg", pkg_id=pid, group=gname))
+                assigned.add(pid)
+    leftover = [k for k in config if k in all_pkg_ids and k not in assigned]
+    if leftover:
+        rows.append(_Row("group", group="other"))
+        for pid in leftover:
+            rows.append(_Row("pkg", pkg_id=pid, group="other"))
+    return rows
+
+
+def interactive_select(
+    config: dict,
+    distro: str,
+    defaults: dict,
+    auto_profile: str | None,
+) -> tuple[set[str] | None, bool]:
+    """Curses multi-select. Returns (selected_ids, dry_run_requested).
+
+    selected_ids = None  → user cancelled (q/esc).
+    dry_run_requested True iff user pressed `d` to submit as dry-run.
+    """
+    import curses
+
+    selected: set[str] = _initial_selection(config, distro, defaults, auto_profile)
+    rows = _build_rows(config)
+    # Cache resolved spec per pkg for the session (description, source, sudo).
+    cache: dict[str, Resolved | None] = {}
+    for r in rows:
+        if r.kind == "pkg" and r.pkg_id is not None:
+            try:
+                cache[r.pkg_id] = resolve(r.pkg_id, config[r.pkg_id], distro, defaults)
+            except ValueError:
+                cache[r.pkg_id] = None
+
+    state = {"cursor": 0, "submit": False, "dry": False}
+
+    def _group_pkg_ids(group: str) -> list[str]:
+        return [
+            r.pkg_id for r in rows
+            if r.kind == "pkg" and r.group == group and r.pkg_id is not None
+        ]
+
+    def _run(stdscr: "curses._CursesWindow") -> None:
+        curses.curs_set(0)
+        stdscr.nodelay(False)
+        while True:
+            stdscr.erase()
+            h, w = stdscr.getmaxyx()
+            profile_label = auto_profile or "none"
+            header = (
+                f" install.py  distro={distro}  profile={profile_label}  "
+                f"selected={len(selected)}/{sum(1 for r in rows if r.kind == 'pkg')}"
+            )
+            stdscr.addnstr(0, 0, header.ljust(w - 1), w - 1, curses.A_REVERSE)
+            help_line = (
+                " space=toggle  g=group-toggle  a=all  z=clear  "
+                "enter=install  d=dry-run  q=quit"
+            )
+            stdscr.addnstr(h - 1, 0, help_line.ljust(w - 1), w - 1, curses.A_REVERSE)
+
+            # Viewport: rows visible between line 2 and h-2.
+            view_h = h - 3
+            cursor = state["cursor"]
+            top = max(0, cursor - view_h + 1) if cursor >= view_h else 0
+            for i in range(top, min(len(rows), top + view_h)):
+                r = rows[i]
+                y = 2 + (i - top)
+                is_cursor = i == cursor
+                attr = curses.A_REVERSE if is_cursor else curses.A_NORMAL
+                if r.kind == "group":
+                    pids = _group_pkg_ids(r.group or "")
+                    chk = sum(1 for p in pids if p in selected)
+                    line = f"  [{r.group}]  ({chk}/{len(pids)})"
+                    stdscr.addnstr(y, 0, line.ljust(w - 1), w - 1, attr | curses.A_BOLD)
+                else:
+                    spec = cache.get(r.pkg_id or "")
+                    if spec is not None:
+                        src = spec.source
+                        sudo = " sudo" if spec.sudo else ""
+                        desc = spec.description
+                    else:
+                        src, sudo, desc = "?", "", ""
+                    mark = "[x]" if r.pkg_id in selected else "[ ]"
+                    line = f"    {mark} {(r.pkg_id or ''):<22} [{src}{sudo}]  {desc}"
+                    stdscr.addnstr(y, 0, line.ljust(w - 1), w - 1, attr)
+
+            stdscr.refresh()
+            k = stdscr.getch()
+            if k in (ord("q"), 27):
+                return
+            if k in (curses.KEY_UP, ord("k")):
+                state["cursor"] = max(0, cursor - 1)
+            elif k in (curses.KEY_DOWN, ord("j")):
+                state["cursor"] = min(len(rows) - 1, cursor + 1)
+            elif k == curses.KEY_NPAGE:
+                state["cursor"] = min(len(rows) - 1, cursor + view_h)
+            elif k == curses.KEY_PPAGE:
+                state["cursor"] = max(0, cursor - view_h)
+            elif k == curses.KEY_HOME:
+                state["cursor"] = 0
+            elif k == curses.KEY_END:
+                state["cursor"] = len(rows) - 1
+            elif k == ord(" "):
+                r = rows[cursor]
+                if r.kind == "pkg" and r.pkg_id is not None:
+                    if r.pkg_id in selected:
+                        selected.discard(r.pkg_id)
+                    else:
+                        selected.add(r.pkg_id)
+                elif r.kind == "group":
+                    pids = _group_pkg_ids(r.group or "")
+                    if all(p in selected for p in pids):
+                        for p in pids:
+                            selected.discard(p)
+                    else:
+                        for p in pids:
+                            selected.add(p)
+            elif k == ord("g"):
+                r = rows[cursor]
+                grp = r.group
+                if grp:
+                    pids = _group_pkg_ids(grp)
+                    if all(p in selected for p in pids):
+                        for p in pids:
+                            selected.discard(p)
+                    else:
+                        for p in pids:
+                            selected.add(p)
+            elif k == ord("a"):
+                for r in rows:
+                    if r.kind == "pkg" and r.pkg_id is not None:
+                        selected.add(r.pkg_id)
+            elif k == ord("z"):
+                selected.clear()
+            elif k == ord("d"):
+                state["dry"] = True
+                state["submit"] = True
+                return
+            elif k in (curses.KEY_ENTER, 10, 13):
+                state["submit"] = True
+                return
+
+    curses.wrapper(_run)
+    if not state["submit"]:
+        return None, False
+    return selected, state["dry"]
+
+
 def select_packages(
     config: dict,
     distro: str,
@@ -1067,6 +1298,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--config", default=str(DEPS_TOML), help="path to deps.toml")
     p.add_argument("--shell", metavar="PKG_ID", help="override [shell].default; apply this shell")
     p.add_argument("--skip-shell", action="store_true", help="do not touch login shell even if [shell].default set")
+    p.add_argument(
+        "-i", "--interactive", action="store_true",
+        help="force interactive curses selector (otherwise auto when tty + no --group/--only/--profile)",
+    )
+    p.add_argument(
+        "--no-interactive", action="store_true",
+        help="force-skip interactive selector even on tty (for scripted use in a terminal)",
+    )
     args = p.parse_args(argv)
 
     logging.basicConfig(
@@ -1114,18 +1353,57 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     only = {s.strip() for s in args.only.split(",")} if args.only else None
-    selected = select_packages(config, distro, args.group, only)
 
-    if args.profile:
-        if only:
-            log.info("profile %r ignored: --only takes precedence", args.profile)
-        else:
-            selected, dropped = apply_profile(selected, args.profile, config)
-            if dropped:
-                log.info(
-                    "profile %r excludes %d pkg(s): %s",
-                    args.profile, len(dropped), ", ".join(dropped),
-                )
+    # Decide interactive mode.
+    tty_ok = sys.stdin.isatty() and sys.stdout.isatty()
+    list_modes_active = bool(
+        args.list_groups or args.list_packages or args.list_profiles or args.list_sudo
+    )
+    auto_tui = (
+        tty_ok
+        and not args.no_interactive
+        and not args.group
+        and not only
+        and not args.profile
+        and not list_modes_active
+    )
+    use_tui = args.interactive or auto_tui
+
+    if use_tui and not tty_ok:
+        log.warning("interactive requested but stdin/stdout not a tty — falling back")
+        use_tui = False
+
+    if use_tui:
+        auto_profile = default_profile_for(distro, config)
+        if auto_profile:
+            log.info("interactive: preselecting profile %r (headless detected)", auto_profile)
+        result_ids, dry_from_tui = interactive_select(config, distro, defaults, auto_profile)
+        if result_ids is None:
+            log.info("interactive: cancelled — nothing installed")
+            return 0
+        if not result_ids:
+            log.info("interactive: no packages selected — nothing to do")
+            return 0
+        if dry_from_tui:
+            args.dry_run = True
+        # Preserve declaration order so install ordering (e.g. nodejs before
+        # opencode, uv before xonsh) is respected.
+        selected = [
+            (k, v) for k, v in config.items()
+            if k not in RESERVED_KEYS and k in result_ids
+        ]
+    else:
+        selected = select_packages(config, distro, args.group, only)
+        if args.profile:
+            if only:
+                log.info("profile %r ignored: --only takes precedence", args.profile)
+            else:
+                selected, dropped = apply_profile(selected, args.profile, config)
+                if dropped:
+                    log.info(
+                        "profile %r excludes %d pkg(s): %s",
+                        args.profile, len(dropped), ", ".join(dropped),
+                    )
 
     log.info("selected: %d package(s)", len(selected))
 
