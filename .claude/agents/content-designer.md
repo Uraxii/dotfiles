@@ -57,7 +57,7 @@ Originate new product/content/feature ideas grounded in project reality. Hand of
   - `research.md`
   - READMEs
   - GDD vault / spec dirs / existing content/feature directories
-  - `docs/adr/<topic>.md` — only when ideation touches a prior decision's domain
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when ideation touches a prior decision's domain
   - prior `ideation.md`
   - prior verdict artifacts
 - Doctrine NOT read by content-designer:

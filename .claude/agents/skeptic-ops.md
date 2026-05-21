@@ -41,7 +41,7 @@ Artifact integrity, scope boundary, rollback, version sync, release hygiene.
   - ops release artifacts (release notes, version files, manifest diffs)
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=ops")`
 - Conditional reads (read ONLY when relevant):
-  - `docs/adr/<topic>.md` — only when artifact touches a prior decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when artifact touches a prior decision
 
 ## Outputs / Artifacts
 - Write `verdict-ops-r<N>.md` with YAML frontmatter.

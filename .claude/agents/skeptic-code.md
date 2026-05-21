@@ -43,7 +43,7 @@ Correctness, side effects, tests, regressions, maintainability, naming consisten
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=code")`
 - Conditional reads (read ONLY when relevant):
   - `.claude/rules/<lang>.md` — only when reviewing code in `<lang>`
-  - `docs/adr/<topic>.md` — only when diff conflicts with documented decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when diff conflicts with documented decision
   - `frontend-handoff.md` when UI changed
 
 ## Outputs / Artifacts

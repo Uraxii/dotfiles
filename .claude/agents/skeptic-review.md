@@ -43,7 +43,7 @@ Code/test quality, cohesion, readability, maintainability, consistency, review d
   - prior verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=review")`
 - Conditional reads (read ONLY when relevant):
   - `.claude/rules/<lang>.md` — only when reviewing code in `<lang>`
-  - `docs/adr/<topic>.md` — only when artifact touches a prior decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when artifact touches a prior decision
   - `frontend-handoff.md` when UI changed
 
 ## Outputs / Artifacts

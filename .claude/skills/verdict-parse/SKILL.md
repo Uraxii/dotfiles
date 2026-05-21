@@ -15,34 +15,42 @@ Claude: `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`
 
 OC: `verdict-parse` custom tool with `{run_dir, type}` args.
 
-## Verdict types (canonical 5 skeptic values + friction)
+Script: `python3 .claude/skills/verdict-parse/verdict-parse.py --run-dir <path> --type <type>`
 
-`design|code|ops|review|test-audit|friction`
+## Args
 
-## Glob pattern
-
-`<run-dir>/verdict-<type>-r<N>.md`
-
-Where `<N>` = integer revision. Pick file w/ max `<N>`.
-
-## Frontmatter schema
-
-```yaml
----
-verdict: Approved | Conditional | Blocked
-role: <role-name>
-review_type: <design|code|ops|review|test-audit>
-loops: <N>
-revision: r<N>
-prod_diff_sha: <sha>  # optional, pinned gates only
-blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
----
-```
-
-**Conditional verdicts MUST have ## Conditions section in body; orchestrator verifies before proceeding.**
+| Arg | Type | Required | Description |
+|-----|------|----------|-------------|
+| `--run-dir` | path | yes | Pipeline run directory |
+| `--type` | enum | yes | `design\|code\|ops\|review\|test-audit\|friction` |
 
 ## Returns
 
-JSON: `{verdict, role, review_type, loops, revision, prod_diff_sha, path}`
+Single-line JSON:
+```json
+{
+  "verdict": "Approved|Conditional|Blocked",
+  "role": "<role-name>",
+  "review_type": "<type>",
+  "loops": "<N>",
+  "revision": "r<N>",
+  "prod_diff_sha": "<sha|empty>",
+  "blocker_class": ["<enum>", ...],
+  "path": "<abs-path-to-verdict-file>"
+}
+```
 
-Non-zero exit if no file found.
+`blocker_class`: non-empty only when `verdict=Blocked`. Parsed from single-line
+YAML flow-seq `[a, b]`. Empty list when field absent.
+
+**Conditional verdicts MUST have ## Conditions section in body; orchestrator
+verifies before proceeding.**
+
+## Exit codes
+
+- 0: success
+- 1: run-dir not found, no verdict file, frontmatter parse failed
+
+## See also
+
+`revision-route`, `worktree-lifecycle`.

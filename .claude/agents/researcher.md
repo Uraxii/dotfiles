@@ -37,7 +37,7 @@ Collect facts before plan/design decisions.
   - run `pipeline.md`
 - Conditional reads (read ONLY when relevant):
   - relevant design/plan artifacts under review
-  - `docs/adr/<topic>.md` — only when research scope intersects a prior decision
+  - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when research scope intersects a prior decision
 - Doctrine NOT read by researcher:
   - project `CLAUDE.md` — auto-injected by harness
   - `.claude/rules/<lang>.md` — research is text artifact only; language rules irrelevant
