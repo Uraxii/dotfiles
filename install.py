@@ -99,11 +99,13 @@ class Resolved:
     bins: tuple[str, ...] = ()
     reason: str | None = None  # populated when source = "unsupported"
     install_cmd: str | None = None  # populated when source = "script"
+    sudo: bool = False  # informational: does install require root?
 
     def __str__(self) -> str:
         v = f" {self.version}" if self.version else ""
         u = f" ({self.url})" if self.url else ""
-        return f"{self.pkg_id} → {self.source}:{self.install_name}{v}{u}"
+        s = " [sudo]" if self.sudo else ""
+        return f"{self.pkg_id} → {self.source}:{self.install_name}{v}{u}{s}"
 
 
 def _normalise_bins(raw: object) -> tuple[str, ...]:
@@ -116,6 +118,25 @@ def _normalise_bins(raw: object) -> tuple[str, ...]:
     raise ValueError(f"`bin` must be a string or list of strings, got {type(raw).__name__}")
 
 
+def _default_sudo(source: str, distro: str) -> bool:
+    """Derive default sudo requirement from (source, distro).
+
+    Override via `sudo = true|false` on entry or per-distro table.
+      - native pacman/apt/dnf wrap the install cmd in sudo → true.
+      - termux `pkg` is single-user Android — never sudo.
+      - AUR helpers escalate internally → true.
+      - nix/nix-unstable use the user profile → false.
+      - cargo/npm/uv-tool/pip install to user dirs → false.
+      - script: author wraps sudo explicitly inside install_cmd → default false.
+      - manual/skip/unsupported never install → false.
+    """
+    if source == "native":
+        return distro != "termux"
+    if source == "aur":
+        return True
+    return False
+
+
 def resolve(pkg_id: str, entry: dict, distro: str, defaults: dict) -> Resolved:
     """Merge defaults + entry + per-distro override into a Resolved spec."""
     if "pkg" not in entry:
@@ -125,10 +146,18 @@ def resolve(pkg_id: str, entry: dict, distro: str, defaults: dict) -> Resolved:
     override = entry.get(distro, {})
     if not isinstance(override, dict):
         raise ValueError(f"{pkg_id}: per-distro override for {distro!r} is not a table")
+    source = override.get("source", entry.get("source", defaults.get("source", "native")))
+    sudo_raw = override.get("sudo", entry.get("sudo"))
+    if sudo_raw is None:
+        sudo = _default_sudo(source, distro)
+    else:
+        if not isinstance(sudo_raw, bool):
+            raise ValueError(f"{pkg_id}: `sudo` must be a bool, got {type(sudo_raw).__name__}")
+        sudo = sudo_raw
     return Resolved(
         pkg_id=pkg_id,
         install_name=override.get("pkg", entry["pkg"]),
-        source=override.get("source", entry.get("source", defaults.get("source", "native"))),
+        source=source,
         version=override.get("version", entry.get("version")),
         description=entry["description"],
         url=override.get("url", entry.get("url")),
@@ -137,6 +166,7 @@ def resolve(pkg_id: str, entry: dict, distro: str, defaults: dict) -> Resolved:
         bins=_normalise_bins(override.get("bin", entry.get("bin"))),
         reason=override.get("reason", entry.get("reason")),
         install_cmd=override.get("install_cmd", entry.get("install_cmd")),
+        sudo=sudo,
     )
 
 
@@ -832,7 +862,8 @@ def process_one(
     adapter = get_adapter(spec.source, distro, dry_run)
     if spec.source == "script":
         adapter._cmd = spec.install_cmd  # type: ignore[attr-defined]
-    log.info("• %s [%s] %s", pkg_id, spec.source, spec.description)
+    sudo_tag = " (sudo)" if spec.sudo else ""
+    log.info("• %s [%s]%s %s", pkg_id, spec.source, sudo_tag, spec.description)
 
     # presence + pin check
     inst = adapter.installed_version(spec.install_name)
@@ -1023,6 +1054,10 @@ def main(argv: list[str] | None = None) -> int:
         help="apply named profile from [profiles] (e.g. 'server' to drop desktop pkgs)",
     )
     p.add_argument("--list-profiles", action="store_true")
+    p.add_argument(
+        "--list-sudo", action="store_true",
+        help="list selected packages that require sudo for the current distro",
+    )
     p.add_argument("--distro", help="override detected distro (testing)")
     p.add_argument("-n", "--dry-run", action="store_true")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -1074,7 +1109,7 @@ def main(argv: list[str] | None = None) -> int:
             log.error("unknown package: %s", args.show)
             return 2
         spec = resolve(args.show, config[args.show], distro, defaults)
-        for f in ("pkg_id", "install_name", "source", "version", "description", "url", "post_install", "enabled", "reason"):
+        for f in ("pkg_id", "install_name", "source", "version", "description", "url", "post_install", "enabled", "sudo", "reason"):
             print(f"  {f}: {getattr(spec, f)}")
         return 0
 
@@ -1093,6 +1128,28 @@ def main(argv: list[str] | None = None) -> int:
                 )
 
     log.info("selected: %d package(s)", len(selected))
+
+    if args.list_sudo:
+        sudo_pkgs: list[tuple[str, str]] = []
+        no_sudo_pkgs: list[str] = []
+        for pkg_id, entry in selected:
+            try:
+                spec = resolve(pkg_id, entry, distro, defaults)
+            except ValueError as e:
+                log.error("%s: resolve error: %s", pkg_id, e)
+                continue
+            if spec.sudo:
+                sudo_pkgs.append((pkg_id, spec.source))
+            else:
+                no_sudo_pkgs.append(pkg_id)
+        print(f"requires sudo ({len(sudo_pkgs)}):")
+        for pid, src in sudo_pkgs:
+            print(f"  - {pid} [{src}]")
+        print(f"no sudo ({len(no_sudo_pkgs)}):")
+        for pid in no_sudo_pkgs:
+            print(f"  - {pid}")
+        return 0
+
     report = Report()
     for pkg_id, entry in selected:
         process_one(pkg_id, entry, distro, defaults, args.dry_run, report)

@@ -24,6 +24,16 @@
 #                        report when source = "unsupported". Per-distro override
 #                        encouraged so the message names the platform-specific
 #                        cause (e.g. "no wayland on android").
+#   - sudo             = optional bool. Informational only — does install
+#                        require root? Defaults derived from source+distro:
+#                          native arch/ubuntu/fedora → true
+#                          native termux             → false (single-user)
+#                          aur                       → true
+#                          nix/cargo/npm/uv-tool/pip → false (user dirs)
+#                          script                    → false (author wraps
+#                                                     sudo inside install_cmd)
+#                        Override per-distro when default is wrong. Surfaced
+#                        in `--show`, per-pkg log line, and `--list-sudo`.
 #   - install_cmd      = REQUIRED when source = "script". Shell command run
 #                        via `bash -c`. Pipelines allowed. Idempotency is the
 #                        installer's responsibility — bin probe protects
@@ -224,6 +234,8 @@ nixos.pkg = "nodejs_22"
 # nodesource apt repo + installs current major; package bundles npm.
 ubuntu.source = "script"
 ubuntu.install_cmd = "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs"
+# NodeSource setup script + apt-get both need root.
+ubuntu.sudo = true
 fedora.pkg = "nodejs"
 # Termux ships current node in `nodejs`; `nodejs-lts` is also available if a
 # pinned LTS is needed. Default to rolling.
@@ -266,8 +278,11 @@ description = "Cross-shell prompt (config: .config/starship.toml.tmpl via set-th
 # Upstream install.sh handles arch detection + sudo + /usr/local/bin install.
 ubuntu.source = "script"
 ubuntu.install_cmd = "curl -sS https://starship.rs/install.sh | sh -s -- -y"
+# install.sh elevates via sudo internally for /usr/local/bin write.
+ubuntu.sudo = true
 fedora.source = "script"
 fedora.install_cmd = "curl -sS https://starship.rs/install.sh | sh -s -- -y"
+fedora.sudo = true
 
 [zoxide]
 pkg = "zoxide"
