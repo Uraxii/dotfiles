@@ -454,17 +454,19 @@ ubuntu.pkg = "libffi8"
 pkg = "godots"
 bin = "godots"
 description = "Godot version manager + launcher (multiple engine installs in one place)."
-# Arch: AUR. Ubuntu/Fedora/NixOS: upstream ships AppImage on GitHub releases;
-# asset name pattern unstable across versions so left manual — wire a script
-# source w/ pinned release URL when you settle on a version.
+# Arch: AUR prebuilt. Ubuntu/Fedora: upstream ships LinuxX11.zip on GitHub
+# releases containing single binary `Godots.x86_64`. Script unpacks to
+# ~/.local/share/godots/ and drops symlink at ~/.local/bin/godots (no sudo).
+# NixOS: stays manual — generic linux binary needs nix-ld or FHS env to run;
+# defer to user's wrapper preference.
 arch.source = "aur"
 arch.pkg = "godots-bin"
-ubuntu.source = "manual"
-ubuntu.url = "https://github.com/MakovWait/Godots/releases"
-fedora.source = "manual"
-fedora.url = "https://github.com/MakovWait/Godots/releases"
+ubuntu.source = "script"
+ubuntu.install_cmd = "if [ -x \"$HOME/.local/bin/godots\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/share/godots\" \"$HOME/.local/bin\" && curl -fLo /tmp/godots.zip https://github.com/MakovWait/godots/releases/latest/download/LinuxX11.zip && unzip -o /tmp/godots.zip -d \"$HOME/.local/share/godots\" && chmod +x \"$HOME/.local/share/godots/Godots.x86_64\" && ln -sf \"$HOME/.local/share/godots/Godots.x86_64\" \"$HOME/.local/bin/godots\" && rm /tmp/godots.zip; fi"
+fedora.source = "script"
+fedora.install_cmd = "if [ -x \"$HOME/.local/bin/godots\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/share/godots\" \"$HOME/.local/bin\" && curl -fLo /tmp/godots.zip https://github.com/MakovWait/godots/releases/latest/download/LinuxX11.zip && unzip -o /tmp/godots.zip -d \"$HOME/.local/share/godots\" && chmod +x \"$HOME/.local/share/godots/Godots.x86_64\" && ln -sf \"$HOME/.local/share/godots/Godots.x86_64\" \"$HOME/.local/bin/godots\" && rm /tmp/godots.zip; fi"
 nixos.source = "manual"
-nixos.url = "https://github.com/MakovWait/Godots/releases"
+nixos.url = "https://github.com/MakovWait/godots/releases (linux binary needs nix-ld or FHS env on nixos)"
 termux.source = "unsupported"
 termux.reason = "no GUI on android"
 
