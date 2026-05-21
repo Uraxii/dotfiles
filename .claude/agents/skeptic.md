@@ -5,7 +5,17 @@ model: opus
 tools: Read, Grep, Glob, Bash, Edit, Skill
 mode: subagent
 color: warning
+status: retired
 ---
+
+> **Retired.** Split into per-review-type agents in PR-2:
+> - `skeptic-design.md`
+> - `skeptic-code.md`
+> - `skeptic-ops.md`
+> - `skeptic-review.md`
+> - `skeptic-test-audit.md`
+>
+> File body kept as reference for the consolidated doctrine. Do not invoke this agent; orchestrator routes by `review_type`.
 
 # Role: Skeptic
 

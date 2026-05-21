@@ -57,7 +57,7 @@ Orchestrator surfaces relevant rule paths via the spawn template `## Read` block
 - Every build runs in worktree (K=1 min). Worktree primitives via `Skill(skill: "worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
 - Every build revision produces `build-evidence-r<N>-s<K>.md` + `prebuild-skeptic-code-r<N>-s<K>.md` per shard.
 - If UI/UX scope present and `ui-ux-designer` did not run, build writes fallback `frontend-handoff.md`.
-- Skeptic code gate enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
+- Skeptic code gate (skeptic-code agent) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
 - When UI changed and `ui-ux-designer` did not run, skeptic/reviewer/security/tester must read fallback `frontend-handoff.md`; missing artifact = Blocked.
 
 ### Build Shards (Worktree-Based)
@@ -137,7 +137,11 @@ blocker_class: [...]
 | build | code change needed |
 | architect | schema/state/module-boundary change |
 | ui-ux-designer | UI/UX scope in brief |
-| skeptic | if architect/build/ops gate needed |
+| skeptic-design | architect ran; gate design.md before build |
+| skeptic-code | build ran; gate code post-build |
+| skeptic-ops | ops-path runs; gate release artifacts |
+| skeptic-review | optional secondary review-quality audit (rare; primary review = two-axis reviewer) |
+| skeptic-test-audit | post-tester audit of test design quality |
 | reviewer | diff > ~50 LoC or cross-module/shared utils. Orchestrator spawns 2 subs (Standards + Spec) in parallel. |
 | security-auditor | external input/auth/crypto/network/storage/perm/native |
 | tester | prod code changed + tests/regression needed |
@@ -145,7 +149,7 @@ blocker_class: [...]
 | decision-elicitation | brief/plan declares `decision_points:` OR mid-run role self-flag (Phase 2+). Orchestrator-owned, no subagent. |
 | friction-reviewer | always last |
 
-Ops short path: build → skeptic(ops) → friction. Add reviewer/tester if rework >1.
+Ops short path: build → skeptic-ops → friction. Add reviewer/tester if rework >1.
 
 ## Dependency Graph
 
@@ -161,6 +165,9 @@ Enforce only for included roles.
 | skeptic-design | architect complete | design.md, prior verdict |
 | build | skeptic-design approved (if design ran). Spawned per shard (K≥1). | plan.ref, design.md, prior verdict, Shard block |
 | skeptic-code | all build shards terminal AND zero failed | design.md, union of shard diffs, evidence + prebuild artifacts, prior verdict |
+| skeptic-ops | build complete (ops path) | ops artifacts, prior verdict |
+| skeptic-review | build complete (rare audit path) | union of shard diffs, evidence, prior verdict |
+| skeptic-test-audit | tester complete | test paths via test-path-resolve, prod-diff-sha pin, prior verdict |
 | reviewer (×2 axes) | all build shards terminal AND zero failed | per-axis read sets; orchestrator aggregates |
 | security-auditor | build or architect complete | design.md, union of shard diffs (if post-build), frontend-handoff.md (if UI), prior verdict |
 | tester | skeptic-code + reviewer + security approved | latest verdicts, all shard branches, frontend-handoff.md (if UI) |
@@ -239,7 +246,11 @@ Rules:
 - **All revising roles persist within their own revision loop** via task_id resume (Claude) / child session (OC):
   - architect (design loop)
   - build (code loop; one task_id per shard)
-  - skeptic (per `review_type`; skeptic-design instance ≠ skeptic-code instance)
+  - skeptic-design (design loop)
+  - skeptic-code (per shard verdict)
+  - skeptic-ops (single revision; cap 1)
+  - skeptic-review (audit loop)
+  - skeptic-test-audit (test-design audit loop)
   - reviewer (per axis; Standards instance ≠ Spec instance)
   - security-auditor (per `review_type`; security-design ≠ security-code)
   - tester (test loop)
