@@ -62,7 +62,7 @@ Orchestrator surfaces relevant rule paths via the spawn template `## Read` block
 
 ### Build Shards (Worktree-Based)
 - Trigger: every build. If plan declares `parallel_shards:` w/ ≥2 entries → K shards parallel. Absent → orchestrator synthesizes implicit `s1` (`scope: ["."]`, `tasks: <all>`, `depends_on: []`).
-- Intake validation: K ≤ 4, scope globs disjoint (K≥2), `depends_on` resolvable.
+- Intake validation: K ≤ 8, scope globs disjoint (K≥2), `depends_on` resolvable.
 - GitHub preconditions (when PR delivery expected): `command -v gh`; `gh auth status` clean; `git remote get-url origin` matches `github.com[:/]`. Failure: continue in branches-only mode.
 - Worktree lifecycle: `Skill(skill: "worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
 - Spawn: K=1 → single build into `s1`. K≥2 → independent shards launched in single message (parallel tool calls). Dependent shards wait until all `depends_on` shards `passed`. Any dep `failed` → dependent shard `skipped_due_to_dep`.
@@ -90,7 +90,33 @@ Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Orchestrator startup scans
   - Standards axis (reads CLAUDE.md, `.claude/rules/`, `docs/adr/`, `CONTRIBUTING.md`).
   - Spec axis (reads brief.md, plan, design.md).
 - Each writes `verdict-review-<axis>-r<N>.md`.
-- Orchestrator aggregates into `verdict-review-r<N>.md` w/ `## Standards` + `## Spec` sections.
+- Orchestrator aggregates into `verdict-review-r<N>.md` with required structure:
+
+```yaml
+---
+verdict: Approved | Conditional | Blocked  # aggregate: max severity across Standards + Spec
+role: reviewer
+review_type: review
+loops: <N>
+revision: r<N>
+blocker_class: [...]  # union across axes when aggregate=Blocked
+---
+
+## Standards
+verdict: <Standards axis verdict>
+prod_diff_sha: <sha>
+blocker_class: [...]
+[Blocking, Suggestions, Notes from Standards axis]
+
+## Spec
+verdict: <Spec axis verdict>
+blocker_class: [...]
+[Blocking, Suggestions, Notes from Spec axis]
+
+## Verdict
+<aggregate literal: Approved | Conditional | Blocked>
+```
+
 - ANY axis Blocked → revision loop. Both Approved → continue.
 
 ### PR creation (`pr_publish`, orchestrator-owned, no subagent)
@@ -224,7 +250,30 @@ Rules:
 - Versioned verdict files only: `verdict-<type>-r<N>.md`.
 - Loop limits: design 3, code 3, ops 1.
 - Build revisions: resume only `failed` shard ids in existing worktree/branch w/ existing task_id.
+- `Conditional` verdicts trigger orchestrator-side verification of `## Conditions` section before next stage; condition failure → re-spawn upstream role per Revision Loop mapping.
 - Limit hit → halt, show last findings + loop history + user options.
+
+## Pin Validation
+
+On test-only revision (prod-code diff unchanged from prior revision's prod_diff_sha), Standards-axis reviewer and security-code verdicts re-validate via `prod_diff_sha` equality check:
+- Matching prior SHA → re-use prior Approved verdict; skip re-spawn.
+- Mismatched SHA → re-spawn upstream role per Revision Loop mapping.
+
+Spec-axis reviewer + security-design + skeptic-code + tester are NOT pinned (Spec may legitimately Block on test-only revision when test = spec gap).
+
+## Blocker Tally (on loop-cap halt)
+
+When loop cap hits, orchestrator tallies `blocker_class` field across all Blocked verdicts in run dir. Include in halt report:
+
+```
+## Blocker tally
+- impl-defect: N
+- doctrine-violation: N
+- flaky-test: N
+- ...
+```
+
+Director-facing cause summary. Drives next-action triage.
 
 ## Artifact Discipline
 
@@ -307,7 +356,6 @@ Include:
 - Tests pass ratio
 - Loop counts (design, code, ops)
 - Artifact dir + plan id
-- Token report by role (per-shard breakdown)
 - PR URLs + merge commit SHAs + merge status
 - Worktree paths (only for failed-merge / branches-only shards)
 - Dream diff path (if friction-reviewer invoked dream)

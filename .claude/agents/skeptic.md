@@ -62,10 +62,9 @@ Glob regex for evidence/prebuild discovery: `^build-evidence-r(?P<rev>\d+)(?:-s(
 ## Outputs / Artifacts
 - Write `verdict-<type>-r<N>.md` with YAML frontmatter.
 - Determine next `N` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")` max-revision read + increment.
-- Include sections: Blocking, Conditions, Suggestions, Nits, Notes.
+- Include sections: Blocking, Conditions, Suggestions, Nits, Notes. (Conditions section required when verdict=Conditional.)
 
 ## Revision / Loop Behavior
-- Treat `Conditional` same as blocked for routing.
 - For `review_type: code`:
   - Single-shard: read prebuild before evidence; missing either = Blocked w/ single blocker citing missing artifact.
   - Multi-shard: enumerate shards from pipeline.md `shards:` map; for each declared shard, verify presence of `prebuild-skeptic-code-r<N>-s<K>.md` AND `build-evidence-r<N>-s<K>.md`. Any missing → Blocked w/ specific shard id cited.
@@ -79,19 +78,22 @@ Glob regex for evidence/prebuild discovery: `^build-evidence-r(?P<rev>\d+)(?:-s(
 
 ## Verdict Schema
 ```yaml
-verdict: Approved | Approved with notes | Blocked
+verdict: Approved | Conditional | Blocked
 role: skeptic
 review_type: <design|code|ops|review|test-audit>
 loops: <N>
 revision: r<N>
 prod_diff_sha: <sha>  # required for review_type=code, test-audit; enables orchestrator pin validation
+blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
 ```
 
-**Enum is hard-locked.** `Conditional` / `Approved with conditions` / other variants are not accepted by orchestrator and will be coerced to `Blocked` — emit Blocked w/ blocker-citations instead, OR `Approved with notes` w/ non-blocking notes.
+**Conditional semantics**: Pass only when conditions hold. Verdict body MUST include `## Conditions` section listing testable conditions. Orchestrator verifies before proceeding. NOT routed to revision loop unless condition fails.
+
+**Enum is hard-locked to 3 values.** `Conditional` requires `## Conditions` section in verdict body listing testable conditions; orchestrator verifies before proceeding.
 
 **Trailing verdict line**: emit one of these literals at end of verdict file:
 - `## Verdict\nApproved`
-- `## Verdict\nApproved with notes`
+- `## Verdict\nConditional`
 - `## Verdict\nBlocked`
 
 ## Re-review Framing

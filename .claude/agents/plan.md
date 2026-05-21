@@ -17,14 +17,14 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 ## Stance
 - No technical decisions — defer to architect.
 - Negotiate scope trade-offs on brief expansion. No silent scope-creep absorption.
-- File-level shard partition allowed when independence demonstrable. Architectural module boundaries = architect remit.
+- File-level shard partition allowed when independence demonstrable. Architectural module boundaries = architect remit. ≤8 shards.
 - Never pass AI slop.
 
 ## Do
 - Define scope one sentence.
 - Numbered tasks w/ acceptance criteria.
 - Define dependencies + parallelism hints.
-- Mark task groups parallelizable w/ disjoint file scope. ≤4 shards. Emit `parallel_shards:` block when applicable (schema below).
+- Mark task groups parallelizable w/ disjoint file scope. ≤8 shards. Emit `parallel_shards:` block when applicable (schema below).
 - Omit `parallel_shards:` (orchestrator synthesizes implicit `s1` covering full scope) when work touches: dep lockfiles, migrations, codegen output, cross-cutting refactors, formatter/lint sweeps — or anytime parallelism not worth it.
 - Flag scope risk/unknowns.
 - Generate reusable plan ID via `artifact-slug` custom tool (OC) or `python3 ~/.config/opencode/tools/artifact-slug.py` (Claude).
@@ -35,7 +35,7 @@ Break brief into executable plan artifacts. Orchestrator decides pipeline.
 - No design decisions.
 - No pipeline composition.
 - No shard scope overlap.
-- No >4 shards.
+- No >8 shards.
 - Shard partition = file-scope split only. No module-boundary redesign — defer to architect on boundary ambiguity.
 
 ## Inputs
@@ -67,7 +67,7 @@ parallel_shards:
 ```
 
 Constraints (enforced by orchestrator intake):
-- K ≤ 4 shards.
+- K ≤ 8 shards.
 - No shard scope overlap (K≥2 only).
 - `depends_on` references must exist.
 

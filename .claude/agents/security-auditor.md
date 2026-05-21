@@ -53,18 +53,24 @@ Find security blocking issues in design/code artifacts.
 - Determine next `N` via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=security")` max-revision read + increment.
 
 ## Revision / Loop Behavior
-- Treat `Conditional` same as blocked for routing.
 - Re-review prior blockers/conditionals first, then scan new issues.
 - Loop cap handled by orchestrator at 3 blocked/conditional cycles.
+- `Conditional` verdict passes only when conditions hold; orchestrator verifies before proceeding.
 
 ## Completion / Reporting
 - Reference exact verdict file path.
 
 ## Verdict Schema
 ```yaml
-verdict: Approved | Blocked | Conditional
+verdict: Approved | Conditional | Blocked
 role: security-auditor
 review_type: <security-design|security-code>
 loops: <N>
 revision: r<N>
+prod_diff_sha: <sha>  # required for review_type=security-code; n/a for security-design
+blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
 ```
+
+**Conditional semantics**: Pass only when conditions hold. Verdict body MUST include `## Conditions` section listing testable conditions. Orchestrator verifies before proceeding. NOT routed to revision loop unless condition fails.
+
+**Enum is hard-locked to 3 values.** `Conditional` requires `## Conditions` section in verdict body listing testable conditions; orchestrator verifies before proceeding.
