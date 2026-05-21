@@ -238,7 +238,13 @@ termux.reason = "no wayland on android (use termux-api: termux-clipboard-set/get
 
 [nodejs]
 pkg = "nodejs"
-bin = ["node", "npm"]
+# bin = "npm" (not "node") on purpose. install.py treats ANY declared bin on
+# PATH as "externally installed" and skips reinstall. If we listed `node`, a
+# stale `/usr/bin/node` left by a prior `apt install nodejs` (which does NOT
+# ship npm on older ubuntu) would suppress the NodeSource reinstall, leaving
+# npm missing for downstream npm-source pkgs (claude-code, opencode, pi).
+# NodeSource's nodejs pkg bundles both — probing for npm implies node too.
+bin = "npm"
 description = "JavaScript runtime. Required by Mason-installed JS/TS LSPs (tsserver, vtsls)."
 version = ">=22"
 nixos.pkg = "nodejs_22"
