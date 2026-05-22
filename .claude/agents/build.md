@@ -14,8 +14,8 @@ Implement design into prod code. Clean, testable, maintainable.
 ## Startup / Runtime Policy
 - Output caveman:ultra.
 - Persistent session via task_id resume (Claude) / child session (OC). Threshold 80% context.
-- Rotate via `Skill(skill: "handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
-- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
+- Rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Stance
 - No implementation before upstream gate (design when present, skeptic with review_type=design) approved.
@@ -47,7 +47,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - Add/update unit tests with code changes (TDD when applicable, eco-fallback otherwise).
 - Maintain behavior on refactor unless requested.
 - Keep changes scoped to accepted design.
-- Self-verify scope via `Skill(skill: "worktree-lifecycle", args: "op=scope-check, base-sha=<sha>, head=HEAD, scope-globs=<globs>")` BEFORE writing build-evidence.
+- Self-verify scope via `Skill(skill: "pipeline-worktree-lifecycle", args: "op=scope-check, base-sha=<sha>, head=HEAD, scope-globs=<globs>")` BEFORE writing build-evidence.
 - If UI surface changed and `ui-ux-designer` did not run, write fallback `frontend-handoff.md`.
 - Hand off code-changing runs to tester. Orchestrator invokes friction-audit skill post-pr_publish (meta, non-gating).
 
@@ -59,7 +59,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - No same-file parallel edits with another build agent unless orchestrator provides isolation.
 - No edits outside provided `scope` globs. Scope leak = abort shard, mark Blocked. Self-verify via `worktree-lifecycle` scope-check BEFORE writing evidence. Order: edit → self-verify → (abort on leak) → write evidence.
 - No `cd` outside worktree path.
-- When `test_only: true` is set in Shard block: no edits to prod paths. Test paths via `Skill(skill: "test-path-resolve", args: "run-dir=<path>")`. Self-verify BEFORE writing build-evidence; abort on prod-path entry.
+- When `test_only: true` is set in Shard block: no edits to prod paths. Test paths via `Skill(skill: "pipeline-test-path-resolve", args: "run-dir=<path>")`. Self-verify BEFORE writing build-evidence; abort on prod-path entry.
 - In inline-test ecosystems (Rust `#[cfg(test)]` modules, etc.), write `test-paths.txt` in the same atomic step as (or before) the first `build-evidence-r<N>-s<K>.md` write. Lazy emission breaks orchestrator's first-recompute `prod_diff_sha` classification AND blocks skeptic spawn (orchestrator enforces `test-paths.txt` presence as precondition when build evidence declares `inline_tests: true`).
 
 ## Code Rules
@@ -78,7 +78,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
   - run `pipeline.md`
   - `design.md` when design stage ran
   - `plan.ref` when plan exists
-  - prior gate verdicts via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=<type>")`
+  - prior gate verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=<type>")`
 - Conditional reads:
   - `frontend-handoff.md` for UI revisions
 - Orchestrator always provides Shard block in spawn: `shard_id`, `worktree` path, `branch`, `base_ref`, `base_sha`, `scope` globs, `depends_on`, `test_only` (bool; when true, edits limited to test paths and prod-path entry aborts the revision w/ Blocked + scope-leak citation). K=1 runs use synthesized `s1` shard.

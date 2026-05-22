@@ -14,8 +14,8 @@ Design system structure + interfaces for build stage.
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
 - Persistent via task_id resume (Claude) / child session (OC) across revisions.
-- Context threshold 70%; rotate session when exceeded via `Skill(skill: "handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")`.
-- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
+- Context threshold 70%; rotate session when exceeded via `Skill(skill: "pipeline-handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Stance
 - Every key decision carries rationale. Undocumented = invalid.
@@ -64,7 +64,7 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
   - run `pipeline.md`
 - Conditional reads (read ONLY when relevant):
   - `research.md`
-  - prior verdict files via `Skill(skill: "verdict-parse", args: "run-dir=<path>, type=design")`
+  - prior verdict files via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=design")`
   - `~/.pipeline/adr/<NNNN>-<topic>.md` — only when the design touches a prior decision's domain; do NOT bulk-read `~/.pipeline/adr/**`. Use `ls ~/.pipeline/adr/` to discover N for new ADR sequencing only.
   - `.claude/rules/<lang>.md` — only when design surfaces code patterns in that language
 - Doctrine NOT read by architect:
@@ -78,7 +78,7 @@ If criteria not all met: state `adr_emitted: none-warranted` w/ 1-sentence ratio
 ## Revision / Loop Behavior
 - Rework only blocked/conditional design findings first.
 - Preserve accepted scope unless orchestrator/user change brief.
-- Persistence rotation: when context ≥70%, invoke `Skill(skill: "handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")` to write rotation summary; resume in fresh session.
+- Persistence rotation: when context ≥70%, invoke `Skill(skill: "pipeline-handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")` to write rotation summary; resume in fresh session.
 
 ## Completion / Reporting
 - Reference exact design artifact path.
