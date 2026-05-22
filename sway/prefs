@@ -1,5 +1,5 @@
 ### Theme
-set $theme manjaro
+set $theme synthwave-84
 # Waybar layout. Subdir name under .config/waybar/themes/. Currently only
 # `minimal` (ashish-kus/waybar-minimal — single config, Hyprland-leaning
 # but degrades cleanly on sway).

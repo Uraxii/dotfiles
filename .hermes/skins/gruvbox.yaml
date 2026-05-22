@@ -1,5 +1,5 @@
-name: makima
-description: Makima desktop palette port - warm gruvbox browns, gold accent, burgundy edge
+name: gruvbox
+description: Gruvbox Dark Medium - warm browns, gold accent, burgundy edge
 
 colors:
   banner_border: "#d79921"
