@@ -1,0 +1,89 @@
+name: makima
+description: Makima desktop palette port - warm gruvbox browns, gold accent, burgundy edge
+
+colors:
+  banner_border: "#d79921"
+  banner_title: "#fabd2f"
+  banner_accent: "#d3869b"
+  banner_dim: "#a89984"
+  banner_text: "#f0e8d0"
+  ui_accent: "#d79921"
+  ui_label: "#83a598"
+  ui_ok: "#b8bb26"
+  ui_error: "#cc241d"
+  ui_warn: "#fabd2f"
+  prompt: "#f0e8d0"
+  input_rule: "#5d141a"
+  response_border: "#d79921"
+  status_bar_bg: "#1d2021"
+  status_bar_text: "#d5c4a1"
+  status_bar_strong: "#fabd2f"
+  status_bar_dim: "#a89984"
+  status_bar_good: "#b8bb26"
+  status_bar_warn: "#fabd2f"
+  status_bar_bad: "#d79921"
+  status_bar_critical: "#cc241d"
+  session_label: "#d79921"
+  session_border: "#504945"
+  voice_status_bg: "#1d2021"
+  selection_bg: "#504945"
+  completion_menu_bg: "#1d2021"
+  completion_menu_current_bg: "#504945"
+  completion_menu_meta_bg: "#282828"
+  completion_menu_meta_current_bg: "#5d141a"
+
+spinner:
+  waiting_faces:
+    - "(mk)"
+    - "(--)"
+    - "(..)"
+    - "(==)"
+  thinking_faces:
+    - "(mk)"
+    - "(..)"
+    - "(??)"
+    - "(!!)"
+  thinking_verbs:
+    - "watching threads"
+    - "pulling chains"
+    - "tempering plans"
+    - "reading contracts"
+    - "binding context"
+    - "shaping intent"
+  wings:
+    - ["[gold ", " gold]"]
+    - ["{ctrl ", " ctrl}"]
+    - ["<red ", " red>"]
+
+branding:
+  agent_name: "Makima Hermes"
+  welcome: "Welcome to Makima Hermes. Type your message or /help for commands."
+  goodbye: "Goodbye. Stay in control."
+  response_label: " Makima Hermes "
+  prompt_symbol: ">"
+  help_header: "Makima commands"
+
+tool_prefix: "|"
+
+tool_emojis:
+  terminal: ">_"
+  read_file: "rd"
+  write_file: "wr"
+  patch: "pt"
+  web_search: "ws"
+  web_extract: "wx"
+  delegate_task: "dg"
+
+banner_logo: |
+  [bold #fabd2f] __  __    _    _  _____ __  __    _    [/]
+  [bold #d79921]|  \/  |  / \  | |/ /_ _|  \/  |  / \   [/]
+  [#d3869b]     | |\/| | / _ \ | ' / | || |\/| | / _ \  [/]
+  [#cc241d]     | |  | |/ ___ \| . \ | || |  | |/ ___ \ [/]
+  [#5d141a]     |_|  |_/_/   \_\_|\_\___|_|  |_/_/   \_\[/]
+
+banner_hero: |
+  [#5d141a]        .-----------------------.[/]
+  [#cc241d]       /  CONTROL DEVIL DOSSIER  \\[/]
+  [#d79921]      |  bg #282828  fg #f0e8d0 |[/]
+  [#fabd2f]      |  gold #d79921 red #cc241d|[/]
+  [#d3869b]       \\__ warm terminal contract _/[/]
