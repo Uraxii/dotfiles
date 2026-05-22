@@ -369,6 +369,18 @@ install_cmd = "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bas
 post_install = "hermes setup"
 url = "https://hermes-agent.nousresearch.com/"
 
+[graphify]
+pkg = "graphifyy"
+bin = "graphify"
+description = "Multi-modal knowledge-graph builder for AI coding assistants (Tree-sitter AST + LLM extraction + NetworkX + Leiden clustering)."
+url = "https://graphify.net"
+# PyPI package name is `graphifyy` (double-y); CLI binary is `graphify`.
+# uv-tool isolates the venv from system python (PEP 668-safe across arch/fedora/ubuntu/debian).
+# Requires Python 3.10+. Companion SKILL.md vendored at .claude/skills/graphify/.
+source = "uv-tool"
+# Termux: ships Python but lacks build deps for some graphify extras (faster-whisper, leiden);
+# core build works. Leave at default uv-tool; user installs extras manually if needed.
+
 # ============================================================
 # Bootstrap toolchain — must precede pkgs that use `source = "uv-tool"`.
 # ============================================================
@@ -516,7 +528,7 @@ shells   = ["zsh", "xonsh"]
 editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard", "nodejs"]
 fonts    = ["nerd-fonts-0xproto"]
 dotfiles = ["stow", "git", "gh", "jq"]
-ai       = ["claude-code", "opencode", "pi", "hermes"]
+ai       = ["claude-code", "opencode", "pi", "hermes", "graphify"]
 pipeline   = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
 containers = ["docker"]
 games      = ["godots"]
