@@ -261,6 +261,41 @@ fedora.pkg = "nodejs"
 termux.pkg = "nodejs"
 
 # ============================================================
+# Note-taking / Knowledge Base
+# ============================================================
+
+[obsidian]
+pkg = "obsidian"
+bin = "obsidian"
+description = "Powerful knowledge base that works on top of a local folder of plain text Markdown files"
+# Arch: in `extra` repo (not AUR). Default `native` source handles it.
+nixos.source = "nix-unstable"
+# Ubuntu/Fedora: no native pkg; AppImage or flatpak from obsidian.md/download
+ubuntu.source = "manual"
+ubuntu.url = "https://obsidian.md/download (flatpak: flatpak install flathub md.obsidian.Obsidian)"
+fedora.source = "manual"
+fedora.url = "https://obsidian.md/download (flatpak: flatpak install flathub md.obsidian.Obsidian)"
+termux.source = "unsupported"
+termux.reason = "no GUI on android"
+
+[notesmd-cli]
+pkg = "notesmd-cli-bin"
+bin = "notesmd-cli"
+description = "Obsidian CLI - search, create, update, move notes in an Obsidian vault from the terminal (github.com/Yakitrak/notesmd-cli)"
+arch.source = "aur"
+# Non-Arch distros: download prebuilt Go binary from GitHub releases.
+# Single static binary extracted to ~/.local/bin; no runtime deps.
+ubuntu.source = "script"
+ubuntu.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
+fedora.source = "script"
+fedora.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
+nixos.source = "script"
+nixos.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
+# Termux (arm64): same approach with arm64 binary
+termux.source = "script"
+termux.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_arm64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
+
+# ============================================================
 # Fonts
 # ============================================================
 
@@ -543,6 +578,7 @@ ai       = ["claude-code", "opencode", "pi", "hermes", "graphify"]
 pipeline   = ["uv", "python", "pango", "cairo", "gdk-pixbuf", "libffi"]
 containers = ["docker"]
 games      = ["godots"]
+notes      = ["obsidian", "notesmd-cli"]
 
 # ============================================================
 # Profiles (opt-in via --profile <name>)
