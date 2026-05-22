@@ -1166,6 +1166,7 @@ def process_one(
     defaults: dict,
     dry_run: bool,
     report: Report,
+    force: bool = False,
 ) -> None:
     try:
         spec = resolve(pkg_id, entry, distro, defaults)
@@ -1210,10 +1211,14 @@ def process_one(
                 break
     if inst is not None:
         if satisfies(inst, spec.version):
-            log.info("  ✓ already present (v%s)", inst)
-            report.already.append(pkg_id)
-            return
-        log.info("  ↻ installed v%s violates pin %r — reinstall", inst, spec.version)
+            if force:
+                log.info("  ↻ already present (v%s) — --force, reinstalling", inst)
+            else:
+                log.info("  ✓ already present (v%s)", inst)
+                report.already.append(pkg_id)
+                return
+        else:
+            log.info("  ↻ installed v%s violates pin %r — reinstall", inst, spec.version)
 
     # install
     if spec.source == "manual":
@@ -1385,6 +1390,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--distro", help="override detected distro (testing)")
     p.add_argument("-n", "--dry-run", action="store_true")
+    p.add_argument("-f", "--force", action="store_true",
+                   help="reinstall even if package already present")
     p.add_argument("-v", "--verbose", action="store_true")
     p.add_argument("--list-groups", action="store_true")
     p.add_argument("--list-packages", action="store_true")
@@ -1555,7 +1562,8 @@ def main(argv: list[str] | None = None) -> int:
 
     report = Report()
     for pkg_id, entry in selected:
-        process_one(pkg_id, entry, distro, defaults, args.dry_run, report)
+        process_one(pkg_id, entry, distro, defaults, args.dry_run, report,
+                    force=args.force)
 
     report.emit()
 
