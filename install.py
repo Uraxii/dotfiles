@@ -914,6 +914,14 @@ def interactive_select(
 
     selected: set[str] = _initial_selection(config, distro, defaults, auto_profile)
     rows = _build_rows(config)
+    # Collapse state per group. All groups start collapsed so the install list
+    # fits on one screen w/o scrolling. Tab on a group header toggles it; `e`
+    # expands all; `c` collapses all.
+    collapsed: dict[str, bool] = {
+        r.group: True
+        for r in rows
+        if r.kind == "group" and r.group is not None
+    }
     # Cache resolved spec per pkg for the session (description, source, sudo).
     cache: dict[str, Resolved | None] = {}
     for r in rows:
@@ -931,10 +939,28 @@ def interactive_select(
             if r.kind == "pkg" and r.group == group and r.pkg_id is not None
         ]
 
+    def _visible_rows() -> list[_Row]:
+        """Filter rows: always show group headers; show pkgs only when their
+        group is expanded (not collapsed).
+        """
+        out: list[_Row] = []
+        for r in rows:
+            if r.kind == "group":
+                out.append(r)
+            elif r.kind == "pkg" and r.group and not collapsed.get(r.group, False):
+                out.append(r)
+        return out
+
     def _run(stdscr: "curses._CursesWindow") -> None:
         curses.curs_set(0)
         stdscr.nodelay(False)
         while True:
+            visible = _visible_rows()
+            # Clamp cursor to current visible range (collapse can shrink it).
+            if state["cursor"] >= len(visible):
+                state["cursor"] = max(0, len(visible) - 1)
+            cursor = state["cursor"]
+
             stdscr.erase()
             h, w = stdscr.getmaxyx()
             profile_label = auto_profile or "none"
@@ -944,24 +970,26 @@ def interactive_select(
             )
             stdscr.addnstr(0, 0, header.ljust(w - 1), w - 1, curses.A_REVERSE)
             help_line = (
-                " space=toggle  g=group-toggle  a=all  z=clear  "
-                "enter=install  d=dry-run  q=quit"
+                " space=toggle  tab=expand  e=expand-all  c=collapse-all  "
+                "a=select-all  z=clear  enter=install  d=dry-run  q=quit"
             )
             stdscr.addnstr(h - 1, 0, help_line.ljust(w - 1), w - 1, curses.A_REVERSE)
 
             # Viewport: rows visible between line 2 and h-2.
             view_h = h - 3
-            cursor = state["cursor"]
             top = max(0, cursor - view_h + 1) if cursor >= view_h else 0
-            for i in range(top, min(len(rows), top + view_h)):
-                r = rows[i]
+            for i in range(top, min(len(visible), top + view_h)):
+                r = visible[i]
                 y = 2 + (i - top)
                 is_cursor = i == cursor
                 attr = curses.A_REVERSE if is_cursor else curses.A_NORMAL
                 if r.kind == "group":
                     pids = _group_pkg_ids(r.group or "")
                     chk = sum(1 for p in pids if p in selected)
-                    line = f"  [{r.group}]  ({chk}/{len(pids)})"
+                    # ▶ = collapsed, ▼ = expanded. Basic Geometric-Shapes
+                    # Unicode renders on every monospace font we ship.
+                    indicator = "▶" if collapsed.get(r.group or "", False) else "▼"
+                    line = f"  {indicator} [{r.group}]  ({chk}/{len(pids)})"
                     stdscr.addnstr(y, 0, line.ljust(w - 1), w - 1, attr | curses.A_BOLD)
                 else:
                     spec = cache.get(r.pkg_id or "")
@@ -972,7 +1000,7 @@ def interactive_select(
                     else:
                         src, sudo, desc = "?", "", ""
                     mark = "[x]" if r.pkg_id in selected else "[ ]"
-                    line = f"    {mark} {(r.pkg_id or ''):<22} [{src}{sudo}]  {desc}"
+                    line = f"      {mark} {(r.pkg_id or ''):<22} [{src}{sudo}]  {desc}"
                     stdscr.addnstr(y, 0, line.ljust(w - 1), w - 1, attr)
 
             stdscr.refresh()
@@ -982,35 +1010,47 @@ def interactive_select(
             if k in (curses.KEY_UP, ord("k")):
                 state["cursor"] = max(0, cursor - 1)
             elif k in (curses.KEY_DOWN, ord("j")):
-                state["cursor"] = min(len(rows) - 1, cursor + 1)
+                state["cursor"] = min(len(visible) - 1, cursor + 1)
             elif k == curses.KEY_NPAGE:
-                state["cursor"] = min(len(rows) - 1, cursor + view_h)
+                state["cursor"] = min(len(visible) - 1, cursor + view_h)
             elif k == curses.KEY_PPAGE:
                 state["cursor"] = max(0, cursor - view_h)
             elif k == curses.KEY_HOME:
                 state["cursor"] = 0
             elif k == curses.KEY_END:
-                state["cursor"] = len(rows) - 1
+                state["cursor"] = len(visible) - 1
+            elif k == 9:  # TAB — toggle collapse on group at cursor
+                r = visible[cursor] if 0 <= cursor < len(visible) else None
+                if r and r.kind == "group" and r.group:
+                    collapsed[r.group] = not collapsed[r.group]
+            elif k == curses.KEY_RIGHT or k == ord("l"):
+                # Expand group at cursor (no-op if already expanded or on pkg).
+                r = visible[cursor] if 0 <= cursor < len(visible) else None
+                if r and r.kind == "group" and r.group:
+                    collapsed[r.group] = False
+            elif k == curses.KEY_LEFT or k == ord("h"):
+                # Collapse group at cursor (no-op if already collapsed or on pkg).
+                r = visible[cursor] if 0 <= cursor < len(visible) else None
+                if r and r.kind == "group" and r.group:
+                    collapsed[r.group] = True
+            elif k == ord("e"):
+                for g in collapsed:
+                    collapsed[g] = False
+            elif k == ord("c"):
+                for g in collapsed:
+                    collapsed[g] = True
             elif k == ord(" "):
-                r = rows[cursor]
+                r = visible[cursor] if 0 <= cursor < len(visible) else None
+                if r is None:
+                    continue
                 if r.kind == "pkg" and r.pkg_id is not None:
                     if r.pkg_id in selected:
                         selected.discard(r.pkg_id)
                     else:
                         selected.add(r.pkg_id)
-                elif r.kind == "group":
-                    pids = _group_pkg_ids(r.group or "")
-                    if all(p in selected for p in pids):
-                        for p in pids:
-                            selected.discard(p)
-                    else:
-                        for p in pids:
-                            selected.add(p)
-            elif k == ord("g"):
-                r = rows[cursor]
-                grp = r.group
-                if grp:
-                    pids = _group_pkg_ids(grp)
+                elif r.kind == "group" and r.group:
+                    # Toggle select-all-in-group regardless of collapsed state.
+                    pids = _group_pkg_ids(r.group)
                     if all(p in selected for p in pids):
                         for p in pids:
                             selected.discard(p)
