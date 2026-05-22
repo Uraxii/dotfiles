@@ -26,12 +26,18 @@ limit=10
 [[ $# -eq 1 && $1 = "-j" ]] && {
   text="$(head -n 1 "$loc/colors")"
 
+  if [ -z "$text" ]; then
+    printf '{ "text":"", "tooltip":"no colors picked yet"}\n'
+    exit
+  fi
+
   mapfile -t allcolors < <(tail -n +2 "$loc/colors")
   # allcolors=($(tail -n +2 "$loc/colors"))
   tooltip="<b>   COLORS</b>\n\n"
 
   tooltip+="-> <b>$text</b>  <span color='$text'></span>  \n"
   for i in "${allcolors[@]}"; do
+    [ -z "$i" ] && continue
     tooltip+="   <b>$i</b>  <span color='$i'></span>  \n"
   done
 
