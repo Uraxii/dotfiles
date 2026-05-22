@@ -29,8 +29,10 @@ stow -n -v -t ~ .               # dry run (no filesystem changes)
 | zsh | Interactive shell | [docs/shell.md](docs/shell.md) |
 | oh-my-posh | Prompt | [docs/shell.md](docs/shell.md) |
 | ghostty | Terminal emulator | [docs/shell.md](docs/shell.md) |
-| nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`.config/nvim/`](.config/nvim/) |
-| opencode | AI agent stack | [docs/tooling.md](docs/tooling.md) |
+| nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`nvim/`](nvim/) |
+| opencode | AI agent stack (legacy) | [docs/tooling.md](docs/tooling.md) |
+| Claude Code | AI agent stack — `.claude/` pipeline + skills | [docs/tooling.md](docs/tooling.md) |
+| Hermes Agent | AI agent stack — `.hermes/` port of pipeline | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
 | comms provider | Pipeline notification / Slack abstraction layer | [docs/comms.md](docs/comms.md) |

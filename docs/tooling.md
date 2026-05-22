@@ -168,6 +168,74 @@ if (u.instructions) for (let p of u.instructions) { /* load explicit paths */ }
 
 `opencode` CLI, `python3` (stdlib only for scripts; for custom tools), `git`, `gh`.
 
+## Hermes Agent (port of pipeline to Nous Research harness)
+
+### Purpose
+
+Parallel port of the multi-role gated pipeline to the **Hermes Agent harness** (Nous Research, `https://hermes-agent.nousresearch.com`). Coexists with the Claude Code branch — same `.pipeline/runs/<artifact-id>/` ledger, different invocation path.
+
+Doctrine deltas vs Claude Code branch:
+- Subagent persistence dropped — every `delegate_task` spawn is fresh. Continuity via mandatory `handoff-<role>-r<N>.md` artifact (Hermes constraint R1: `delegate_task` does not return child session_id; no programmatic resume).
+- Toolsets coarse only (`file`, `terminal`, `web`, `pipeline`). Per-role fine-grain via `role_policy.py` shell hook + per-spawn role sidecar (R2).
+- Decision elicitation: sync via `clarify` tool (root only); async via Discord `send_message` + text-reply sentinel `!decide <run_id>:d<N> <index>`. Hermes native gateway routes user replies back to orchestrator session — no custom decision-router hook (R3 + R5).
+- Slack dropped on Hermes side. Discord only.
+- `terminal.backend: local` locked — `pipeline-core` plugin guards registration on this.
+
+### Key files
+
+Stow-managed under `~/dotfiles/.hermes/` → symlinked into `~/.hermes/`:
+
+- `.hermes/SOUL.md.example` — root agent identity template. **Not stowed.** User copies once to `~/.hermes/SOUL.md` (stays local + gitignored).
+- `.hermes/config.yaml.example` — harness config template. **Not stowed.** User copies once to `~/.hermes/config.yaml` (stays local + gitignored).
+- `.hermes/skills/pipeline/<role>/SKILL.md` — 11 role-skills (orchestrator + plan, researcher, architect, build, skeptic, security-auditor, tester, ui-ux-designer, content-designer, progenitor).
+- `.hermes/skills/pipeline-{agent-brief-format,handoff-doc,decision-elicitation,agent-preflight}/SKILL.md` — 4 prompt-skills.
+- `.hermes/skills/caveman/SKILL.md` — output-style skill (pin via Hermes `memory` tool).
+- `.hermes/skill-bundles/pipeline.yaml` — `/pipeline <request>` entry point.
+- `.hermes/plugins/pipeline-core/{plugin.yaml,__init__.py,schemas.py,tools.py}` — Python plugin registering 8 deterministic logic tools (artifact_slug, verdict_parse, dep_graph_compose, revision_route, worktree_lifecycle, test_path_resolve, prod_diff_sha, friction_audit).
+- `.hermes/hooks/{cap_bash_timeout.py,graphify_advice.sh,terminal_policy.py,role_policy.py}` — shell hooks.
+- `.hermes/policy.json` — `terminal_policy` allow/deny patterns (replaces Claude Code's `settings.json permissions`).
+- `.hermes/role-policy.json` — per-role write-path denylists for `role_policy.py`.
+
+Stow-ignored runtime / secrets / local-only:
+- `.hermes/SOUL.md` — local-only; seed from `SOUL.md.example`.
+- `.hermes/config.yaml` — local-only; seed from `config.yaml.example`.
+- `.hermes/.env` — `ANTHROPIC_API_KEY`, `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, `DISCORD_GUILD_ID`.
+- `.hermes/state.db` — SQLite session store.
+- `.hermes/sessions/sessions.json` — gateway routing index.
+- `.hermes/memory/` — Hermes memory provider state (provider-dependent).
+- `.hermes/pipeline-registry.json` — active-run registry (orchestrator-maintained for cross-pipeline `run_id → run_dir` lookup on Discord replies).
+
+### Setup
+
+1. Install Hermes: `pip install hermes-agent` (or per upstream docs).
+2. Stow dotfiles: `cd ~/dotfiles && stow .` — links skills / plugins / hooks / policies into `~/.hermes/`.
+3. **Seed local files** (one-time, not stowed):
+   ```bash
+   mkdir -p ~/.hermes
+   cp ~/dotfiles/.hermes/SOUL.md.example ~/.hermes/SOUL.md
+   cp ~/dotfiles/.hermes/config.yaml.example ~/.hermes/config.yaml
+   ```
+   If Hermes already wrote its own defaults, diff + merge the pipeline-specific blocks (hooks, plugins.enabled, terminal.backend lock, delegation limits).
+4. Set secrets: `hermes config set DISCORD_BOT_TOKEN <token>`, `hermes config set DISCORD_CHANNEL_ID <id>`, `hermes config set ANTHROPIC_API_KEY <key>`.
+5. Enable plugin: `hermes plugins enable pipeline-core` + restart hermes.
+6. Verify: `hermes skills list | grep pipeline` (expect 11 role-skills + 4 prompt-skills + caveman).
+7. Use: `hermes chat` → `/pipeline <request>`.
+
+### Sentinels
+
+- Resume: `<<resume-pipeline-<artifact-id>>>` or literal `resume <artifact-id>` in user input.
+- Plan reuse: `use plan <artifact-id>` in user input.
+- Async decision reply: `!decide <run_id>:d<N> <index>` (Discord text).
+- Async drift menu reply: `!resolve <run_id>:drift <rebase|abort|proceed>` (Discord text).
+
+### External dependencies
+
+`hermes-agent` (`hermes` CLI), `python3` ≥ 3.9, `git`, `gh`, `pyyaml` (Hermes ships it). Discord bot token + channel for async decision elicitation (optional — sync via `clarify` works without).
+
+### Port plan reference
+
+`~/.claude/plans/port-claude-code-pipline-fizzy-token.md` — full architectural decisions, doctrine deltas, sequencing, verification.
+
 ## systemd / user
 
 ### Purpose

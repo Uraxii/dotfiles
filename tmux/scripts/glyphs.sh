@@ -5,7 +5,7 @@
 # strips them. Idempotent.
 #
 # Usage:
-#   ./glyphs.sh                 # patch ~/dotfiles/.config/tmux/tmux.conf
+#   ./glyphs.sh                 # patch ~/dotfiles/tmux/tmux.conf
 #   ./glyphs.sh path/to/file    # patch arbitrary file w/ same registry
 #
 # Adding a glyph: append to the PAIRS array below + reference __TOKEN__ in
@@ -14,7 +14,7 @@
 
 set -eu
 
-target=${1:-$HOME/dotfiles/.config/tmux/tmux.conf}
+target=${1:-$HOME/dotfiles/tmux/tmux.conf}
 [ -f "$target" ] || { echo "glyphs.sh: target not found: $target" >&2; exit 1; }
 
 NERD_GLYPH=${NERD_GLYPH:-$HOME/dotfiles/scripts/nerd-glyph}

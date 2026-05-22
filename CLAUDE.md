@@ -3,44 +3,59 @@
 ## Dos
 - Recommend safety commits/branches for large changes.
 
-GNU Stow-managed dotfiles. Flat/single-package mode — repo root IS the package, target is `$HOME`.
+GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land in `~/.config/` (target set via `.stowrc`).
 
 ```bash
-stow .          # create symlinks (default target = ..)
-stow -R .       # restow after changes
-stow -n -v .    # dry run
+./setup.sh           # stow + link breakers ($HOME → ~/.config symlinks for hardcoded tools)
+./setup.sh restow    # restow after structural changes (unstow + stow + relink)
+./setup.sh unstow    # remove all symlinks (stow + breakers)
+./setup.sh dry       # dry run preview
 ```
+
+`setup.sh` wraps `stow .` + creates `$HOME/<name> → ~/.config/<name>` symlinks for tools that hardcode `$HOME` paths (zsh, xonsh, claude-code, hermes). Idempotent.
 
 ## Repo Structure
 
 ```
 ~/dotfiles/
-├── .zshrc                        # Zsh config (starship init + bootstrap, keybinds, aliases)
-├── .swaylock/                    # Swaylock config
+├── .stowrc                       # --target=~/.config (omerxx model)
 ├── .stow-local-ignore            # Stow ignore patterns (regex)
-├── .config/
-│   ├── ghostty/                  # Ghostty terminal
-│   ├── networkmanager-dmenu/     # Network manager dmenu
-│   ├── nvim/                     # Neovim (Kickstart-based, has own CLAUDE.md)
-│   ├── omp/                      # Oh My Posh prompt themes (inactive, kept for reference)
-│   ├── opencode/                 # OpenCode + Claude Code skills
-│   ├── qt6ct/                    # Qt6 theming (qt6ct.conf)
-│   ├── starship.toml             # Starship prompt — committed default (bootstrap source)
-│   ├── starship.toml.tmpl        # Starship template; set-theme.sh substitutes ##PALETTE##
-│   ├── sway/                     # Sway WM (config, modules, themes, scripts)
-│   ├── waybar/                   # Waybar (themes/<name>/ + user-overrides.css)
-│   └── wofi/                     # Wofi launcher (config only, CSS is runtime)
-├── .claude/                      # Claude Code project settings
-├── home.nix                      # Nix home-manager config
+├── ghostty/                      # → ~/.config/ghostty/
+├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
+├── nvim/                         # → ~/.config/nvim/  (Kickstart-based, has own CLAUDE.md)
+├── omp/                          # → ~/.config/omp/   (inactive, kept for reference)
+├── opencode/                     # → ~/.config/opencode/  (+ Claude Code skills)
+├── qt6ct/                        # → ~/.config/qt6ct/
+├── starship.toml                 # IGNORED — managed at runtime by set-theme.sh
+├── starship.toml.tmpl            # IGNORED — template, set-theme.sh substitutes ##PALETTE##
+├── sway/                         # → ~/.config/sway/
+├── systemd/                      # → ~/.config/systemd/
+├── tmux/                         # → ~/.config/tmux/
+├── waybar/                       # → ~/.config/waybar/
+├── wofi/                         # → ~/.config/wofi/
+├── swaylock/                     # → ~/.config/swaylock/  (XDG-native; no dot prefix)
+├── .claude/                      # → ~/.config/.claude/  → setup.sh links ~/.claude → here
+├── .hermes/                      # → ~/.config/.hermes/  → setup.sh links ~/.hermes → here
+├── .zshrc                        # → ~/.config/.zshrc    → setup.sh links ~/.zshrc → here
+├── .xonshrc                      # → ~/.config/.xonshrc  → setup.sh links ~/.xonshrc → here
+├── .zprofile                     # → ~/.config/.zprofile → setup.sh links ~/.zprofile → here
+├── home.nix                      # IGNORED (repo meta)
+├── setup.sh                      # IGNORED (install entrypoint)
 ```
+
+**Breakers**: tools that hardcode `$HOME` paths (`.claude`, `.hermes`, `.zshrc`, `.xonshrc`, `.zprofile`) stow into `~/.config/.foo` then `setup.sh` adds `$HOME/.foo → ~/.config/.foo` symlinks. Swaylock no longer a breaker — it checks `$XDG_CONFIG_HOME/swaylock/config` natively, so `swaylock/` (no dot) at repo root works.
+
+**First-boot chicken-egg**: on a fresh machine, zsh reads `~/.zshrc` BEFORE `./setup.sh` runs. Bootstrap via bash: `bash -c './setup.sh'`, then start zsh.
 
 ## Stow Ignore
 
-`.stow-local-ignore` controls what stow skips (regex). Currently ignores git files, README/LICENSE, `scripts`, `.claude/settings.local.json`, `.config/starship.toml` (tracked default but managed at runtime by `set-theme.sh` / zshrc bootstrap — must not symlink). Overrides stow defaults — must re-add defaults manually.
+`.stow-local-ignore` controls what stow skips (regex). Ignores: repo meta (`README`, `LICENSE`, `docs`, `CLAUDE.md`, `CONTEXT.md`, `AGENTS.md`, `deps.toml`, `install.py`, `pytest.ini`, `scripts`, `tests`, `home.nix`), VCS files, caches (`__pycache__`, `.ruff_cache`), `.claude/*local*`, `.pipeline`, hermes secrets/runtime, opencode runtime (`memory`, `inbox`, `plans`, `projects`, `models.local`), `tmux/plugins`, `starship.toml` + `.tmpl` (managed by set-theme.sh).
+
+`.stowrc` defines `--target=~/.config` + ignores `.stowrc` itself + `DS_Store`. Stow regex overrides defaults — must re-add defaults manually.
 ## Agent & Skill Files
 
 `.claude/agents/` and `.claude/skills/` are the editable source of truth.
-`.config/opencode/agents/` and `.config/opencode/skills/` are symlinks to these.
+`opencode/agents/` and `opencode/skills/` are symlinks to these.
 Edit files directly — no generator.
 
 
@@ -71,7 +86,7 @@ Two placeholder syntaxes (to avoid Go template conflicts in TOML):
 | `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
 | `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<name>/` (currently `minimal`) |
 | OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
-| Starship palette | `themes/*/data/starship-palette` | `##PALETTE##` | `.config/starship.toml.tmpl` → `~/.config/starship.toml` |
+| Starship palette | `themes/*/data/starship-palette` | `##PALETTE##` | `starship.toml.tmpl` → `~/.config/starship.toml` |
 
 Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
 
@@ -101,12 +116,12 @@ themes/<name>/
 
 Starship is the active prompt (`.zshrc:24`). Runtime config `~/.config/starship.toml` is owned by two paths:
 
-- **Sway systems**: `set-theme.sh:79-83` regenerates it from `.config/starship.toml.tmpl` + `themes/<name>/starship-palette` on every sway theme switch.
-- **Non-sway systems** (or first shell before sway runs): `.zshrc` bootstrap stanza copies the committed `dotfiles/.config/starship.toml` to `~/.config/starship.toml` if missing.
+- **Sway systems**: `set-theme.sh:79-83` regenerates it from `starship.toml.tmpl` + `themes/<name>/starship-palette` on every sway theme switch.
+- **Non-sway systems** (or first shell before sway runs): `.zshrc` bootstrap stanza copies the committed `dotfiles/starship.toml` to `~/.config/starship.toml` if missing.
 
-The committed `.config/starship.toml` is a frozen snapshot — a portable default. It is explicitly stow-ignored (`\.config/starship\.toml` in `.stow-local-ignore`) so set-theme.sh never writes through a symlink back into the repo. Refresh the snapshot manually when the desired default changes:
+The committed `starship.toml` is a frozen snapshot — a portable default. It is explicitly stow-ignored (`^/starship\.toml$` in `.stow-local-ignore`) so set-theme.sh never writes through a symlink back into the repo. Refresh the snapshot manually when the desired default changes:
 ```bash
-cp ~/.config/starship.toml ~/dotfiles/.config/starship.toml
+cp ~/.config/starship.toml ~/dotfiles/starship.toml
 ```
 
 # Docs

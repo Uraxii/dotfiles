@@ -5,25 +5,25 @@ __pycache__/
 .pytest_cache/
 .claude/*local*
 .claude/**/*local*
-.config/opencode/projects/*
-!.config/opencode/projects/.gitkeep
-.config/configstore
-.config/uv
-.config/opencode/plans/*
-!.config/opencode/plans/.gitkeep
-.config/opencode/memory/*
-!.config/opencode/memory/.gitkeep
-.config/opencode/agents/memory/*
-!.config/opencode/agents/memory/.gitkeep
-.config/opencode/agents/shared/agent-models.local.json
-.config/opencode/agents/shared/model-map.local.md
-.config/opencode/inbox/
-.config/opencode/opencode.json
-.config/opencode/models.local
+opencode/projects/*
+!opencode/projects/.gitkeep
+configstore
+uv
+opencode/plans/*
+!opencode/plans/.gitkeep
+opencode/memory/*
+!opencode/memory/.gitkeep
+opencode/agents/memory/*
+!opencode/agents/memory/.gitkeep
+opencode/agents/shared/agent-models.local.json
+opencode/agents/shared/model-map.local.md
+opencode/inbox/
+opencode/opencode.json
+opencode/models.local
 messages.md
 
 # tpm-installed tmux plugins — runtime install, never tracked
-.config/tmux/plugins/
+tmux/plugins/
 
 .claude/plans
 .claude/projects
@@ -45,9 +45,21 @@ messages.md
 !/.pipeline/_shared/
 !/.pipeline/_shared/**
 # OpenCode pipeline-aware config tracked; runtime overrides still in .local variants
-!/.config/opencode/opencode.json
+!/opencode/opencode.json
 
 # Slack listener: per-run runtime state never tracked.
 # State, pid, and log files live under <run-dir>, which is already covered by
 # .pipeline/runs/ above. Tokens at ~/.claude/pipeline/slack.env.local are
 # handled by the .claude/**/*local* rule above.
+
+# Hermes runtime + secrets — never tracked
+.hermes/.env
+.hermes/.env.local
+.hermes/state.db
+.hermes/sessions/
+.hermes/memory/
+.hermes/pipeline-registry.json
+.hermes/*local*
+# Local-only live copies (templates tracked as .example)
+.hermes/SOUL.md
+.hermes/config.yaml

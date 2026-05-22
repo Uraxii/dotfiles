@@ -1,0 +1,28 @@
+{
+  "_note": "Per-role write sandboxing. Consulted by role_policy.py hook when a per-spawn .role-active-<frag>.json sidecar is present in the active run-dir. write_allow_prefix and write_deny enforce the role's write scope. Roles not listed have no extra restrictions beyond terminal_policy global allow/deny.",
+
+  "tester": {
+    "_intent": "Tester writes only into test directories. Production code edits go through build role.",
+    "write_allow_prefix": ["tests/", "test/", "spec/"]
+  },
+
+  "skeptic": {
+    "_intent": "Skeptic produces verdict files + reads. No production writes.",
+    "write_allow_prefix": [".pipeline/runs/"]
+  },
+
+  "security-auditor": {
+    "_intent": "Security-auditor writes verdicts + audit notes. No production writes.",
+    "write_allow_prefix": [".pipeline/runs/"]
+  },
+
+  "researcher": {
+    "_intent": "Researcher writes research.md only.",
+    "write_allow_prefix": [".pipeline/runs/"]
+  },
+
+  "plan": {
+    "_intent": "Plan writes the plan file at ~/.pipeline/plans/-<slug>/<id>.md.",
+    "write_allow_prefix": [".pipeline/", "~/.pipeline/"]
+  }
+}
