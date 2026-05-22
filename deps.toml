@@ -307,6 +307,17 @@ pkg = "zoxide"
 bin = "zoxide"
 description = "Smart cd that learns frequent dirs. Used by .zshrc."
 
+[glow]
+pkg = "glow"
+bin = "glow"
+description = "Terminal markdown renderer (charm.sh). Pretty-print .md in shell + browse local file trees."
+url = "https://github.com/charmbracelet/glow"
+# Arch/Fedora/NixOS/Termux ship glow natively. Ubuntu lacks it in default repos —
+# fall back to upstream GitHub release tarball.
+ubuntu.source = "script"
+ubuntu.install_cmd = "curl -fsSL https://github.com/charmbracelet/glow/releases/latest/download/glow_Linux_x86_64.tar.gz | tar xz -C /tmp glow && sudo install -m755 /tmp/glow /usr/local/bin/glow && rm -f /tmp/glow"
+ubuntu.sudo = true
+
 [tealdeer]
 pkg = "tealdeer"
 bin = "tldr"
@@ -523,7 +534,7 @@ termux.reason = "no GUI on android"
 
 [groups]
 desktop  = ["sway", "swayidle", "swaybg", "swaylock-effects", "waybar", "wofi", "networkmanager-dmenu", "pavucontrol"]
-terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer"]
+terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer", "glow"]
 shells   = ["zsh", "xonsh"]
 editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard", "nodejs"]
 fonts    = ["nerd-fonts-0xproto"]
