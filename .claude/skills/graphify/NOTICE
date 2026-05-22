@@ -1,0 +1,25 @@
+Vendored from https://github.com/safishamsi/graphify
+
+File: graphify/skill.md
+Upstream branch: v8
+Upstream blob SHA: c3e39b3f454ef201263e91d345ade92f322cbcb1
+Upstream commit SHA: 076e6b7c06d0018a027ecc37249d82518999f639
+License: MIT
+
+To refresh:
+  gh api repos/safishamsi/graphify/contents/graphify/skill.md --jq '.content' \
+    | base64 -d > .claude/skills/graphify/SKILL.md
+  # then update upstream SHAs in this NOTICE
+
+Companion runtime:
+  pip install graphifyy   # Python 3.10+ required
+  # CLI binary `graphify` resolved via PATH; the skill's Step 1 detects + bootstraps.
+
+Not vendored:
+  - graphify install (writes PreToolUse hook + CLAUDE.md directives — skipped intentionally)
+  - skill-aider.md, skill-codex.md, skill-opencode.md, etc. (other-platform variants)
+
+Caveats:
+  - SKILL.md is 1114 lines. Loaded into context whenever auto-triggered.
+  - Outbound LLM call only on initial build / --update runs.
+  - graphify-out/ per-project cache — add to global gitignore template.
