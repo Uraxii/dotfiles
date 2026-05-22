@@ -34,6 +34,18 @@ del _p, _os
 # ---------------------------------------------------------------------------
 
 import shutil as _shutil
+from pathlib import Path as _Path
+
+# Bootstrap runtime starship config from repo on first shell start if missing.
+# On sway systems set-theme.sh regenerates this from starship.toml.tmpl
+# per theme; on non-sway systems the committed default is used as-is.
+_runtime = _Path.home() / '.config' / 'starship.toml'
+_source  = _Path.home() / 'dotfiles' / 'starship.toml'
+if not _runtime.exists() and _source.exists():
+    _runtime.parent.mkdir(parents=True, exist_ok=True)
+    _shutil.copy(_source, _runtime)
+del _runtime, _source, _Path
+
 if _shutil.which('starship'):
     execx($(starship init xonsh))
 if _shutil.which('zoxide'):
