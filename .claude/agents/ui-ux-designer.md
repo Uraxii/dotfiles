@@ -92,4 +92,3 @@ Turn product intent into clear, implementation-ready UI/UX direction. Raise qual
 ## Handoff Ownership
 - UI/UX Designer runs → this role owns `frontend-handoff.md`.
 - Role skipped + UI changed → Build owns fallback `frontend-handoff.md`.
-- `frontend-design` skill may still be used by Build for implementation aesthetics, but skill use does not replace this role's handoff ownership or routing semantics.

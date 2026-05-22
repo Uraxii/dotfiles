@@ -145,7 +145,7 @@ def check_skill_invocation(run_dir: Path, repo_root: Path) -> dict | None:
     for f in agents_dir.glob("*.md"):
         for m in pat.findall(f.read_text(encoding="utf-8", errors="replace")):
             invoked.add(m)
-    unreferenced = declared_skills - invoked - {"caveman", "frontend-design"}  # filter known-external
+    unreferenced = declared_skills - invoked - {"caveman"}  # filter known-external
     # Only flag pipeline-native skills
     pipeline_native = {
         "agent-brief-format", "artifact-slug", "decision-elicitation", "handoff-doc",
