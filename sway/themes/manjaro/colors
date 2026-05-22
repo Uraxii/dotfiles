@@ -1,24 +1,26 @@
-## Manjaro Theme
+## Synthwave '84 Theme
+## Palette source: https://github.com/robb0wen/synthwave-vscode
+## Directory name kept as `manjaro` for sway/prefs stability.
 
 # Colors
-set $bg          #0d0b1a
-set $bg_2        #1a1530
-set $fg          #e8e0f0
-set $fg_1        #f5f0ff
-set $fg_2        #c4b8d8
-set $magenta     #e6207a
-set $green       #2eb398
-set $yellow      #d4a017
-set $blue        #1a237e
-set $blue_faded  #0d1252
-set $purple      #7b2fbe
-set $aqua        #2196a6
-set $gray        #6e6580
-set $darkgray    #090714
-set $pink        #ff1493
+set $bg          #2a2139
+set $bg_2        #34294f
+set $fg          #f0eff1
+set $fg_1        #ffffff
+set $fg_2        #b6b1c1
+set $magenta     #ff7edb
+set $green       #72f1b8
+set $yellow      #fede5d
+set $blue        #495495
+set $blue_faded  #1a1428
+set $purple      #b893ce
+set $aqua        #03edf9
+set $gray        #848bbd
+set $darkgray    #1a1428
+set $pink        #fe4450
 
 # Class                 border    bground   text    indicator  child_border
-client.focused          $magenta  $magenta  $fg_1   $purple    $magenta
+client.focused          $magenta  $magenta  $bg     $purple    $magenta
 client.focused_inactive $bg_2     $bg       $gray   $bg_2      $bg_2
 client.unfocused        $darkgray $bg       $gray   $darkgray  $darkgray
 client.urgent           $pink     $pink     $fg_1   $pink      $pink

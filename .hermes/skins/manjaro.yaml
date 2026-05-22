@@ -2,35 +2,35 @@ name: manjaro
 description: Manjaro desktop palette port - midnight purple, hot magenta, teal highlights
 
 colors:
-  banner_border: "#e6207a"
-  banner_title: "#ff1493"
-  banner_accent: "#a96cef"
-  banner_dim: "#6e6580"
-  banner_text: "#e8e0f0"
-  ui_accent: "#e6207a"
-  ui_label: "#5cc8d8"
-  ui_ok: "#2eb398"
-  ui_error: "#ff1493"
-  ui_warn: "#f0c040"
-  prompt: "#e8e0f0"
-  input_rule: "#7b2fbe"
-  response_border: "#e6207a"
-  status_bar_bg: "#090714"
-  status_bar_text: "#c4b8d8"
-  status_bar_strong: "#ff1493"
-  status_bar_dim: "#6e6580"
-  status_bar_good: "#2eb398"
-  status_bar_warn: "#f0c040"
-  status_bar_bad: "#e6207a"
-  status_bar_critical: "#ff1493"
-  session_label: "#e6207a"
-  session_border: "#1a1530"
-  voice_status_bg: "#090714"
-  selection_bg: "#1a1530"
-  completion_menu_bg: "#090714"
-  completion_menu_current_bg: "#1a1530"
-  completion_menu_meta_bg: "#0d0b1a"
-  completion_menu_meta_current_bg: "#7b2fbe"
+  banner_border: "#ff7edb"
+  banner_title: "#fe4450"
+  banner_accent: "#b893ce"
+  banner_dim: "#848bbd"
+  banner_text: "#f0eff1"
+  ui_accent: "#ff7edb"
+  ui_label: "#03edf9"
+  ui_ok: "#72f1b8"
+  ui_error: "#fe4450"
+  ui_warn: "#fede5d"
+  prompt: "#f0eff1"
+  input_rule: "#b893ce"
+  response_border: "#ff7edb"
+  status_bar_bg: "#1a1428"
+  status_bar_text: "#b6b1c1"
+  status_bar_strong: "#fe4450"
+  status_bar_dim: "#848bbd"
+  status_bar_good: "#72f1b8"
+  status_bar_warn: "#fede5d"
+  status_bar_bad: "#ff7edb"
+  status_bar_critical: "#fe4450"
+  session_label: "#ff7edb"
+  session_border: "#34294f"
+  voice_status_bg: "#1a1428"
+  selection_bg: "#34294f"
+  completion_menu_bg: "#1a1428"
+  completion_menu_current_bg: "#34294f"
+  completion_menu_meta_bg: "#2a2139"
+  completion_menu_meta_current_bg: "#b893ce"
 
 spinner:
   waiting_faces:
@@ -75,15 +75,15 @@ tool_emojis:
   delegate_task: "dg"
 
 banner_logo: |
-  [bold #ff1493] __  __    _    _   _      _    ____   ___  [/]
-  [bold #e6207a]|  \/  |  / \  | \ | |    | |  / ___| / _ \ [/]
-  [#a96cef]     | |\/| | / _ \ |  \| |_   | | | |  _ | | | |[/]
-  [#5cc8d8]     | |  | |/ ___ \| |\  | |__| | | |_| || |_| |[/]
-  [#2eb398]     |_|  |_/_/   \_\_| \_|\____/   \____| \___/ [/]
+  [bold #fe4450] __  __    _    _   _      _    ____   ___  [/]
+  [bold #ff7edb]|  \/  |  / \  | \ | |    | |  / ___| / _ \ [/]
+  [#b893ce]     | |\/| | / _ \ |  \| |_   | | | |  _ | | | |[/]
+  [#03edf9]     | |  | |/ ___ \| |\  | |__| | | |_| || |_| |[/]
+  [#72f1b8]     |_|  |_/_/   \_\_| \_|\____/   \____| \___/ [/]
 
 banner_hero: |
-  [#090714]        .-----------------------.[/]
-  [#1a1530]       /     SMOOTH SAILING      \\[/]
-  [#e6207a]      |  bg #0d0b1a mag #e6207a |[/]
-  [#5cc8d8]      |  teal #2eb398 vio #7b2fbe|[/]
-  [#ff1493]       \\__ midnight neon route __/[/]
+  [#1a1428]        .-----------------------.[/]
+  [#34294f]       /     SMOOTH SAILING      \\[/]
+  [#ff7edb]      |  bg #2a2139 mag #ff7edb |[/]
+  [#03edf9]      |  teal #72f1b8 vio #b893ce|[/]
+  [#fe4450]       \\__ midnight neon route __/[/]

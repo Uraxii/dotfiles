@@ -6,13 +6,13 @@ colors:
   banner_title: "#fabd2f"
   banner_accent: "#d3869b"
   banner_dim: "#a89984"
-  banner_text: "#f0e8d0"
+  banner_text: "#ebdbb2"
   ui_accent: "#d79921"
   ui_label: "#83a598"
   ui_ok: "#b8bb26"
   ui_error: "#cc241d"
   ui_warn: "#fabd2f"
-  prompt: "#f0e8d0"
+  prompt: "#ebdbb2"
   input_rule: "#5d141a"
   response_border: "#d79921"
   status_bar_bg: "#1d2021"
@@ -84,6 +84,6 @@ banner_logo: |
 banner_hero: |
   [#5d141a]        .-----------------------.[/]
   [#cc241d]       /  CONTROL DEVIL DOSSIER  \\[/]
-  [#d79921]      |  bg #282828  fg #f0e8d0 |[/]
+  [#d79921]      |  bg #282828  fg #ebdbb2 |[/]
   [#fabd2f]      |  gold #d79921 red #cc241d|[/]
   [#d3869b]       \\__ warm terminal contract _/[/]
