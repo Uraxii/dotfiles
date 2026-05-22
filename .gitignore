@@ -36,6 +36,11 @@ tmux/plugins/
 .claude/session-env/
 .claude/statsig/
 .claude/todos/
+.claude/backups/
+.claude/file-history/
+.claude/sessions/
+.claude/shell-snapshots/
+.claude/mcp-needs-auth-cache.json
 # Ignore .pipeline/ runtime dirs but keep _shared/ SSoT source tracked
 .pipeline/runs/
 .pipeline/dreams/
@@ -60,6 +65,11 @@ tmux/plugins/
 .hermes/memory/
 .hermes/pipeline-registry.json
 .hermes/*local*
+.hermes/channel_directory.json
+.hermes/cron/
+.hermes/kanban.db
+.hermes/kanban.db-shm
+.hermes/kanban.db-wal
 # Local-only live copies (templates tracked as .example)
 .hermes/SOUL.md
 .hermes/config.yaml
