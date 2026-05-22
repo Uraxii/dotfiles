@@ -5,10 +5,23 @@
 # Pass 2: stow --no-folding into $HOME/.claude and $HOME/.hermes
 #         (per-file symlinks; runtime state coexists alongside tracked files).
 #
+# Subcommand:
+#   (none)  fail loudly on existing-file conflicts
+#   adopt   pull existing $HOME files INTO repo + symlink (review with `git diff`)
+#
 # See README.md for ~/.zshenv stub (one-time, per machine).
 set -eu
 cd "$(dirname "$(readlink -f "$0")")"
-stow .
+
+OPTS=()
+case "${1:-}" in
+    adopt) OPTS+=(--adopt) ;;
+    "")    ;;
+    *)     echo "usage: $0 [adopt]" >&2; exit 2 ;;
+esac
+
+# Explicit -d "$PWD" forces stow-dir to repo root regardless of how setup.sh is invoked.
+stow "${OPTS[@]}" -d "$PWD" .
 mkdir -p "$HOME/.claude" "$HOME/.hermes"
-stow --no-folding -t "$HOME/.claude" .claude
-stow --no-folding -t "$HOME/.hermes" .hermes
+stow "${OPTS[@]}" --no-folding -d "$PWD" -t "$HOME/.claude" .claude
+stow "${OPTS[@]}" --no-folding -d "$PWD" -t "$HOME/.hermes" .hermes
