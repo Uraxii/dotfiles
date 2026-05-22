@@ -350,7 +350,8 @@ url = "https://github.com/charmbracelet/glow"
 # Arch/Fedora/NixOS/Termux ship glow natively. Ubuntu lacks it in default repos —
 # fall back to upstream GitHub release tarball.
 ubuntu.source = "script"
-ubuntu.install_cmd = "curl -fsSL https://github.com/charmbracelet/glow/releases/latest/download/glow_Linux_x86_64.tar.gz | tar xz -C /tmp glow && sudo install -m755 /tmp/glow /usr/local/bin/glow && rm -f /tmp/glow"
+# Asset name embeds version (glow_<ver>_Linux_x86_64.tar.gz) — resolve via API.
+ubuntu.install_cmd = "url=$(curl -fsSL https://api.github.com/repos/charmbracelet/glow/releases/latest | grep browser_download_url | grep Linux_x86_64.tar.gz | grep -v sbom | head -1 | cut -d'\"' -f4) && curl -fsSL \"$url\" | tar xz -C /tmp glow && sudo install -m755 /tmp/glow /usr/local/bin/glow && rm -f /tmp/glow"
 ubuntu.sudo = true
 
 [tealdeer]

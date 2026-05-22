@@ -26,9 +26,9 @@ HAS_WIDECHARS="false"
 # Bootstrap runtime config from repo on first shell start if missing.
 # On sway systems set-theme.sh regenerates this from starship.toml.tmpl
 # per theme; on non-sway systems the committed default is used as-is.
-if [ ! -f "$HOME/.config/starship.toml" ] && [ -f "$HOME/dotfiles/.config/starship.toml" ]; then
+if [ ! -f "$HOME/.config/starship.toml" ] && [ -f "$HOME/dotfiles/starship.toml" ]; then
     mkdir -p "$HOME/.config"
-    cp "$HOME/dotfiles/.config/starship.toml" "$HOME/.config/starship.toml"
+    cp "$HOME/dotfiles/starship.toml" "$HOME/.config/starship.toml"
 fi
 
 eval "$(starship init zsh)"

@@ -518,23 +518,33 @@ class NpmAdapter(Adapter):
         if version:
             spec = f"{name}@{version}"
 
-        # Nix-store-installed node has an immutable global prefix
-        # (`/nix/store/...-nodejs-X/lib/node_modules`). `npm install -g` will
-        # ENOENT trying to mkdir there. Redirect to a user-writable prefix.
+        # `npm install -g` requires write access to the configured prefix.
+        # Failure modes encountered in the wild:
+        #   - Nix-store nodejs: prefix is /nix/store/...-nodejs-X (immutable).
+        #   - NodeSource nodejs on Ubuntu: prefix is /usr/lib (system-owned,
+        #     EACCES without sudo).
+        # Generic fix: if the prefix's lib/node_modules dir is not writable
+        # by the current user, redirect to ~/.npm-global.
         env_extra: dict[str, str] | None = None
         rc, prefix_out = self._run(
             ["npm", "config", "get", "prefix"], capture=True,
         )
         prefix = prefix_out.strip()
-        if rc == 0 and prefix.startswith("/nix/store"):
-            user_prefix = str(Path.home() / ".npm-global")
-            (Path(user_prefix) / "bin").mkdir(parents=True, exist_ok=True)
-            env_extra = {"NPM_CONFIG_PREFIX": user_prefix}
-            log.info(
-                "  • npm prefix in nix store (%s) — redirecting to %s "
-                "(ensure %s/bin is on PATH)",
-                prefix, user_prefix, user_prefix,
-            )
+        if rc == 0 and prefix:
+            target_dir = Path(prefix) / "lib" / "node_modules"
+            # Probe writability: parent dir must exist + be writable, OR
+            # target itself must exist + be writable.
+            probe = target_dir if target_dir.exists() else target_dir.parent
+            writable = probe.exists() and os.access(probe, os.W_OK)
+            if not writable:
+                user_prefix = str(Path.home() / ".npm-global")
+                (Path(user_prefix) / "bin").mkdir(parents=True, exist_ok=True)
+                env_extra = {"NPM_CONFIG_PREFIX": user_prefix}
+                log.info(
+                    "  • npm prefix %s not user-writable — redirecting to %s "
+                    "(ensure %s/bin is on PATH)",
+                    prefix, user_prefix, user_prefix,
+                )
 
         rc, _ = self._run(["npm", "install", "-g", spec], env_extra=env_extra)
         return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"npm exit {rc}")
