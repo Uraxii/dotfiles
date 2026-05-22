@@ -33,7 +33,9 @@ require('lazy').setup({
   require 'plugins.noice', -- Highly experimental plugin that completely replaces the UI for messages, cmdline and the popupmenu.
 
   -- [[ AI ASSISTANTS ]]
-  require 'plugins.claude-code', -- Use Claude terminal app within Neovim
+
+  -- [[ NOTES ]]
+  require 'plugins.obsidian', -- Obsidian vault integration
 
   -- [[ GIT ]]
   require 'plugins/neogit', -- Perform Git actions within Neovim
