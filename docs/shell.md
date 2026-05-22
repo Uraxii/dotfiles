@@ -63,7 +63,7 @@ palette selection.
 (shell-style `STARSHIP_PALETTE="<name>"`) and substitutes the single
 `##PALETTE##` placeholder. The named palette must exist as a
 `[palettes.<name>]` block inside `starship.toml.tmpl`. Currently
-defined: `makima`, `manjaro`, `catppuccin_mocha`.
+defined: `gruvbox`, `synthwave-84`, `catppuccin_mocha`.
 
 To add a palette for a new theme:
 1. Add a `[palettes.<new>]` block in `.config/starship.toml.tmpl`.

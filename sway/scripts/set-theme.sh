@@ -1,5 +1,5 @@
 #!/bin/bash
-THEME="${1:-makima}"
+THEME="${1:-gruvbox}"
 FONT="${2:-0xProto Nerd Font}"
 WAYBAR_THEME="${3:-minimal}"
 THEME_DIR="$HOME/.config/sway/themes/$THEME/data"

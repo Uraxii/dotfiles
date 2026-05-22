@@ -23,7 +23,7 @@ Practical recipes for extending the theming pipeline.
 
 ## How to add a theme
 
-1. Copy an existing theme: `cp -r .config/sway/themes/makima
+1. Copy an existing theme: `cp -r .config/sway/themes/gruvbox
    .config/sway/themes/<new>`.
 2. Edit `.config/sway/themes/<new>/colors` (sway color vars) and
    `window` (wallpaper path, border styles).
@@ -40,7 +40,7 @@ Practical recipes for extending the theming pipeline.
      matching palette block to the template too.
    - `icon-theme` — bare icon-theme name (e.g. `Papirus-Dark`).
    - `tmux-theme.conf` — full tmux style overrides (status, window
-     list, panes, message). Copy from `themes/makima/data/tmux-theme.conf`
+     list, panes, message). Copy from `themes/gruvbox/data/tmux-theme.conf`
      and re-color. `set-theme.sh` copies this to
      `~/.local/share/tmux/theme.conf` and hot-reloads any running
      tmux server.
