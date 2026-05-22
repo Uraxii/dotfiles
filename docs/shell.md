@@ -11,8 +11,9 @@ and tool integrations (nvm, zoxide, opencode).
 
 ### Key files
 
-- `.zshrc` — main config.
-- `.zprofile` — login env (currently exports `QT_QPA_PLATFORMTHEME=qt6ct`).
+- `zsh/.zshrc` — main config (deployed to `~/.config/zsh/.zshrc`).
+- `zsh/.zprofile` — login env (currently exports `QT_QPA_PLATFORMTHEME=qt6ct`).
+- `~/.zshenv` — one-line stub, NOT tracked: `export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"`.
 
 ### Keybindings & UX
 

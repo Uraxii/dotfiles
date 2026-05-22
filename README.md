@@ -1,6 +1,6 @@
 # Uraxii Dotfiles
 
-GNU Stow-managed dotfiles for a Sway-based Wayland desktop. Single-package, flat-mode layout — the repo root *is* the package, the target is `$HOME`.
+GNU Stow-managed dotfiles for a Sway-based Wayland desktop. Omerxx-style XDG layout — `--target=~/.config` set in `.stowrc`.
 
 ## Quick start
 
@@ -10,12 +10,35 @@ Prerequisites: `git`, `stow`.
 sudo pacman -S git stow         # Arch / Manjaro
 git clone <this-repo> ~/dotfiles
 cd ~/dotfiles
-stow -t ~ .                     # create symlinks
-stow -R -t ~ .                  # restow after changes
-stow -n -v -t ~ .               # dry run (no filesystem changes)
+./setup.sh                      # runs `stow .`
+stow -R .                       # restow after changes
+stow -n -v .                    # dry run
 ```
 
-`docs/`, `README*`, `LICENSE*`, runtime opencode/pipeline state, and a few editor noise patterns are filtered by `.stow-local-ignore` and never linked into `$HOME`.
+## First-time setup (per machine)
+
+Three one-time manual steps for tools that don't honor XDG:
+
+```bash
+# 1. zsh: redirect to $ZDOTDIR (zsh always reads ~/.zshenv, can't be relocated)
+cat > ~/.zshenv <<'EOF'
+export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+EOF
+
+# 2. claude-code: hardcodes ~/.claude
+ln -s ~/.config/.claude ~/.claude
+
+# 3. hermes: hardcodes ~/.hermes
+ln -s ~/.config/.hermes ~/.hermes
+```
+
+If `~/.claude/` or `~/.hermes/` already exists as a real directory (e.g. you ran claude/hermes before installing dotfiles), merge first then symlink:
+```bash
+rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.claude.bak && ln -s ~/.config/.claude ~/.claude
+# same pattern for ~/.hermes
+```
+
+`docs/`, `README*`, `LICENSE*`, runtime opencode/pipeline state, and a few editor noise patterns are filtered by `.stow-local-ignore` and never linked.
 
 ## Component inventory
 

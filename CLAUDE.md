@@ -6,13 +6,10 @@
 GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land in `~/.config/` (target set via `.stowrc`).
 
 ```bash
-./setup.sh           # stow + link breakers ($HOME → ~/.config symlinks for hardcoded tools)
-./setup.sh restow    # restow after structural changes (unstow + stow + relink)
-./setup.sh unstow    # remove all symlinks (stow + breakers)
-./setup.sh dry       # dry run preview
+./setup.sh      # runs `stow .`
 ```
 
-`setup.sh` wraps `stow .` + creates `$HOME/<name> → ~/.config/<name>` symlinks for tools that hardcode `$HOME` paths (zsh, xonsh, claude-code, hermes). Idempotent.
+`setup.sh` is near-stock — just `stow .`. All shell configs are XDG-native (`zsh/`, `xonsh/`). Two AI tools (claude-code, hermes) hardcode `~/.foo` paths; they get a one-time manual symlink per machine (see README "First-time setup").
 
 ## Repo Structure
 
@@ -20,32 +17,41 @@ GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land i
 ~/dotfiles/
 ├── .stowrc                       # --target=~/.config (omerxx model)
 ├── .stow-local-ignore            # Stow ignore patterns (regex)
+├── setup.sh                      # IGNORED — just runs `stow .`
 ├── ghostty/                      # → ~/.config/ghostty/
 ├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
-├── nvim/                         # → ~/.config/nvim/  (Kickstart-based, has own CLAUDE.md)
-├── omp/                          # → ~/.config/omp/   (inactive, kept for reference)
+├── nvim/                         # → ~/.config/nvim/   (Kickstart-based, has own CLAUDE.md)
+├── omp/                          # → ~/.config/omp/    (inactive, kept for reference)
 ├── opencode/                     # → ~/.config/opencode/  (+ Claude Code skills)
 ├── qt6ct/                        # → ~/.config/qt6ct/
-├── starship.toml                 # IGNORED — managed at runtime by set-theme.sh
-├── starship.toml.tmpl            # IGNORED — template, set-theme.sh substitutes ##PALETTE##
 ├── sway/                         # → ~/.config/sway/
+├── swaylock/                     # → ~/.config/swaylock/   (XDG-native)
 ├── systemd/                      # → ~/.config/systemd/
 ├── tmux/                         # → ~/.config/tmux/
 ├── waybar/                       # → ~/.config/waybar/
 ├── wofi/                         # → ~/.config/wofi/
-├── swaylock/                     # → ~/.config/swaylock/  (XDG-native; no dot prefix)
-├── .claude/                      # → ~/.config/.claude/  → setup.sh links ~/.claude → here
-├── .hermes/                      # → ~/.config/.hermes/  → setup.sh links ~/.hermes → here
-├── .zshrc                        # → ~/.config/.zshrc    → setup.sh links ~/.zshrc → here
-├── .xonshrc                      # → ~/.config/.xonshrc  → setup.sh links ~/.xonshrc → here
-├── .zprofile                     # → ~/.config/.zprofile → setup.sh links ~/.zprofile → here
+├── xonsh/rc.xsh                  # → ~/.config/xonsh/rc.xsh   (xonsh native XDG path)
+├── zsh/.zshrc                    # → ~/.config/zsh/.zshrc     (loaded via $ZDOTDIR; see ~/.zshenv stub)
+├── zsh/.zprofile                 # → ~/.config/zsh/.zprofile
+├── starship.toml                 # IGNORED — managed at runtime by set-theme.sh
+├── starship.toml.tmpl            # IGNORED — template, set-theme.sh substitutes ##PALETTE##
+├── .claude/                      # → ~/.config/.claude/   (hardcoded path; one-time symlink ~/.claude → here)
+├── .hermes/                      # → ~/.config/.hermes/   (hardcoded path; one-time symlink ~/.hermes → here)
 ├── home.nix                      # IGNORED (repo meta)
-├── setup.sh                      # IGNORED (install entrypoint)
 ```
 
-**Breakers**: tools that hardcode `$HOME` paths (`.claude`, `.hermes`, `.zshrc`, `.xonshrc`, `.zprofile`) stow into `~/.config/.foo` then `setup.sh` adds `$HOME/.foo → ~/.config/.foo` symlinks. Swaylock no longer a breaker — it checks `$XDG_CONFIG_HOME/swaylock/config` natively, so `swaylock/` (no dot) at repo root works.
+**Hardcoded-path tools**: `claude-code` reads `~/.claude/`, `hermes` reads `~/.hermes/`. Neither honors XDG. One-time per-machine symlink:
+```bash
+ln -s ~/.config/.claude ~/.claude
+ln -s ~/.config/.hermes ~/.hermes
+```
 
-**First-boot chicken-egg**: on a fresh machine, zsh reads `~/.zshrc` BEFORE `./setup.sh` runs. Bootstrap via bash: `bash -c './setup.sh'`, then start zsh.
+**zsh + ZDOTDIR**: zsh hardcodes `~/.zshenv` as the one always-loaded file. Create a one-line stub on each machine:
+```sh
+# ~/.zshenv
+export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+```
+After that, zsh loads `.zshrc`, `.zprofile`, etc from `$ZDOTDIR` instead of `$HOME`.
 
 ## Stow Ignore
 
