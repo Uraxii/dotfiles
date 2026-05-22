@@ -56,12 +56,12 @@ spinner:
     - ["<red ", " red>"]
 
 branding:
-  agent_name: "Makima Hermes"
-  welcome: "Welcome to Makima Hermes. Type your message or /help for commands."
-  goodbye: "Goodbye. Stay in control."
-  response_label: " Makima Hermes "
+  agent_name: "Gruvbox Hermes"
+  welcome: "Welcome to Gruvbox Hermes. Type your message or /help for commands."
+  goodbye: "Goodbye."
+  response_label: " Gruvbox Hermes "
   prompt_symbol: ">"
-  help_header: "Makima commands"
+  help_header: "Gruvbox commands"
 
 tool_prefix: "|"
 
@@ -75,15 +75,15 @@ tool_emojis:
   delegate_task: "dg"
 
 banner_logo: |
-  [bold #fabd2f] __  __    _    _  _____ __  __    _    [/]
-  [bold #d79921]|  \/  |  / \  | |/ /_ _|  \/  |  / \   [/]
-  [#d3869b]     | |\/| | / _ \ | ' / | || |\/| | / _ \  [/]
-  [#cc241d]     | |  | |/ ___ \| . \ | || |  | |/ ___ \ [/]
-  [#5d141a]     |_|  |_/_/   \_\_|\_\___|_|  |_/_/   \_\[/]
+  [bold #fabd2f]  ____ ____  _   ___     ______   ___   __  __[/]
+  [bold #d79921] / ___|  _ \| | | \ \   / / __ ) / _ \  \ \/ /[/]
+  [#d3869b]| |  _| |_) | | | |\ \ / /|  _ \| | | |  \  / [/]
+  [#cc241d]| |_| |  _ <| |_| | \ V / | |_) | |_| |  /  \ [/]
+  [#5d141a] \____|_| \_\\___/   \_/  |____/ \___/  /_/\_\[/]
 
 banner_hero: |
   [#5d141a]        .-----------------------.[/]
-  [#cc241d]       /  CONTROL DEVIL DOSSIER  \\[/]
+  [#cc241d]       /     GRUVBOX DARK MED    \\[/]
   [#d79921]      |  bg #282828  fg #ebdbb2 |[/]
   [#fabd2f]      |  gold #d79921 red #cc241d|[/]
   [#d3869b]       \\__ warm terminal contract _/[/]

@@ -56,12 +56,12 @@ spinner:
     - ["<teal ", " teal>"]
 
 branding:
-  agent_name: "Manjaro Hermes"
-  welcome: "Welcome to Manjaro Hermes. Type your message or /help for commands."
+  agent_name: "Synthwave Hermes"
+  welcome: "Welcome to Synthwave Hermes. Type your message or /help for commands."
   goodbye: "Smooth sailing."
-  response_label: " Manjaro Hermes "
+  response_label: " Synthwave Hermes "
   prompt_symbol: ">"
-  help_header: "Manjaro commands"
+  help_header: "Synthwave commands"
 
 tool_prefix: "|"
 
@@ -75,15 +75,15 @@ tool_emojis:
   delegate_task: "dg"
 
 banner_logo: |
-  [bold #fe4450] __  __    _    _   _      _    ____   ___  [/]
-  [bold #ff7edb]|  \/  |  / \  | \ | |    | |  / ___| / _ \ [/]
-  [#b893ce]     | |\/| | / _ \ |  \| |_   | | | |  _ | | | |[/]
-  [#03edf9]     | |  | |/ ___ \| |\  | |__| | | |_| || |_| |[/]
-  [#72f1b8]     |_|  |_/_/   \_\_| \_|\____/   \____| \___/ [/]
+  [bold #fe4450] ____  __   __ _   _ _____ _   _ __        __    _    __     __ _____ [/]
+  [bold #ff7edb]/ ___| \ \ / /| \ | |_   _| | | |\ \      / /   / \   \ \   / /| ____|[/]
+  [#b893ce]\___ \  \ V / |  \| | | | | |_| | \ \ /\ / /   / _ \   \ \ / / |  _|  [/]
+  [#03edf9] ___) | | |   | |\  | | | |  _  |  \ V  V /   / ___ \   \ V /  | |___ [/]
+  [#72f1b8]|____/  |_|   |_| \_| |_| |_| |_|   \_/\_/   /_/   \_\   \_/   |_____|[/]
 
 banner_hero: |
   [#1a1428]        .-----------------------.[/]
-  [#34294f]       /     SMOOTH SAILING      \\[/]
+  [#34294f]       /      SYNTHWAVE '84      \\[/]
   [#ff7edb]      |  bg #2a2139 mag #ff7edb |[/]
   [#03edf9]      |  teal #72f1b8 vio #b893ce|[/]
   [#fe4450]       \\__ midnight neon route __/[/]
