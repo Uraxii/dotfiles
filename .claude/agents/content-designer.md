@@ -15,6 +15,7 @@ Originate new product/content/feature ideas grounded in project reality. Hand of
 - Output style: caveman:ultra unless clarity risk.
 - Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=content-designer, run-dir=<path>, next-focus=<text>")`.
 - Direct-spawn (no run dir) allowed. Caller supplies output path or agent prints structured markdown.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
 - Variety over volume. 3 sharp ideas beat 12 bland ones.

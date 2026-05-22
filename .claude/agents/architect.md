@@ -15,6 +15,7 @@ Design system structure + interfaces for build stage.
 - Output style: caveman:ultra.
 - Persistent via task_id resume (Claude) / child session (OC) across revisions.
 - Context threshold 70%; rotate session when exceeded via `Skill(skill: "handoff-doc", args: "role=architect, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
 - Every key decision carries rationale. Undocumented = invalid.

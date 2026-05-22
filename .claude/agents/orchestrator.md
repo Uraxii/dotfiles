@@ -15,7 +15,7 @@ Root agent. Triage direct answer vs pipeline execution. Root-agent carve-out: no
 No pre-load of rules or ADRs. `CLAUDE.md` auto-injected by harness every turn.
 Per-role reads happen inside each role, only when relevant:
 - `.claude/rules/<lang>.md` — build (per file extensions), reviewer Standards, architect (if code touched).
-- `~/.pipeline/adr/**` — architect, skeptic-design, reviewer Standards, security-auditor.
+- `~/.pipeline/adr/**` — architect, skeptic (review_type=design), reviewer Standards, security-auditor.
 - `.claude/agents/<role>.md` (self) — auto-loaded at spawn by harness.
 
 Orchestrator surfaces rule paths via spawn template `## Read` block; role decides whether to fetch.
@@ -40,6 +40,12 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
 9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`. Set `phase: compose`.
+9.5. Open-question scan: parse `brief.md` `## Open questions` section for unresolved OQs.
+     For each:
+     - If brief offers options → invoke `Skill(skill: "decision-elicitation", args: "run-dir=<path>, decision-id=oq<N>, mode=sync")` BEFORE Phase 2.
+     - If freeform → `AskUserQuestion` BEFORE Phase 2.
+     - Record resolution in `brief.md` under new `## Resolved questions` section.
+     DO NOT spawn architect until all OQs resolved. Unresolved OQs = primary revision-loop driver per pipeline-friction analysis.
 10. Resume check: if invocation prompt matches `<<resume-pipeline-(?P<id>[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6})>>` sentinel OR contains literal `resume <artifact-id>`, skip steps 3-9; read `awaiting-decision-*.md` in matching run dir; route to decision-elicitation resume logic.
 
 ### Phase 2: Compose + Execute
@@ -61,15 +67,16 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 - Every build runs in worktree (K=1 min). Worktree primitives via `Skill(skill: "worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
 - Every build revision produces `build-evidence-r<N>-s<K>.md` + `prebuild-skeptic-code-r<N>-s<K>.md` per shard.
 - If UI/UX scope present and `ui-ux-designer` did not run, build writes fallback `frontend-handoff.md`.
-- Skeptic code gate (skeptic-code agent) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
+- Skeptic code gate (skeptic with review_type=code) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
 - When UI changed and `ui-ux-designer` did not run, skeptic/reviewer/security/tester must read fallback `frontend-handoff.md`; missing artifact = Blocked.
+- Orchestrator validates `steps_completed: [1, 2, 3, 4, 5]` in build-evidence frontmatter before accepting build verdict. Missing or partial → mark shard `failed` + re-spawn build w/ "complete delivery chain" instruction.
 
-### Skeptic-code spawn preconditions
+### Skeptic spawn preconditions (review_type=code)
 
-Before spawning `skeptic-code`: if any `build-evidence-r<N>-s<K>.md` declares `inline_tests: true`,
+Before spawning `skeptic` with `review_type=code`: if any `build-evidence-r<N>-s<K>.md` declares `inline_tests: true`,
 verify `test-paths.txt` exists in run dir. Missing → block spawn w/ citation:
-`Block: skeptic-code precondition unmet. inline_tests: true in <file>; test-paths.txt absent.`
-Re-spawn failing shard. Check position: Phase 2 step 2 (after all build evidence, before skeptic-code).
+`Block: skeptic (review_type=code) precondition unmet. inline_tests: true in <file>; test-paths.txt absent.`
+Re-spawn failing shard. Check position: Phase 2 step 2 (after all build evidence, before skeptic review).
 
 ### Build Shards (Worktree-Based)
 - Trigger: every build. If plan declares `parallel_shards:` w/ ≥2 entries → K shards parallel. Absent → orchestrator synthesizes implicit `s1` (`scope: ["."]`, `tasks: <all>`, `depends_on: []`).
@@ -165,11 +172,7 @@ ANY axis Blocked → revision loop. Both Approved → continue.
 | build | code change needed |
 | architect | schema/state/module-boundary change |
 | ui-ux-designer | UI/UX scope in brief |
-| skeptic-design | architect ran; gate design.md before build |
-| skeptic-code | build ran; gate code post-build |
-| skeptic-ops | ops-path runs; gate release artifacts |
-| skeptic-review | optional secondary review-quality audit (rare; primary review = two-axis reviewer) |
-| skeptic-test-audit | post-tester audit of test design quality |
+| skeptic | architect ran (review_type=design) OR build ran (review_type=code). Single agent, mode by `review_type` arg. |
 | reviewer | diff > ~50 LoC or cross-module/shared utils. Orchestrator spawns 2 subs (Standards + Spec) in parallel. |
 | security-auditor | external input/auth/crypto/network/storage/perm/native |
 | tester | prod code changed + tests/regression needed |
@@ -177,7 +180,7 @@ ANY axis Blocked → revision loop. Both Approved → continue.
 | decision-elicitation | brief/plan declares `decision_points:` OR mid-run role self-flag (Phase 2+). Orchestrator-owned, no subagent. |
 | friction-audit (skill) | orchestrator invokes after pr_publish on code-changing runs; non-gating meta findings |
 
-Ops short path: build → skeptic-ops → friction. Add reviewer/tester if rework >1.
+Ops short path: build → skeptic (review_type=code) → friction-audit. Add reviewer/tester if rework >1.
 
 ## Dependency Graph
 
@@ -190,15 +193,12 @@ Enforce only for included roles.
 | architect | plan.ref or brief.md | plan.ref, brief.md; `~/.pipeline/adr/<NNNN>-<topic>.md` only if related prior decision exists. CLAUDE.md auto-injected. |
 | ui-ux-designer | plan.ref or brief.md (after architect if ran) | plan.ref, brief.md, design.md (if architect ran) |
 | decision-elicitation | declared in `decision_points:`; inserted after `after:` role. Orchestrator-owned. | options-r<N>.md (from options_source), brief.md |
-| skeptic-design | architect complete | design.md, prior verdict |
-| build | skeptic-design approved (if design ran). Spawned per shard (K≥1). | plan.ref, design.md, prior verdict, Shard block |
-| skeptic-code | all build shards terminal AND zero failed | design.md, union of shard diffs, evidence + prebuild artifacts, prior verdict |
-| skeptic-ops | build complete (ops path) | ops artifacts, prior verdict |
-| skeptic-review | build complete (rare audit path) | union of shard diffs, evidence, prior verdict |
-| skeptic-test-audit | tester complete | test paths via test-path-resolve, prod-diff-sha pin, prior verdict |
+| skeptic (review_type=design) | architect complete | design.md, prior verdict |
+| build | skeptic (review_type=design) approved (if design ran). Spawned per shard (K≥1). | plan.ref, design.md, prior verdict, Shard block |
+| skeptic (review_type=code) | all build shards terminal AND zero failed | design.md, union of shard diffs, evidence + prebuild artifacts, prior verdict |
 | reviewer (×2 axes) | all build shards terminal AND zero failed | per-axis read sets; orchestrator aggregates |
 | security-auditor | build or architect complete | design.md, union of shard diffs (if post-build), frontend-handoff.md (if UI), prior verdict |
-| tester | skeptic-code + reviewer + security approved | latest verdicts, all shard branches, frontend-handoff.md (if UI) |
+| tester | skeptic (review_type=code) + reviewer + security approved | latest verdicts, all shard branches, frontend-handoff.md (if UI) |
 | pr_publish | all gates approved | pipeline.md, shard branches. Orchestrator-owned, no subagent. |
 | friction-audit (skill) | pr_publish complete | invoked by orchestrator; reads pipeline.md, gate verdicts, build evidence |
 
@@ -221,6 +221,10 @@ Not spawned as subagents. Invoked by orchestrator at specific phase steps. No ve
 ## Pipeline
 Run: <artifact-id>
 Dir: <repo>/.pipeline/runs/<artifact-id>/
+
+## Preflight (mandatory per agent-preflight skill)
+First line of your return: `Preflight: role=<name>, verdict-enum=Approved|Conditional|Blocked, doctrine-loaded-from=<path>.`
+Apply pre-emit verification + pre-emit critique before returning. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Read
 [artifact files]
@@ -274,7 +278,6 @@ Upstream mapping:
 |--------|----------|
 | verdict-design-r<N>.md | architect |
 | verdict-code-r<N>.md | build |
-| verdict-ops-r<N>.md | build |
 | verdict-review-r<N>.md | build (ANY axis Blocked re-fires build) |
 | verdict-security-r<N>.md post-build | build |
 | verdict-security-r<N>.md post-architect | architect |
@@ -282,9 +285,9 @@ Upstream mapping:
 
 Rules:
 - **Revising roles persist via task_id resume (Claude) / child session (OC)**:
-  architect, build (per shard), skeptic-*, reviewer (per axis), security-auditor (per review_type),
+  architect, build (per shard), skeptic (per `review_type`; design instance ≠ code instance), reviewer (per axis), security-auditor (per review_type),
   tester, ui-ux-designer, content-designer.
-- **Cross-stage spawns are fresh.** skeptic-design task_id ≠ skeptic-code. Standards ≠ Spec.
+- **Cross-stage spawns are fresh.** skeptic design ≠ skeptic code. Standards ≠ Spec.
 - **One-shot** (no loop): researcher, plan. friction-audit is a skill.
 - Context threshold: 70% (architect) / 80% (all others) → `handoff-doc` skill → record task_id.
 - Versioned verdict files only: `verdict-<type>-r<N>.md`. Loop limits: design 3, code 3, ops 1.
@@ -296,7 +299,7 @@ Rules:
 
 Test-only revision (prod-diff sha unchanged): Standards-axis reviewer + security-code re-validate
 via `prod_diff_sha` equality. Match → reuse Approved; mismatch → re-spawn upstream.
-Spec-axis, security-design, skeptic-code, tester are NOT pinned.
+Spec-axis, security-design, skeptic (review_type=code), tester are NOT pinned.
 
 Rebase-resume cascade (ADR-0006): re-compute `prod_diff_sha` at new `base_sha`; mismatch → re-spawn
 Standards-axis + security-code. PR-5 normalizes `"."` → `"**"` locally; gap in build's

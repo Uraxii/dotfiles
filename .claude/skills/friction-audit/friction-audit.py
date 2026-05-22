@@ -85,8 +85,7 @@ def check_task_id_continuity(run_dir: Path) -> dict | None:
         return {"check": "task-id-continuity", "citation": "pipeline.md missing", "severity": "high"}
     text = pipeline_md.read_text(encoding="utf-8", errors="replace")
     # Persistent roles per orchestrator doctrine
-    persistent = ["architect", "build", "skeptic-design", "skeptic-code", "skeptic-ops",
-                  "skeptic-review", "skeptic-test-audit", "reviewer", "security-auditor",
+    persistent = ["architect", "build", "skeptic", "reviewer", "security-auditor",
                   "tester", "ui-ux-designer", "content-designer"]
     # Only flag roles that ran (mentioned in Stages section)
     mentioned = [r for r in persistent if re.search(rf"^\s*-\s*{re.escape(r)}\b", text, re.MULTILINE)]
@@ -111,6 +110,25 @@ def check_phase_field(run_dir: Path) -> dict | None:
         return {
             "check": "phase-field",
             "citation": "pipeline.md missing phase: field (PR-5 deferred check)",
+            "severity": "low",
+        }
+    return None
+
+
+def check_preflight(run_dir: Path) -> dict | None:
+    """Check verdict files cite preflight + pre-emit critique sections per agent-preflight doctrine."""
+    verdicts = list(run_dir.glob("verdict-*.md"))
+    if not verdicts:
+        return None
+    missing_critique = []
+    for v in verdicts:
+        text = v.read_text(encoding="utf-8", errors="replace")
+        if not re.search(r"##\s*Pre-emit critique", text, re.IGNORECASE):
+            missing_critique.append(v.name)
+    if missing_critique:
+        return {
+            "check": "preflight-critique",
+            "citation": f"verdicts missing ## Pre-emit critique section: {', '.join(missing_critique)}",
             "severity": "low",
         }
     return None
@@ -151,6 +169,7 @@ CHECKS = [
     ("adr-assertion", check_adr_assertion),
     ("task-id-continuity", check_task_id_continuity),
     ("phase-field", check_phase_field),
+    ("preflight-critique", check_preflight),
 ]
 
 

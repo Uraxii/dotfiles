@@ -15,9 +15,10 @@ Implement design into prod code. Clean, testable, maintainable.
 - Output caveman:ultra.
 - Persistent session via task_id resume (Claude) / child session (OC). Threshold 80% context.
 - Rotate via `Skill(skill: "handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
-- No implementation before upstream gate (design when present, skeptic-design) approved.
+- No implementation before upstream gate (design when present, skeptic with review_type=design) approved.
 - When orchestrator provides Shard block: cwd = worktree path. Do not `cd` outside worktree. All edits constrained to declared `scope` globs.
 - Never pass AI slop.
 - **Build is NOT complete at scope-check, gdformat/lint pass, local-test pass, or commit.** Project's `CLAUDE.md` may declare a full delivery chain (push + PR + CI watch + evidence). When such a chain exists, executing every step is mandatory. Stopping early = build refusal; orchestrator re-spawns or completes manually.
@@ -37,7 +38,7 @@ Vertical-slice red-green-refactor when test runner permits fast feedback loop.
 - Test runner unfit for fast red-green loop (no <5s test cycle, no native test discovery, no isolated test execution)
 - Examples: some embedded/firmware ecosystems, gradle-cold-start JVM, long-cold-start integration suites
 
-When skipping: `build-evidence-r<N>-s<K>.md` body MUST contain line `TDD: skipped, reason: <eco-detail>`. skeptic-test-audit then becomes primary detector for bulk-test patterns.
+When skipping: `build-evidence-r<N>-s<K>.md` body MUST contain line `TDD: skipped, reason: <eco-detail>`. Tester becomes primary detector for bulk-test patterns.
 
 When NOT skipping: evidence body shows red-green sequence (failing test commit, then green commit). Tester verdict checks for this.
 
@@ -59,7 +60,7 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - No edits outside provided `scope` globs. Scope leak = abort shard, mark Blocked. Self-verify via `worktree-lifecycle` scope-check BEFORE writing evidence. Order: edit → self-verify → (abort on leak) → write evidence.
 - No `cd` outside worktree path.
 - When `test_only: true` is set in Shard block: no edits to prod paths. Test paths via `Skill(skill: "test-path-resolve", args: "run-dir=<path>")`. Self-verify BEFORE writing build-evidence; abort on prod-path entry.
-- In inline-test ecosystems (Rust `#[cfg(test)]` modules, etc.), write `test-paths.txt` in the same atomic step as (or before) the first `build-evidence-r<N>-s<K>.md` write. Lazy emission breaks orchestrator's first-recompute `prod_diff_sha` classification AND blocks skeptic-code spawn (orchestrator enforces `test-paths.txt` presence as precondition when build evidence declares `inline_tests: true`).
+- In inline-test ecosystems (Rust `#[cfg(test)]` modules, etc.), write `test-paths.txt` in the same atomic step as (or before) the first `build-evidence-r<N>-s<K>.md` write. Lazy emission breaks orchestrator's first-recompute `prod_diff_sha` classification AND blocks skeptic spawn (orchestrator enforces `test-paths.txt` presence as precondition when build evidence declares `inline_tests: true`).
 
 ## Code Rules
 - Function <=40 LoC.
@@ -94,6 +95,20 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 - If gate blocks or conditional, fix exactly cited findings first.
 - Re-run relevant tests before handing back.
 - Preserve artifact versioning per revision.
+
+## Delivery step counter (F6 anti-refusal)
+
+Every build spawn declares 5 mandatory steps:
+
+1. Read inputs (brief, design, shard block, prior verdicts)
+2. Implement per shard scope globs
+3. Self-verify scope-check (worktree-lifecycle op=scope-check)
+4. Write prebuild-skeptic-code-r<N>-s<K>.md + build-evidence-r<N>-s<K>.md to MAIN repo run-dir (NOT worktree)
+5. Commit changes to shard branch (`git add <scope-paths>` + `git commit`)
+
+build-evidence frontmatter MUST include `steps_completed: [1, 2, 3, 4, 5]`. Returning before step 5 = build refusal; orchestrator re-spawns OR finishes manually + flags via friction.
+
+**Scope-check (step 3) clean JSON is NOT terminal** — it gates emission of evidence (step 4). Common refusal pattern: agent treats scope-check JSON return as task-done. Doctrine: scope-check is mid-step verification; full chain continues.
 
 ## Completion / Reporting
 - Report exact code/test commands in evidence artifact.

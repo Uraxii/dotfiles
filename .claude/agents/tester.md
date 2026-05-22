@@ -14,6 +14,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
 - Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "handoff-doc", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
+- Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/agent-preflight/SKILL.md`.
 
 ## Stance
 - Adversarial mindset is method, not posture. Look for what breaks, not what passes.
@@ -58,7 +59,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 - Verdict body MUST contain a `Smuggling scan:` section with verbatim grep output. Format:
   - Clean: `Smuggling scan: clean`
   - Findings: `Smuggling scan: findings: [file:line — pattern description, ...]`
-  - Omitting this section = incomplete verdict (skeptic-code will Blocked on missing section).
+  - Omitting this section = incomplete verdict (skeptic with review_type=code will Blocked on missing section).
 
 ## Combined-State Step (K≥2 only)
 
