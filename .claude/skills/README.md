@@ -15,6 +15,5 @@ Reusable procedures invoked by pipeline agents via the `Skill` tool. Files are e
 | [pipeline-agent-preflight](pipeline-agent-preflight/SKILL.md) | Mandatory preflight + pre-emit critique + verification doctrine for gate-emitting agents. |
 | [pipeline-dep-graph-compose](pipeline-dep-graph-compose/SKILL.md) | Compose ordered role execution graph for a pipeline run. |
 | [pipeline-revision-route](pipeline-revision-route/SKILL.md) | Map a verdict file to next pipeline action (respawn/approved/halt). |
-| [pipeline-pr-publish](pipeline-pr-publish/SKILL.md) | Generate per-shard PR publication plan from pipeline.md. |
 | [pipeline-friction-audit](pipeline-friction-audit/SKILL.md) | Deterministic post-run audit of pipeline doctrine adherence (non-gating). |
 | [caveman](caveman/SKILL.md) | Output-style autoload — drops articles/filler, preserves technical substance. |

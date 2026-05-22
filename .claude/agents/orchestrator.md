@@ -58,9 +58,11 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 4. Route each verdict: `Skill(skill: "pipeline-revision-route", args: "verdict-path=<abs-path>")`.
    Output: `{action, target_role, revision_n, reason, loop_cap_hit, verdict_summary}`.
    Loop until `action=approved` or `action=halt`.
-5. Publish PRs: `Skill(skill: "pipeline-pr-publish", args: "pipeline-md=<abs-path>")`.
-   Execute returned `commands` fields via Bash (plan-only default; orchestrator runs git/gh).
-   Set `phase: close`. Then invoke friction-audit skill (orchestrator writes findings file).
+5. Publish PRs: for each shard branch in `pipeline.md` `shards:` map, commit + push + open PR
+   via the available PR-opening skill (`yeet` by default). For K=1 (single shard), one PR.
+   For K≥2 (multi-shard), open one PR per shard; merge in `depends_on` topology order;
+   `git fetch origin <base_ref>` between merges. Set `phase: close`. Then invoke friction-audit
+   skill (orchestrator writes findings file).
 6. Emit completion report.
 
 ### Build Stage Contract
@@ -130,14 +132,19 @@ Orchestrator writes `friction-findings-r<N>.md` (frontmatter + passed/failed sec
 Findings never block PR merge — inform pipeline-improvement backlog grooming only.
 
 ### PR creation (orchestrator-owned, no subagent)
-1. `Skill(skill: "pipeline-pr-publish", args: "pipeline-md=<path>")` → plan JSON.
-   `base_sha_stable: false` → abort + surface to user.
-2. For each shard in `merge_order`: execute `commands.recommit`, `commands.push`,
-   `commands.pr_create`, `commands.pr_merge` via Bash in sequence.
-3. Merge failure: halt remaining; already-merged stay.
-4. `mode: branches-only`: write `pr-report.md` w/ manual commands from `commands.push`.
-5. Worktree cleanup: `Skill(skill: "pipeline-worktree-lifecycle", args: "op=cleanup, ...")` per shard.
-6. Write `pr-report.md` w/ per-shard: PR URL, merge SHA, status.
+
+1. Verify base SHA stable: `git rev-parse <base_ref>` matches `pipeline.md` `base_sha`.
+   Mismatch → abort + surface to user.
+2. For each shard in `pipeline.md` `shards:` map (K=1 typical, K≥2 supported):
+   - Resolve merge order from `depends_on` topology (Kahn; independent shards first).
+   - Commit + push the shard branch + open a PR via available PR-opening skill (`yeet`).
+   - PR title format: K=1 `<type>(<scope>): <subject>` (conventional); K≥2 append `(shard s<K>/<total>)`.
+   - PR base: `<base_ref>`. PR head: `pipeline/<artifact-id>/s<K>` (or shard's recorded branch).
+3. Merge each PR in topology order. After each merge: `git fetch origin <base_ref>`.
+4. Merge failure: halt remaining merges; already-merged shards stay; surface to user.
+5. `gh` unavailable → branches-only fallback. Write `pr-report.md` listing manual `gh pr create` + `gh pr merge` commands per shard. No auto-merge.
+6. Worktree cleanup: `Skill(skill: "pipeline-worktree-lifecycle", args: "op=cleanup, ...")` per merged shard.
+7. Write `pr-report.md` w/ per-shard: PR URL, merge SHA, status, timestamp.
 
 ## Role Inclusion Rules
 
@@ -182,7 +189,6 @@ Not spawned as subagents. Invoked by orchestrator at specific phase steps. No ve
 |-------|-----------|---------|
 | dep-graph-compose | 2.1 | Compose ordered role list + decision inject points from pipeline context |
 | revision-route | 2.4 | Map verdict (review_type, role, verdict-value) → next action (respawn/approved/halt) |
-| pr-publish | 2.5 | Generate per-shard PR publication plan; Kahn merge-order; gh probe; branches-only fallback |
 
 ## Spawn Template (Canonical)
 
