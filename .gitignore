@@ -5,6 +5,9 @@ __pycache__/
 .pytest_cache/
 .claude/*local*
 .claude/**/*local*
+# .stow-local-ignore is stow's package-level ignore file — DO track it.
+!.claude/.stow-local-ignore
+!.hermes/.stow-local-ignore
 opencode/projects/*
 !opencode/projects/.gitkeep
 configstore
@@ -65,6 +68,8 @@ tmux/plugins/
 .hermes/memory/
 .hermes/pipeline-registry.json
 .hermes/*local*
+# .stow-local-ignore is stow's package-level ignore file — DO track it.
+!.hermes/.stow-local-ignore
 .hermes/channel_directory.json
 .hermes/cron/
 .hermes/kanban.db

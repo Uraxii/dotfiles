@@ -34,6 +34,9 @@ __pycache__
 ^/install\.py
 ^/setup\.sh
 ^/pytest\.ini
+# .claude/.hermes handled by separate `stow --no-folding -t $HOME` pass in setup.sh
+^/\.claude
+^/\.hermes
 ^/scripts/?$
 ^/tests/?$
 ^/home\.nix

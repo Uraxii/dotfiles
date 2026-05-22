@@ -1,0 +1,34 @@
+# Stow ignores for .claude package (deployed --no-folding -t $HOME by setup.sh).
+# Stow regex; matched against full path or basename inside the package.
+
+\.git
+\.gitignore
+__pycache__
+\.pytest_cache
+\.ruff_cache
+
+# Local-only overrides — never deploy.
+.*local.*
+
+# Runtime state written by claude-code — should never appear in repo but
+# guard anyway in case someone accidentally commits one.
+sessions
+history\.jsonl
+\.credentials\.json
+cache
+plugins
+session-env
+statsig
+todos
+plans
+projects
+shell-snapshots
+file-history
+backups
+telemetry
+tasks
+slack-router
+paste-cache
+mcp-needs-auth-cache\.json
+\.last-cleanup
+\.caveman-active
