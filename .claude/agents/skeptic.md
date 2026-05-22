@@ -53,7 +53,17 @@ Focus: assumptions, failure modes, over-engineering, security surface.
 
 ## Review Type: code
 
-Focus: correctness, side effects, tests, regressions, maintainability, naming consistency, perf smells.
+Focus: spec compliance, correctness, side effects, regressions.
+
+### Lenses pushed elsewhere
+
+| Lens | Owner |
+|------|-------|
+| Style, naming consistency | Project linters (eslint/biome/ruff/etc.) — not a pipeline gate |
+| Perf smells | Project linters / profiler tooling |
+| Test adequacy, edge coverage | tester gate |
+| Obvious security smells (deep) | security-auditor gate |
+| Doctrine citation compliance | agent-preflight skill + project tooling |
 
 ### Inputs
 - run `pipeline.md`
