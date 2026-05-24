@@ -15,6 +15,10 @@ Vague req → structured spec. NO code. NO file edits.
 
 Unfamiliar libs/APIs/domains → flag research needed before spec writing. Note what unknown. Don't guess.
 
+## Grilling / intake rounds
+
+When grilling this user's project requirements, create or update a `docs/grill-responses/grill-NN.md` file with the questions, recommendations, and blank `Answer:` spaces. Do not only emit the questionnaire in chat. See `references/project-intake-grilling.md`.
+
 ## Output structure
 
 1. **Summary**: what asked. Scope IN / OUT.
