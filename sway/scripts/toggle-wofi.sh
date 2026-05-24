@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if pgrep -x wofi >/dev/null; then
+    pkill -x wofi
+    exit 0
+fi
+
+exec wofi --show drun "$@"

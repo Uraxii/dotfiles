@@ -102,7 +102,6 @@ window#waybar {
     }
 }
 
-/* --- user-overrides.css --- */
 /* User overrides — appended to every HANCORE theme's style.css by
  * set-theme.sh. Survives theme switches.
  *
@@ -151,7 +150,9 @@ window#waybar {
 
 .modules-left,
 .modules-right {
-  background: @bg2;
+  /* Semi-transparent taskbar pills. Real blur is compositor-side; stock sway
+   * can render alpha here, but cannot blur windows behind layer-shell bars. */
+  background: alpha(@bg2, 0.85);
   color: @fg;
 }
 
@@ -233,6 +234,7 @@ window#waybar #battery,
 window#waybar #network,
 window#waybar #bluetooth,
 window#waybar #pulseaudio,
+window#waybar #pulseaudio#mic,
 window#waybar #backlight,
 window#waybar #cpu,
 window#waybar #memory,
@@ -242,7 +244,75 @@ window#waybar #language,
 window#waybar #keyboard-state,
 window#waybar #temperature,
 window#waybar #disk,
-window#waybar #power-profiles-daemon {
+window#waybar #power-profiles-daemon,
+window#waybar #custom-powerDraw,
+window#waybar #custom-clipboard,
+window#waybar #custom-colorpicker,
+window#waybar #custom-logo,
+window#waybar #custom-updates,
+window#waybar #custom-hotspot,
+window#waybar #custom-weather,
+window#waybar #backlight-slider,
+window#waybar #pulseaudio-slider,
+window#waybar #network-speed {
   padding: 0 10px;
   margin: 0 2px;
+}
+
+/* Drawer groups need explicit min-width so slide-out content doesn't collapse */
+window#waybar #group-blight,
+window#waybar #group-audio,
+window#waybar #group-networking {
+  min-width: 40px;
+}
+
+/* Slider widgets inside drawers — compact height, circular handle */
+window#waybar #backlight-slider,
+window#waybar #pulseaudio-slider {
+  min-width: 120px;
+  min-height: 0;
+  padding: 0;
+  margin: 0 4px;
+}
+
+/* GTK scale (slider) track */
+window#waybar #backlight-slider scale,
+window#waybar #pulseaudio-slider scale {
+  min-height: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+/* GTK scale trough (the bar itself) */
+window#waybar #backlight-slider scale trough,
+window#waybar #pulseaudio-slider scale trough {
+  min-height: 6px;
+  min-width: 100px;
+  border-radius: 3px;
+  background: alpha(@fg, 0.25);
+  margin: 0;
+  padding: 0;
+}
+
+/* GTK scale fill (the filled portion) */
+window#waybar #backlight-slider scale trough highlight,
+window#waybar #pulseaudio-slider scale trough highlight {
+  min-height: 6px;
+  border-radius: 3px;
+  background: @accent;
+  margin: 0;
+  padding: 0;
+}
+
+/* GTK scale slider handle — force circular */
+window#waybar #backlight-slider scale slider,
+window#waybar #pulseaudio-slider scale slider {
+  min-width: 14px;
+  min-height: 14px;
+  border-radius: 7px;
+  background: @fg;
+  border: none;
+  margin: -4px 0;
+  padding: 0;
+  box-shadow: none;
 }

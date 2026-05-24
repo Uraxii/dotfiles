@@ -1,18 +1,14 @@
 {
   "layer": "top",
   "position": "top",
+  "exclusive": false,
+  "passthrough": false,
   "modules-left": [
     "custom/logo",
-    "clock",
-    "disk",
-    "memory",
-    "cpu",
-    "temperature",
-    "custom/powerDraw"
+    "sway/workspaces"
   ],
   "modules-center": [],
   "modules-right": [
-    "sway/workspaces",
     "hyprland/window",
     "tray",
     "custom/clipboard",
@@ -22,7 +18,9 @@
     "bluetooth",
     "group/audio",
     "group/networking",
-    "battery"
+    "battery",
+    "custom/powerDraw",
+    "clock"
   ],
   "reload_style_on_change": true,
   "custom/logo": {

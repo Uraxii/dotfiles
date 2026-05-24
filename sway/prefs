@@ -13,7 +13,7 @@ set $font_family "0xProto Nerd Font"
 font pango:0xProto Nerd Font 16
 
 # Your preferred application launcher
-set $menu wofi --show drun
+set $menu $scripts_dir/toggle-wofi.sh
 
 set $explorer thunar
 set $browser io.github.zen_browser.zen
