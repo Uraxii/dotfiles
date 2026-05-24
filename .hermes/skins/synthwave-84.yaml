@@ -56,23 +56,58 @@ spinner:
     - ["<teal ", " teal>"]
 
 branding:
-  agent_name: "Synthwave Hermes"
-  welcome: "Welcome to Synthwave Hermes. Type your message or /help for commands."
-  goodbye: "Smooth sailing."
-  response_label: " Synthwave Hermes "
+  agent_name: "Zakia"
+  welcome: "Hello, I'm Zakia. Type your message or /help for commands."
+  goodbye: "Later!"
+  response_label: " Zakia "
   prompt_symbol: ">"
-  help_header: "Synthwave commands"
+  help_header: "Zakia commands"
 
 tool_prefix: "|"
 
 tool_emojis:
-  terminal: ">_"
-  read_file: "rd"
-  write_file: "wr"
-  patch: "pt"
-  web_search: "ws"
-  web_extract: "wx"
-  delegate_task: "dg"
+  terminal: 
+  process: 
+  read_file: 
+  write_file: 
+  patch: 
+  search_files: 
+  web_search: 
+  session_search: 
+  web_extract: 
+  web: 
+  browser_navigate: 
+  browser_click: 
+  browser_type: 
+  browser_snapshot: 
+  browser_scroll: 
+  browser_press: 
+  browser_console: 
+  browser_vision: 
+  browser_get_images: 
+  browser_back: 
+  browser: 
+  execute_code: 
+  code_execution: 
+  vision_analyze: 
+  vision: 
+  image_generate: 
+  image_gen: 
+  fact_store: 
+  fact_feedback: 
+  skills: 
+  skill_view: 
+  skills_list: 
+  skill_manage: 
+  todo: 
+  cronjob: 
+  clarify: 
+  delegate_task: 
+  delegation: 
+  send_message: 
+  messaging: 
+  text_to_speech: 
+  memory: 
 
 banner_logo: |
   [bold #fe4450] ____  __   __ _   _ _____ _   _ __        __    _    __     __ _____ [/]

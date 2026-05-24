@@ -56,12 +56,12 @@ spinner:
     - ["<red ", " red>"]
 
 branding:
-  agent_name: "Gruvbox Hermes"
-  welcome: "Welcome to Gruvbox Hermes. Type your message or /help for commands."
-  goodbye: "Goodbye."
-  response_label: " Gruvbox Hermes "
+  agent_name: "Zakia"
+  welcome: "Hello, I'm Zakia. Type your message or /help for commands."
+  goodbye: "Later!"
+  response_label: " Zakia "
   prompt_symbol: ">"
-  help_header: "Gruvbox commands"
+  help_header: "Zakia commands"
 
 tool_prefix: "|"
 
