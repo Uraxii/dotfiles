@@ -76,6 +76,12 @@ tmux/plugins/
 .hermes/kanban.db
 .hermes/kanban.db-shm
 .hermes/kanban.db-wal
-# Local-only live copies (templates tracked as .example)
-.hermes/SOUL.md
+# Local-only live config; SOUL.md identity files are static and tracked.
 .hermes/config.yaml
+.hermes/profiles/*/config.yaml
+.hermes/profiles/*/.env
+.hermes/profiles/*/state.db
+.hermes/profiles/*/sessions/
+.hermes/profiles/*/memory/
+.hermes/profiles/*/logs/
+.hermes/profiles/*/auth.json
