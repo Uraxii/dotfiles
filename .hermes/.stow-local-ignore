@@ -20,7 +20,6 @@ image_cache
 images
 pastes
 logs
-profiles
 sandboxes
 gateway.*
 cron
@@ -41,5 +40,4 @@ hermes-agent
 interrupt_debug\.log
 lsp
 dashboard-themes
-SOUL\.md$
 config\.yaml$
