@@ -12,7 +12,7 @@ and tool integrations (nvm, zoxide, opencode).
 ### Key files
 
 - `zsh/.zshrc` — main config (deployed to `~/.config/zsh/.zshrc`).
-- `zsh/.zprofile` — login env (currently exports `QT_QPA_PLATFORMTHEME=qt6ct`).
+- `zsh/.zprofile` — login env; exports `QT_QPA_PLATFORMTHEME=qt6ct` only outside KDE Plasma so Plasma 6 System Settings can control Qt app colors.
 - `~/.zshenv` — one-line stub, NOT tracked: `export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"`.
 
 ### Keybindings & UX
