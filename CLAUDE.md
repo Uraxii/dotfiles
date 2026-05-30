@@ -105,7 +105,7 @@ themes/<name>/
 ├── images/             # Wallpapers
 └── data/               # Non-sway configs (NOT included by sway)
     ├── gtk-colors.css      # GTK @define-color overrides
-    ├── qt-colors.colors    # Qt6ct INI color scheme
+    ├── qt-colors.colors    # Qt6ct INI color scheme (⚠️ KDE Plasma footgun — see docs/theming.md)
     ├── waybar-colors.css   # Waybar @define-color block
     ├── wofi.css            # Wofi CSS with {{FONT}} placeholder
     ├── omp-colors          # Shell vars for oh-my-posh ##PLACEHOLDER## substitution
@@ -117,6 +117,8 @@ themes/<name>/
 ## Runtime Files (generated, NOT tracked)
 
 `set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config,scripts/}`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`, `~/.config/starship.toml`.
+
+> ⚠️ **KDE Plasma 6 note**: Under Plasma, qt6ct colors are ignored in favor of `~/.config/kdeglobals`. If `QT_QPA_PLATFORMTHEME=qt6ct` leaks into a Plasma session, Qt app colors break. See [`docs/theming.md`](docs/theming.md) for the full footgun write-up.
 
 ### Starship cross-system bootstrap
 

@@ -71,3 +71,18 @@ sub-section. Not duplicated here.
 
 `bash`, `sed`, `gsettings` (GNOME schemas, for icon theme),
 plus all the per-component deps (waybar, wofi, qt6ct, starship).
+
+### KDE Plasma footgun
+
+The theming pipeline was designed for Sway. Under **KDE Plasma 6**, `QT_QPA_PLATFORMTHEME=qt6ct` (set by `zsh/.zprofile` and `sway/modules/env`) overrides Plasma's own color scheme management. Qt apps pick up the `qt-colors.colors` palette from qt6ct and ignore whatever you set in KDE System Settings.
+
+If you enable the KDE profile or boot into Plasma:
+
+- Plasma applies its own Qt colors via `~/.config/kdeglobals` — qt6ct interferes with this.
+- The `.zprofile` guard (`XDG_CURRENT_DESKTOP != KDE`) prevents qt6ct from being set in Plasma. This guard is already in place.
+- Applications launched from an older terminal session or systemd user env that still has the variable cached will still use qt6ct until the session ends.
+- To apply a dark KDE color scheme manually:
+  ```bash
+  plasma-apply-colorscheme BreezeDark
+  plasma-apply-desktoptheme breeze-dark
+  ```
