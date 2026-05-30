@@ -74,15 +74,48 @@ plus all the per-component deps (waybar, wofi, qt6ct, starship).
 
 ### KDE Plasma footgun
 
-The theming pipeline was designed for Sway. Under **KDE Plasma 6**, `QT_QPA_PLATFORMTHEME=qt6ct` (set by `zsh/.zprofile` and `sway/modules/env`) overrides Plasma's own color scheme management. Qt apps pick up the `qt-colors.colors` palette from qt6ct and ignore whatever you set in KDE System Settings.
+The theming pipeline was designed for Sway, but KDE Plasma 6 has three separate dark-mode paths that must agree:
 
-If you enable the KDE profile or boot into Plasma:
+1. **Qt/KDE apps** read Plasma colors from `~/.config/kdeglobals` (`[Colors:Window]`, `[Colors:View]`, etc.).
+2. **Plasma shell/widgets** read the Plasma desktop theme from `~/.config/plasmarc` (`[Theme] name=...`).
+3. **Electron/GTK/libadwaita apps** often read dark-mode preference from GSettings/XDG portals, not from `kdeglobals`.
 
-- Plasma applies its own Qt colors via `~/.config/kdeglobals` — qt6ct interferes with this.
-- The `.zprofile` guard (`XDG_CURRENT_DESKTOP != KDE`) prevents qt6ct from being set in Plasma. This guard is already in place.
-- Applications launched from an older terminal session or systemd user env that still has the variable cached will still use qt6ct until the session ends.
-- To apply a dark KDE color scheme manually:
+The footguns:
+
+- `QT_QPA_PLATFORMTHEME=qt6ct` under Plasma overrides KDE's native Qt integration. Qt apps pick up `~/.config/qt6ct/colors/theme.colors` instead of KDE System Settings / `kdeglobals`.
+- Fixing only `kdeglobals` is not enough for Electron apps like Notion. They can still see "system light mode" if `org.gnome.desktop.interface color-scheme` or the XDG portal reports light.
+- Applications launched before the env/settings fix may keep stale values until restarted. The XDG portal may also need a restart before new Electron apps see the dark preference.
+
+Current intended behavior:
+
+- `.zprofile` must **not** export `QT_QPA_PLATFORMTHEME=qt6ct` in KDE/Plasma sessions.
+- `sway/scripts/apply-plasma-theme.sh` applies the dotfiles palette to KDE by writing `kdeglobals` and setting the Plasma desktop theme.
+- That script also keeps GTK/XDG portal dark-mode aligned for Electron/GTK apps by setting:
   ```bash
-  plasma-apply-colorscheme BreezeDark
-  plasma-apply-desktoptheme breeze-dark
+  gsettings set org.gnome.desktop.interface color-scheme prefer-dark
   ```
+- For live debugging, restart portals after changing the setting so new Electron apps see it immediately:
+  ```bash
+  systemctl --user restart xdg-desktop-portal.service xdg-desktop-portal-kde.service
+  ```
+
+Diagnostics:
+
+```bash
+# Should be unset in KDE
+printenv QT_QPA_PLATFORMTHEME
+systemctl --user show-environment | grep '^QT_QPA_PLATFORMTHEME='
+
+# KDE/Qt app colors
+kreadconfig6 --file ~/.config/kdeglobals --group General --key ColorScheme
+grep -A12 '^\[Colors:Window\]' ~/.config/kdeglobals
+
+# Plasma shell theme
+grep -A2 '^\[Theme\]' ~/.config/plasmarc
+
+# Electron/GTK/libadwaita dark-mode signal
+gsettings get org.gnome.desktop.interface color-scheme
+busctl --user call org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.Settings Read ss org.freedesktop.appearance color-scheme
+```
+
+Portal color-scheme values: `1` means dark, `2` means light. If this reports `2`, apps like Notion will think the system is light even when Plasma itself looks dark.

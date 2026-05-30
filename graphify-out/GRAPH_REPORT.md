@@ -1,16 +1,16 @@
-# Graph Report - dotfiles  (2026-05-24)
+# Graph Report - dotfiles  (2026-05-29)
 
 ## Corpus Check
-- 299 files · ~199,324 words
+- 313 files · ~204,005 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3193 nodes · 3795 edges · 409 communities (362 shown, 47 thin omitted)
+- 3230 nodes · 3818 edges · 420 communities (372 shown, 48 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 33 edges (avg confidence: 0.54)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `08439267`
+- Built from commit: `deec6112`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -257,7 +257,6 @@
 - [[_COMMUNITY_Community 243|Community 243]]
 - [[_COMMUNITY_Community 244|Community 244]]
 - [[_COMMUNITY_Community 245|Community 245]]
-- [[_COMMUNITY_Community 246|Community 246]]
 - [[_COMMUNITY_Community 247|Community 247]]
 - [[_COMMUNITY_Community 248|Community 248]]
 - [[_COMMUNITY_Community 249|Community 249]]
@@ -276,7 +275,6 @@
 - [[_COMMUNITY_Community 262|Community 262]]
 - [[_COMMUNITY_Community 263|Community 263]]
 - [[_COMMUNITY_Community 264|Community 264]]
-- [[_COMMUNITY_Community 265|Community 265]]
 - [[_COMMUNITY_Community 266|Community 266]]
 - [[_COMMUNITY_Community 267|Community 267]]
 - [[_COMMUNITY_Community 268|Community 268]]
@@ -349,6 +347,7 @@
 - [[_COMMUNITY_Community 405|Community 405]]
 - [[_COMMUNITY_Community 406|Community 406]]
 - [[_COMMUNITY_Community 408|Community 408]]
+- [[_COMMUNITY_Community 409|Community 409]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `theme` - 51 edges
@@ -374,15 +373,15 @@
 - `CommsProvider` --uses--> `MessageRef`  [INFERRED]
   opencode/pipeline/comms/provider.py → opencode/pipeline/comms/types.py
 
-## Communities (409 total, 47 thin omitted)
+## Communities (420 total, 48 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.10
-Nodes (46): _acquire_lock(), _atomic_write_state(), build_parser(), cmd_activate(), cmd_deactivate(), cmd_status(), _ensure_router_alive(), _get_pid_owner_uid() (+38 more)
+Cohesion: 0.07
+Nodes (57): _check_terminal_backend(), PluginGuardError, pipeline-core — Hermes plugin registering 8 deterministic pipeline tools.  Regis, Raised when host config violates pipeline-core invariants., Block plugin load if terminal.backend != local.      Hermes config lives at ~/.h, Hermes plugin entry point. Called once at session start., register(), compute_prod_diff_sha() (+49 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.16
-Nodes (25): _acquire_pid_or_exit(), _build_snapshot(), _cleanup_orphan_tmps(), _cleanup_pidfile(), _install_signal_handlers(), _load_comms_context(), _load_comms_context_by_run_id(), main() (+17 more)
+Cohesion: 0.09
+Nodes (37): _acquire_pid_or_exit(), _build_snapshot(), _cleanup_orphan_tmps(), _cleanup_pidfile(), _gc_run_index(), IdleMonitor, _install_signal_handlers(), _load_comms_context() (+29 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.06
@@ -394,7 +393,7 @@ Nodes (37): *, gh auth login*, gh auth logout*, gh auth setup-git*, gh auth stat
 
 ### Community 4 - "Community 4"
 Cohesion: 0.08
-Nodes (18): Post status/completion/friction-summary text., Post a question with option buttons and optional file attachments., Full-fidelity question post with explicit routing ids.          Used by pipeline, Full-fidelity decision post with explicit routing ids.          Used by pipeline, Scan conversations.replies for post with matching client_msg_id., Replace the body of a previously posted message., Post a thread-reply confirming an answer was recorded., Post a message visible ONLY to user_id. (+10 more)
+Nodes (20): _project_hash(), Post status/completion/friction-summary text., Post a question with option buttons and optional file attachments., Full-fidelity question post with explicit routing ids.          Used by pipeline, Post a decision-point with option buttons., Full-fidelity decision post with explicit routing ids.          Used by pipeline, Scan conversations.replies for post with matching client_msg_id., Replace the body of a previously posted message. (+12 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.05
@@ -458,15 +457,15 @@ Nodes (24): Agent & Skill Files, Architecture, code:bash (./setup.sh      # runs
 
 ### Community 20 - "Community 20"
 Cohesion: 0.12
-Nodes (11): AptAdapter, CargoAdapter, DnfAdapter, _is_externally_managed(), NpmAdapter, termux `pkg` (apt wrapper). No sudo on Android (single-user)., npm install -g <name>[@version]. Works for plain names, scoped packages     (@sc, uv tool install — isolated per-tool venvs. PEP 668-safe.      Preferred over pla (+3 more)
+Nodes (11): AptAdapter, AurAdapter, CargoAdapter, DnfAdapter, _is_externally_managed(), NpmAdapter, PacmanAdapter, termux `pkg` (apt wrapper). No sudo on Android (single-user). (+3 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.13
 Nodes (21): apply_profile(), _cmp(), default_profile_for(), detect_distro(), get_adapter(), is_headless(), main(), _parse_ver() (+13 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.19
-Nodes (13): AuthCheck, DecisionPost, InboundEvent, MessageRef, OptionSpec, QuestionPost, Provider-neutral value types for the comms abstraction.  Stdlib-only. No slack-b, Provider-neutral inbound interaction.      Emitted by the provider (push-side, s (+5 more)
+Cohesion: 0.11
+Nodes (21): Immutable point-in-time view of all active session routes., RoutingSnapshot, AuthCheck, DecisionPost, InboundConsumer, InboundEvent, MessageRef, OptionSpec (+13 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.08
@@ -475,10 +474,6 @@ Nodes (22): API endpoints, artifact-serve — reference, code:block1 (/tmp/claud
 ### Community 24 - "Community 24"
 Cohesion: 0.08
 Nodes (23): Adding a new skill, `agent-brief-format`, `artifact-slug`, `caveman`, code:block1 (.claude/skills/), code:yaml (---), code:bash (TEST_GLOBS=$(test -f test-paths.txt && cat test-paths.txt ||), code:block4 (Skill(skill: "<name>", args: "<key>=<value>, <key>=<value>")) (+15 more)
-
-### Community 25 - "Community 25"
-Cohesion: 0.17
-Nodes (10): build_slack_provider(), _EmptySnapshot, _project_hash(), SlackProvider — implements CommsProvider for Slack.  Sole module in the codebase, Post a decision-point with option buttons., Fallback snapshot when routing index not yet set., Zero-arg factory invoked by CommsRegistry. Loads env file once., Slack crash-recovery: recover_message_ts via conversations.replies scan. (+2 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.08
@@ -685,8 +680,8 @@ Cohesion: 0.15
 Nodes (11): Completion / Reporting, Do, Don't, Inputs, Outputs / Artifacts, Pre-Plan Position, Quality Bar, Revision / Loop Behavior (+3 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.17
-Nodes (12): _curses_start_with_fallback(), _default_sudo(), _initial_selection(), interactive_select(), _normalise_bins(), Derive default sudo requirement from (source, distro).      Override via `sudo =, Merge defaults + entry + per-distro override into a Resolved spec., Pkgs preselected in interactive mode: enabled + not profile-excluded     + sourc (+4 more)
+Cohesion: 0.12
+Nodes (16): apply_default_shell(), _current_login_shell(), _curses_start_with_fallback(), _default_sudo(), _initial_selection(), interactive_select(), _normalise_bins(), Derive default sudo requirement from (source, distro).      Override via `sudo = (+8 more)
 
 ### Community 79 - "Community 79"
 Cohesion: 0.15
@@ -809,8 +804,8 @@ Cohesion: 0.29
 Nodes (8): Activation, Auto-Clarity, Boundaries, caveman, code:block1 (memory:save "Use caveman-full output style across all sessio), Intensity, Persistence, Rules
 
 ### Community 109 - "Community 109"
-Cohesion: 0.20
-Nodes (5): AurAdapter, _build_rows(), PacmanAdapter, Flat scrollable rows: group header line + pkg lines, declaration order.      Pkg, _Row
+Cohesion: 0.40
+Nodes (3): _build_rows(), Flat scrollable rows: group header line + pkg lines, declaration order.      Pkg, _Row
 
 ### Community 110 - "Community 110"
 Cohesion: 0.20
@@ -849,8 +844,8 @@ Cohesion: 0.20
 Nodes (9): Behaviour, code:bash (uv run --script ~/.claude/pipeline/session_bind.py activate), Invocation, Output contract, Related, Reverse, Side effects, slack-bind (+1 more)
 
 ### Community 119 - "Community 119"
-Cohesion: 0.16
-Nodes (10): InboundConsumerImpl, Write inbox/<msg_ts>.json atomically from InboundEvent. Returns True if written., Write unrouted/<msg_ts>.json for events with no route in index., Look up run-index by run_id + phash8. Returns (run_dir, run_id) or (None, reason, Implements InboundConsumer Protocol.      Provider's worker thread calls dispatc, Dispatch one normalized inbound event., Handle button click: resolve run_dir, write answer/decision, confirm., _resolve_route_dir_from_run_id() (+2 more)
+Cohesion: 0.24
+Nodes (5): InboundConsumerImpl, Write unrouted/<msg_ts>.json for events with no route in index., Implements InboundConsumer Protocol.      Provider's worker thread calls dispatc, Dispatch one normalized inbound event., _write_unrouted_file()
 
 ### Community 120 - "Community 120"
 Cohesion: 0.20
@@ -905,12 +900,12 @@ Cohesion: 0.36
 Nodes (8): Tests for H2 — load_env_file refuses files with loose permissions., Read-only file (no write bits) should still load if other bits clear., test_force_load_override(), test_load_mode_400(), test_load_mode_600(), test_refuse_mode_644(), test_refuse_mode_664(), _write_env()
 
 ### Community 133 - "Community 133"
-Cohesion: 0.17
-Nodes (11): dark, light, dark, light, $schema, dark, light, theme (+3 more)
+Cohesion: 0.22
+Nodes (8): dark, light, dark, light, $schema, theme, diffLineNumber, markdownCode
 
 ### Community 134 - "Community 134"
-Cohesion: 0.25
-Nodes (7): External dependencies, Generated runtime files, How to add a templated variable, How to add a theme, Key files, Purpose, Theming
+Cohesion: 0.17
+Nodes (11): code:bash (gsettings set org.gnome.desktop.interface color-scheme prefe), code:bash (systemctl --user restart xdg-desktop-portal.service xdg-desk), code:bash (# Should be unset in KDE), External dependencies, Generated runtime files, How to add a templated variable, How to add a theme, KDE Plasma footgun (+3 more)
 
 ### Community 135 - "Community 135"
 Cohesion: 0.25
@@ -1045,8 +1040,8 @@ Cohesion: 0.53
 Nodes (5): find_latest(), main(), parse_blocker_class(), parse_frontmatter(), Parse single-line YAML flow-seq '[a, b]' → ['a', 'b']. Empty list for [].
 
 ### Community 171 - "Community 171"
-Cohesion: 0.33
-Nodes (5): Output structure, requirements-clarifier, Research gate, Rules, Self-check
+Cohesion: 0.29
+Nodes (6): Grilling / intake rounds, Output structure, requirements-clarifier, Research gate, Rules, Self-check
 
 ### Community 172 - "Community 172"
 Cohesion: 0.33
@@ -1073,8 +1068,8 @@ Cohesion: 0.40
 Nodes (4): code:typescript (// Easy to mock), code:typescript (// GOOD: Each function is independently mockable), Designing for Mockability, When to Mock
 
 ### Community 179 - "Community 179"
-Cohesion: 0.29
-Nodes (9): build_decision_blocks(), build_question_blocks(), decode_button_payload(), encode_button_value(), Slack block builders for question/decision posts.  Owns BUTTON_LETTERS constant, Build Slack blocks for a decision post with option buttons., Encode a Slack button value as the pipe-separated payload string., Decode pipe-separated button payload. Returns (phash8, run_id, qd_id, choice) or (+1 more)
+Cohesion: 0.12
+Nodes (17): build_decision_blocks(), build_question_blocks(), decode_button_payload(), encode_button_value(), Slack block builders for question/decision posts.  Owns BUTTON_LETTERS constant, Build Slack blocks for a decision post with option buttons., Encode a Slack button value as the pipe-separated payload string., Decode pipe-separated button payload. Returns (phash8, run_id, qd_id, choice) or (+9 more)
 
 ### Community 180 - "Community 180"
 Cohesion: 0.50
@@ -1117,8 +1112,8 @@ Cohesion: 0.67
 Nodes (3): code:bash (git clone <this-repo> ~/dotfiles), Distro packages (the bits stow cannot install), Fast path (new machine)
 
 ### Community 205 - "Community 205"
-Cohesion: 0.50
-Nodes (4): apply_default_shell(), _current_login_shell(), Return the user's login shell from getent passwd (authoritative).      Falls bac, Apply [shell].default from config, or override_id if passed.      Returns (chang
+Cohesion: 0.67
+Nodes (3): dark, light, backgroundElement
 
 ### Community 206 - "Community 206"
 Cohesion: 0.67
@@ -1233,8 +1228,8 @@ Cohesion: 0.67
 Nodes (3): dark, light, background
 
 ### Community 234 - "Community 234"
-Cohesion: 0.16
-Nodes (11): Immutable point-in-time view of all active session routes., Owns the current RoutingSnapshot + shared lock for idle-counter., Swap snapshot if fingerprint differs. Resets idle counter on non-empty., RoutingIndex, RoutingSnapshot, InboundConsumer, Push-side consumer the provider calls per normalized event.      Lives on the ro, Dispatch one normalized inbound event. (+3 more)
+Cohesion: 0.67
+Nodes (3): dark, light, markdownText
 
 ### Community 235 - "Community 235"
 Cohesion: 0.67
@@ -1278,11 +1273,7 @@ Nodes (3): dark, light, markdownStrong
 
 ### Community 245 - "Community 245"
 Cohesion: 0.67
-Nodes (3): dark, light, diffLineNumber
-
-### Community 246 - "Community 246"
-Cohesion: 0.67
-Nodes (3): dark, light, markdownCode
+Nodes (3): dark, light, secondary
 
 ### Community 247 - "Community 247"
 Cohesion: 0.67
@@ -1309,8 +1300,8 @@ Cohesion: 0.67
 Nodes (3): warning, dark, light
 
 ### Community 253 - "Community 253"
-Cohesion: 0.22
-Nodes (11): _check_terminal_backend(), PluginGuardError, pipeline-core — Hermes plugin registering 8 deterministic pipeline tools.  Regis, Raised when host config violates pipeline-core invariants., Block plugin load if terminal.backend != local.      Hermes config lives at ~/.h, Hermes plugin entry point. Called once at session start., register(), compute_prod_diff_sha() (+3 more)
+Cohesion: 0.18
+Nodes (10): Agent Handoff, code:markdown (# Handoff: <short title>), Common Pitfalls, Inputs, Overview, Procedure: Consuming a Handoff, Procedure: Creating a Handoff, Recommended Document Structure (+2 more)
 
 ### Community 254 - "Community 254"
 Cohesion: 0.67
@@ -1355,10 +1346,6 @@ Nodes (3): dark, light, markdownCodeBlock
 ### Community 264 - "Community 264"
 Cohesion: 0.67
 Nodes (3): dark, light, markdownHeading
-
-### Community 265 - "Community 265"
-Cohesion: 0.18
-Nodes (4): _gc_run_index(), IdleMonitor, Prune stale run-index entries and old unrouted files. Returns count pruned., RoutingPoller
 
 ### Community 266 - "Community 266"
 Cohesion: 0.67
@@ -1524,25 +1511,29 @@ Nodes (3): dark, light, diffLineNumber
 Cohesion: 0.67
 Nodes (3): dark, light, markdownCode
 
+### Community 409 - "Community 409"
+Cohesion: 0.25
+Nodes (7): code:bash (cd ~/.hermes/hermes-agent), Codepoints in use, Hermes Nerd Font Icon Patches, Skin `tool_emojis` vs `display.tool_progress_overrides`, To regenerate the patch after Hermes updates (if it diverges), What's here, Why this exists
+
 ## Knowledge Gaps
-- **1110 isolated node(s):** `pipelineServer`, `execFile`, `artifactSlug`, `name`, `base` (+1105 more)
+- **1126 isolated node(s):** `pipelineServer`, `execFile`, `artifactSlug`, `name`, `base` (+1121 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **47 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `build_slack_provider()` connect `Community 25` to `Community 4`, `Community 253`?**
+- **Why does `build_slack_provider()` connect `Community 179` to `Community 0`, `Community 4`?**
   _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `interactive_select()` connect `Community 78` to `Community 253`, `Community 109`, `Community 21`?**
+- **Why does `interactive_select()` connect `Community 78` to `Community 0`, `Community 109`, `Community 21`?**
   _High betweenness centrality (0.003) - this node is a cross-community bridge._
 - **Why does `theme` connect `Community 93` to `Community 256`, `Community 258`, `Community 259`, `Community 260`, `Community 261`, `Community 262`, `Community 263`, `Community 264`, `Community 266`, `Community 267`, `Community 268`, `Community 269`, `Community 270`, `Community 271`, `Community 272`, `Community 273`, `Community 274`, `Community 275`, `Community 276`, `Community 405`, `Community 278`, `Community 279`, `Community 280`, `Community 281`, `Community 406`, `Community 277`, `Community 282`, `Community 408`, `Community 284`, `Community 287`, `Community 285`, `Community 289`, `Community 290`, `Community 288`, `Community 286`, `Community 292`, `Community 291`, `Community 295`, `Community 296`, `Community 297`, `Community 298`, `Community 299`, `Community 293`, `Community 294`, `Community 404`, `Community 254`, `Community 255`?**
   _High betweenness centrality (0.002) - this node is a cross-community bridge._
 - **Are the 9 inferred relationships involving `CommsProvider` (e.g. with `AuthCheck` and `DecisionPost`) actually correct?**
   _`CommsProvider` has 9 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Return a canonical distro id from /etc/os-release (or termux env).`, `Derive default sudo requirement from (source, distro).      Override via `sudo =`, `Merge defaults + entry + per-distro override into a Resolved spec.` to the rest of the system?**
-  _1533 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1549 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.10372340425531915 - nodes in this community are weakly interconnected._
-- **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.060129509713228495 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07377049180327869 - nodes in this community are weakly interconnected._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.08503401360544217 - nodes in this community are weakly interconnected._

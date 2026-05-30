@@ -4,7 +4,8 @@
 # hasn't changed since last run.
 #
 # Reads the current theme's qt-colors.colors and writes the colors
-# directly to ~/.config/kdeglobals, then notifies running apps via DBus.
+# directly to ~/.config/kdeglobals, aligns GTK/XDG portal dark preference for
+# Electron/libadwaita apps, then notifies running apps via DBus.
 
 set -euo pipefail
 
@@ -19,6 +20,15 @@ KDGLOBALS="${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals"
 
 mkdir -p "$COLOR_SCHEMES_DIR"
 
+# ── Align GTK/XDG portal dark-mode preference ──────────────────────────
+# Electron apps (Notion, Discord, etc.) and GTK/libadwaita apps often ask
+# GSettings/XDG portals for dark mode instead of reading KDE's kdeglobals.
+# Do this before the stamp fast-path so a stale/missing GSettings value is
+# corrected even when the KDE palette did not change.
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
+fi
+
 if [ ! -f "$PALETTE_SRC" ]; then
     # No theme palette — fall back to BreezeDark
     plasma-apply-colorscheme BreezeDark 2>/dev/null || true
@@ -28,7 +38,8 @@ fi
 
 # ── Check if theme changed ─────────────────────────────────────────────
 PALETTE_HASH=$(sha256sum "$PALETTE_SRC" | cut -d' ' -f1)
-if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$PALETTE_HASH" ]; then
+CURRENT_SCHEME="$(kreadconfig6 --file "$KDGLOBALS" --group General --key ColorScheme 2>/dev/null || true)"
+if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$PALETTE_HASH" ] && [ "$CURRENT_SCHEME" = "$PLASMA_SCHEME_NAME" ]; then
     exit 0
 fi
 

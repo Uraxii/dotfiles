@@ -162,7 +162,7 @@
       "source_file": "install.py",
       "source_location": "L316",
       "id": "dotfiles_install_pacmanadapter",
-      "community": 109,
+      "community": 20,
       "norm_label": "pacmanadapter"
     },
     {
@@ -171,7 +171,7 @@
       "source_file": "install.py",
       "source_location": "L319",
       "id": "dotfiles_install_pacmanadapter_installed_version",
-      "community": 109,
+      "community": 20,
       "norm_label": ".installed_version()"
     },
     {
@@ -180,7 +180,7 @@
       "source_file": "install.py",
       "source_location": "L328",
       "id": "dotfiles_install_pacmanadapter_install",
-      "community": 109,
+      "community": 20,
       "norm_label": ".install()"
     },
     {
@@ -189,7 +189,7 @@
       "source_file": "install.py",
       "source_location": "L336",
       "id": "dotfiles_install_auradapter",
-      "community": 109,
+      "community": 20,
       "norm_label": "auradapter"
     },
     {
@@ -207,7 +207,7 @@
       "source_file": "install.py",
       "source_location": "L343",
       "id": "dotfiles_install_auradapter_install",
-      "community": 109,
+      "community": 20,
       "norm_label": ".install()"
     },
     {
@@ -387,7 +387,7 @@
       "source_file": "install.py",
       "source_location": "L555",
       "id": "dotfiles_install_uvtooladapter",
-      "community": 20,
+      "community": 25,
       "norm_label": "uvtooladapter"
     },
     {
@@ -396,7 +396,7 @@
       "source_file": "install.py",
       "source_location": "L569",
       "id": "dotfiles_install_uvtooladapter_installed_version",
-      "community": 20,
+      "community": 25,
       "norm_label": ".installed_version()"
     },
     {
@@ -405,7 +405,7 @@
       "source_file": "install.py",
       "source_location": "L583",
       "id": "dotfiles_install_uvtooladapter_install",
-      "community": 20,
+      "community": 25,
       "norm_label": ".install()"
     },
     {
@@ -684,7 +684,7 @@
       "source_file": "install.py",
       "source_location": "L1275",
       "id": "dotfiles_install_current_login_shell",
-      "community": 205,
+      "community": 78,
       "norm_label": "_current_login_shell()"
     },
     {
@@ -693,7 +693,7 @@
       "source_file": "install.py",
       "source_location": "L1293",
       "id": "dotfiles_install_apply_default_shell",
-      "community": 205,
+      "community": 78,
       "norm_label": "apply_default_shell()"
     },
     {
@@ -792,7 +792,7 @@
       "source_file": "install.py",
       "source_location": "L556",
       "id": "dotfiles_install_rationale_556",
-      "community": 20,
+      "community": 25,
       "norm_label": "uv tool install \u2014 isolated per-tool venvs. pep 668-safe.      preferred over pla"
     },
     {
@@ -891,7 +891,7 @@
       "source_file": "install.py",
       "source_location": "L1276",
       "id": "dotfiles_install_rationale_1276",
-      "community": 205,
+      "community": 78,
       "norm_label": "return the user's login shell from getent passwd (authoritative).      falls bac"
     },
     {
@@ -900,7 +900,7 @@
       "source_file": "install.py",
       "source_location": "L1300",
       "id": "dotfiles_install_rationale_1300",
-      "community": 205,
+      "community": 78,
       "norm_label": "apply [shell].default from config, or override_id if passed.      returns (chang"
     },
     {
@@ -2016,7 +2016,7 @@
       "source_file": ".claude/skills/pipeline-prod-diff-sha/prod-diff-sha.py",
       "source_location": "L1",
       "id": "claude_skills_pipeline_prod_diff_sha_prod_diff_sha_py",
-      "community": 253,
+      "community": 0,
       "norm_label": "prod-diff-sha.py"
     },
     {
@@ -2025,7 +2025,7 @@
       "source_file": ".claude/skills/pipeline-prod-diff-sha/prod-diff-sha.py",
       "source_location": "L54",
       "id": "pipeline_prod_diff_sha_prod_diff_sha_get_test_globs",
-      "community": 253,
+      "community": 0,
       "norm_label": "get_test_globs()"
     },
     {
@@ -2034,7 +2034,7 @@
       "source_file": ".claude/skills/pipeline-prod-diff-sha/prod-diff-sha.py",
       "source_location": "L66",
       "id": "pipeline_prod_diff_sha_prod_diff_sha_compute_prod_diff_sha",
-      "community": 253,
+      "community": 0,
       "norm_label": "compute_prod_diff_sha()"
     },
     {
@@ -2043,7 +2043,7 @@
       "source_file": ".claude/skills/pipeline-prod-diff-sha/prod-diff-sha.py",
       "source_location": "L80",
       "id": "pipeline_prod_diff_sha_prod_diff_sha_main",
-      "community": 253,
+      "community": 0,
       "norm_label": "main()"
     },
     {
@@ -4860,7 +4860,7 @@
       "source_file": "",
       "source_location": "",
       "id": "protocol",
-      "community": 234,
+      "community": 22,
       "norm_label": "protocol"
     },
     {
@@ -5346,7 +5346,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L136",
       "id": "comms_router_routingsnapshot",
-      "community": 234,
+      "community": 22,
       "norm_label": "routingsnapshot"
     },
     {
@@ -5355,7 +5355,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L149",
       "id": "comms_router_write_inbox_file",
-      "community": 119,
+      "community": 1,
       "norm_label": "_write_inbox_file()"
     },
     {
@@ -5382,7 +5382,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L229",
       "id": "comms_router_gc_run_index",
-      "community": 265,
+      "community": 1,
       "norm_label": "_gc_run_index()"
     },
     {
@@ -5391,7 +5391,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L261",
       "id": "comms_router_resolve_route_dir_from_run_id",
-      "community": 119,
+      "community": 1,
       "norm_label": "_resolve_route_dir_from_run_id()"
     },
     {
@@ -5436,7 +5436,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L427",
       "id": "comms_router_routingindex",
-      "community": 234,
+      "community": 1,
       "norm_label": "routingindex"
     },
     {
@@ -5445,7 +5445,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L430",
       "id": "comms_router_routingindex_init",
-      "community": 234,
+      "community": 22,
       "norm_label": ".__init__()"
     },
     {
@@ -5463,7 +5463,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L442",
       "id": "comms_router_routingindex_swap_if_changed",
-      "community": 234,
+      "community": 1,
       "norm_label": ".swap_if_changed()"
     },
     {
@@ -5481,7 +5481,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L509",
       "id": "comms_router_routingpoller",
-      "community": 265,
+      "community": 1,
       "norm_label": "routingpoller"
     },
     {
@@ -5490,7 +5490,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L510",
       "id": "comms_router_routingpoller_init",
-      "community": 265,
+      "community": 1,
       "norm_label": ".__init__()"
     },
     {
@@ -5499,7 +5499,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L523",
       "id": "comms_router_routingpoller_start",
-      "community": 265,
+      "community": 1,
       "norm_label": ".start()"
     },
     {
@@ -5508,7 +5508,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L526",
       "id": "comms_router_routingpoller_join",
-      "community": 265,
+      "community": 1,
       "norm_label": ".join()"
     },
     {
@@ -5517,7 +5517,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L529",
       "id": "comms_router_routingpoller_loop",
-      "community": 265,
+      "community": 1,
       "norm_label": "._loop()"
     },
     {
@@ -5526,7 +5526,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L542",
       "id": "comms_router_idlemonitor",
-      "community": 265,
+      "community": 1,
       "norm_label": "idlemonitor"
     },
     {
@@ -5535,7 +5535,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L543",
       "id": "comms_router_idlemonitor_init",
-      "community": 265,
+      "community": 1,
       "norm_label": ".__init__()"
     },
     {
@@ -5544,7 +5544,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L556",
       "id": "comms_router_idlemonitor_start",
-      "community": 265,
+      "community": 1,
       "norm_label": ".start()"
     },
     {
@@ -5553,7 +5553,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L559",
       "id": "comms_router_idlemonitor_join",
-      "community": 265,
+      "community": 1,
       "norm_label": ".join()"
     },
     {
@@ -5562,7 +5562,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L562",
       "id": "comms_router_idlemonitor_loop",
-      "community": 265,
+      "community": 1,
       "norm_label": "._loop()"
     },
     {
@@ -5607,7 +5607,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L649",
       "id": "comms_router_inboundconsumerimpl_handle_button",
-      "community": 119,
+      "community": 1,
       "norm_label": "._handle_button()"
     },
     {
@@ -5706,7 +5706,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L137",
       "id": "comms_router_rationale_137",
-      "community": 234,
+      "community": 22,
       "norm_label": "immutable point-in-time view of all active session routes."
     },
     {
@@ -5715,7 +5715,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L150",
       "id": "comms_router_rationale_150",
-      "community": 119,
+      "community": 1,
       "norm_label": "write inbox/<msg_ts>.json atomically from inboundevent. returns true if written."
     },
     {
@@ -5733,7 +5733,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L230",
       "id": "comms_router_rationale_230",
-      "community": 265,
+      "community": 1,
       "norm_label": "prune stale run-index entries and old unrouted files. returns count pruned."
     },
     {
@@ -5742,7 +5742,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L265",
       "id": "comms_router_rationale_265",
-      "community": 119,
+      "community": 1,
       "norm_label": "look up run-index by run_id + phash8. returns (run_dir, run_id) or (none, reason"
     },
     {
@@ -5769,7 +5769,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L428",
       "id": "comms_router_rationale_428",
-      "community": 234,
+      "community": 1,
       "norm_label": "owns the current routingsnapshot + shared lock for idle-counter."
     },
     {
@@ -5778,7 +5778,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L445",
       "id": "comms_router_rationale_445",
-      "community": 234,
+      "community": 1,
       "norm_label": "swap snapshot if fingerprint differs. resets idle counter on non-empty."
     },
     {
@@ -5805,7 +5805,7 @@
       "source_file": "opencode/pipeline/comms/router.py",
       "source_location": "L650",
       "id": "comms_router_rationale_650",
-      "community": 119,
+      "community": 1,
       "norm_label": "handle button click: resolve run_dir, write answer/decision, confirm."
     },
     {
@@ -6012,7 +6012,7 @@
       "source_file": "opencode/pipeline/comms/types.py",
       "source_location": "L29",
       "id": "comms_types_threadref",
-      "community": 234,
+      "community": 22,
       "norm_label": "threadref"
     },
     {
@@ -6075,7 +6075,7 @@
       "source_file": "opencode/pipeline/comms/types.py",
       "source_location": "L143",
       "id": "comms_types_inboundconsumer",
-      "community": 234,
+      "community": 22,
       "norm_label": "inboundconsumer"
     },
     {
@@ -6084,7 +6084,7 @@
       "source_file": "opencode/pipeline/comms/types.py",
       "source_location": "L154",
       "id": "comms_types_inboundconsumer_dispatch",
-      "community": 234,
+      "community": 22,
       "norm_label": ".dispatch()"
     },
     {
@@ -6102,7 +6102,7 @@
       "source_file": "opencode/pipeline/comms/types.py",
       "source_location": "L30",
       "id": "comms_types_rationale_30",
-      "community": 234,
+      "community": 22,
       "norm_label": "opaque handle to a provider thread/channel pairing.      `provider` identifies t"
     },
     {
@@ -6165,7 +6165,7 @@
       "source_file": "opencode/pipeline/comms/types.py",
       "source_location": "L144",
       "id": "comms_types_rationale_144",
-      "community": 234,
+      "community": 22,
       "norm_label": "push-side consumer the provider calls per normalized event.      lives on the ro"
     },
     {
@@ -6174,7 +6174,7 @@
       "source_file": "opencode/pipeline/comms/types.py",
       "source_location": "L155",
       "id": "comms_types_rationale_155",
-      "community": 234,
+      "community": 22,
       "norm_label": "dispatch one normalized inbound event."
     },
     {
@@ -6453,7 +6453,7 @@
       "source_file": ".claude/pipeline/comms/slack/provider.py",
       "source_location": "L1",
       "id": "claude_pipeline_comms_slack_provider_py",
-      "community": 25,
+      "community": 179,
       "norm_label": "provider.py"
     },
     {
@@ -6462,7 +6462,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L49",
       "id": "slack_provider_project_hash",
-      "community": 25,
+      "community": 4,
       "norm_label": "_project_hash()"
     },
     {
@@ -6480,7 +6480,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L58",
       "id": "slack_provider_slackprovider_init",
-      "community": 25,
+      "community": 179,
       "norm_label": ".__init__()"
     },
     {
@@ -6534,7 +6534,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L261",
       "id": "slack_provider_slackprovider_post_decision",
-      "community": 25,
+      "community": 4,
       "norm_label": ".post_decision()"
     },
     {
@@ -6642,7 +6642,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L556",
       "id": "slack_provider_emptysnapshot",
-      "community": 25,
+      "community": 179,
       "norm_label": "_emptysnapshot"
     },
     {
@@ -6651,7 +6651,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L564",
       "id": "slack_provider_build_slack_provider",
-      "community": 25,
+      "community": 179,
       "norm_label": "build_slack_provider()"
     },
     {
@@ -6660,7 +6660,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L1",
       "id": "slack_provider_rationale_1",
-      "community": 25,
+      "community": 179,
       "norm_label": "slackprovider \u2014 implements commsprovider for slack.  sole module in the codebase"
     },
     {
@@ -6723,7 +6723,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L269",
       "id": "slack_provider_rationale_269",
-      "community": 25,
+      "community": 4,
       "norm_label": "post a decision-point with option buttons."
     },
     {
@@ -6831,7 +6831,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L557",
       "id": "slack_provider_rationale_557",
-      "community": 25,
+      "community": 179,
       "norm_label": "fallback snapshot when routing index not yet set."
     },
     {
@@ -6840,7 +6840,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L565",
       "id": "slack_provider_rationale_565",
-      "community": 25,
+      "community": 179,
       "norm_label": "zero-arg factory invoked by commsregistry. loads env file once."
     },
     {
@@ -6849,7 +6849,7 @@
       "source_file": ".claude/pipeline/comms/slack/recovery.py",
       "source_location": "L1",
       "id": "claude_pipeline_comms_slack_recovery_py",
-      "community": 25,
+      "community": 179,
       "norm_label": "recovery.py"
     },
     {
@@ -6858,7 +6858,7 @@
       "source_file": "opencode/pipeline/comms/slack/recovery.py",
       "source_location": "L18",
       "id": "slack_recovery_recover_message_ts",
-      "community": 25,
+      "community": 179,
       "norm_label": "recover_message_ts()"
     },
     {
@@ -6867,7 +6867,7 @@
       "source_file": "opencode/pipeline/comms/slack/recovery.py",
       "source_location": "L1",
       "id": "slack_recovery_rationale_1",
-      "community": 25,
+      "community": 179,
       "norm_label": "slack crash-recovery: recover_message_ts via conversations.replies scan."
     },
     {
@@ -6876,7 +6876,7 @@
       "source_file": "opencode/pipeline/comms/slack/recovery.py",
       "source_location": "L23",
       "id": "slack_recovery_rationale_23",
-      "community": 25,
+      "community": 179,
       "norm_label": "scan conversations.replies for a bot message matching client_msg_id.      design"
     },
     {
@@ -12708,7 +12708,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L1",
       "id": "hermes_plugins_pipeline_core_init_py",
-      "community": 253,
+      "community": 0,
       "norm_label": "__init__.py"
     },
     {
@@ -12717,7 +12717,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L35",
       "id": "pipeline_core_init_pluginguarderror",
-      "community": 253,
+      "community": 0,
       "norm_label": "pluginguarderror"
     },
     {
@@ -12726,7 +12726,7 @@
       "source_file": "",
       "source_location": "",
       "id": "runtimeerror",
-      "community": 253,
+      "community": 0,
       "norm_label": "runtimeerror"
     },
     {
@@ -12735,7 +12735,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L39",
       "id": "pipeline_core_init_check_terminal_backend",
-      "community": 253,
+      "community": 0,
       "norm_label": "_check_terminal_backend()"
     },
     {
@@ -12744,7 +12744,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L78",
       "id": "pipeline_core_init_register",
-      "community": 253,
+      "community": 0,
       "norm_label": "register()"
     },
     {
@@ -12753,7 +12753,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L1",
       "id": "pipeline_core_init_rationale_1",
-      "community": 253,
+      "community": 0,
       "norm_label": "pipeline-core \u2014 hermes plugin registering 8 deterministic pipeline tools.  regis"
     },
     {
@@ -12762,7 +12762,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L36",
       "id": "pipeline_core_init_rationale_36",
-      "community": 253,
+      "community": 0,
       "norm_label": "raised when host config violates pipeline-core invariants."
     },
     {
@@ -12771,7 +12771,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L40",
       "id": "pipeline_core_init_rationale_40",
-      "community": 253,
+      "community": 0,
       "norm_label": "block plugin load if terminal.backend != local.      hermes config lives at ~/.h"
     },
     {
@@ -12780,7 +12780,7 @@
       "source_file": ".hermes/plugins/pipeline-core/__init__.py",
       "source_location": "L79",
       "id": "pipeline_core_init_rationale_79",
-      "community": 253,
+      "community": 0,
       "norm_label": "hermes plugin entry point. called once at session start."
     },
     {
@@ -12935,6 +12935,42 @@
       "id": "pipeline_core_tools_rationale_432",
       "community": 60,
       "norm_label": "stub: enumerate run-dir artifacts + write friction-findings-r<n>.md.      full d"
+    },
+    {
+      "label": "reapply-after-update.sh",
+      "file_type": "code",
+      "source_file": ".hermes/patches/reapply-after-update.sh",
+      "source_location": "L1",
+      "id": "hermes_patches_reapply_after_update_sh",
+      "community": 410,
+      "norm_label": "reapply-after-update.sh"
+    },
+    {
+      "label": "reapply-hermes-desktop-ssh-tunnel-sessions.sh",
+      "file_type": "code",
+      "source_file": ".hermes/patches/reapply-hermes-desktop-ssh-tunnel-sessions.sh",
+      "source_location": "L1",
+      "id": "hermes_patches_reapply_hermes_desktop_ssh_tunnel_sessions_sh",
+      "community": 411,
+      "norm_label": "reapply-hermes-desktop-ssh-tunnel-sessions.sh"
+    },
+    {
+      "label": "reapply-hermes-desktop-skins.sh",
+      "file_type": "code",
+      "source_file": ".hermes/patches/reapply-hermes-desktop-skins.sh",
+      "source_location": "L1",
+      "id": "hermes_patches_reapply_hermes_desktop_skins_sh",
+      "community": 246,
+      "norm_label": "reapply-hermes-desktop-skins.sh"
+    },
+    {
+      "label": "backup()",
+      "file_type": "code",
+      "source_file": ".hermes/patches/reapply-hermes-desktop-skins.sh",
+      "source_location": "L26",
+      "id": "patches_reapply_hermes_desktop_skins_backup",
+      "community": 246,
+      "norm_label": "backup()"
     },
     {
       "label": "init.lua",
@@ -14481,7 +14517,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L24",
       "id": "themes_makima_theme_secondary",
-      "community": 133,
+      "community": 245,
       "norm_label": "secondary"
     },
     {
@@ -14490,7 +14526,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L25",
       "id": "themes_makima_secondary_dark",
-      "community": 133,
+      "community": 245,
       "norm_label": "dark"
     },
     {
@@ -14499,7 +14535,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L26",
       "id": "themes_makima_secondary_light",
-      "community": 133,
+      "community": 245,
       "norm_label": "light"
     },
     {
@@ -14751,7 +14787,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L64",
       "id": "themes_makima_theme_backgroundelement",
-      "community": 133,
+      "community": 205,
       "norm_label": "backgroundelement"
     },
     {
@@ -14760,7 +14796,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L65",
       "id": "themes_makima_backgroundelement_dark",
-      "community": 133,
+      "community": 205,
       "norm_label": "dark"
     },
     {
@@ -14769,7 +14805,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L66",
       "id": "themes_makima_backgroundelement_light",
-      "community": 133,
+      "community": 205,
       "norm_label": "light"
     },
     {
@@ -15102,7 +15138,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L116",
       "id": "themes_makima_theme_difflinenumber",
-      "community": 245,
+      "community": 133,
       "norm_label": "difflinenumber"
     },
     {
@@ -15111,7 +15147,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L117",
       "id": "themes_makima_difflinenumber_dark",
-      "community": 245,
+      "community": 133,
       "norm_label": "dark"
     },
     {
@@ -15120,7 +15156,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L118",
       "id": "themes_makima_difflinenumber_light",
-      "community": 245,
+      "community": 133,
       "norm_label": "light"
     },
     {
@@ -15183,7 +15219,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L128",
       "id": "themes_makima_theme_markdowntext",
-      "community": 133,
+      "community": 234,
       "norm_label": "markdowntext"
     },
     {
@@ -15192,7 +15228,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L129",
       "id": "themes_makima_markdowntext_dark",
-      "community": 133,
+      "community": 234,
       "norm_label": "dark"
     },
     {
@@ -15201,7 +15237,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L130",
       "id": "themes_makima_markdowntext_light",
-      "community": 133,
+      "community": 234,
       "norm_label": "light"
     },
     {
@@ -15291,7 +15327,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L144",
       "id": "themes_makima_theme_markdowncode",
-      "community": 246,
+      "community": 133,
       "norm_label": "markdowncode"
     },
     {
@@ -15300,7 +15336,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L145",
       "id": "themes_makima_markdowncode_dark",
-      "community": 246,
+      "community": 133,
       "norm_label": "dark"
     },
     {
@@ -15309,7 +15345,7 @@
       "source_file": "opencode/themes/makima.json",
       "source_location": "L146",
       "id": "themes_makima_markdowncode_light",
-      "community": 246,
+      "community": 133,
       "norm_label": "light"
     },
     {
@@ -17649,7 +17685,7 @@
       "source_file": "opencode/pipeline/comms/slack/provider.py",
       "source_location": "L1",
       "id": "opencode_pipeline_comms_slack_provider_py",
-      "community": 25,
+      "community": 179,
       "norm_label": "provider.py"
     },
     {
@@ -17658,7 +17694,7 @@
       "source_file": "opencode/pipeline/comms/slack/recovery.py",
       "source_location": "L1",
       "id": "opencode_pipeline_comms_slack_recovery_py",
-      "community": 25,
+      "community": 179,
       "norm_label": "recovery.py"
     },
     {
@@ -17867,6 +17903,15 @@
       "id": "sway_scripts_toggle_wofi_sh",
       "community": 401,
       "norm_label": "toggle-wofi.sh"
+    },
+    {
+      "label": "apply-plasma-theme.sh",
+      "file_type": "code",
+      "source_file": "sway/scripts/apply-plasma-theme.sh",
+      "source_location": "L1",
+      "id": "sway_scripts_apply_plasma_theme_sh",
+      "community": 419,
+      "norm_label": "apply-plasma-theme.sh"
     },
     {
       "label": "git-branch.sh",
@@ -18301,6 +18346,87 @@
       "norm_label": "graphify"
     },
     {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "id": "readme_md",
+      "community": 123,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "Uraxii Dotfiles",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "id": "dotfiles_readme_uraxii_dotfiles",
+      "community": 123,
+      "norm_label": "uraxii dotfiles"
+    },
+    {
+      "label": "Quick start",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L5",
+      "id": "dotfiles_readme_quick_start",
+      "community": 123,
+      "norm_label": "quick start"
+    },
+    {
+      "label": "code:bash (sudo pacman -S git stow         # Arch / Manjaro)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L9",
+      "id": "dotfiles_readme_codeblock_1",
+      "community": 123,
+      "norm_label": "code:bash (sudo pacman -s git stow         # arch / manjaro)"
+    },
+    {
+      "label": "First-time setup (per machine)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L18",
+      "id": "dotfiles_readme_first_time_setup_per_machine",
+      "community": 123,
+      "norm_label": "first-time setup (per machine)"
+    },
+    {
+      "label": "code:bash (# 1. zsh: redirect to $ZDOTDIR (zsh always reads ~/.zshenv, )",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L22",
+      "id": "dotfiles_readme_codeblock_2",
+      "community": 123,
+      "norm_label": "code:bash (# 1. zsh: redirect to $zdotdir (zsh always reads ~/.zshenv, )"
+    },
+    {
+      "label": "code:bash (rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && )",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L36",
+      "id": "dotfiles_readme_codeblock_3",
+      "community": 123,
+      "norm_label": "code:bash (rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && )"
+    },
+    {
+      "label": "Component inventory",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L43",
+      "id": "dotfiles_readme_component_inventory",
+      "community": 123,
+      "norm_label": "component inventory"
+    },
+    {
+      "label": "Useful packages",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L65",
+      "id": "dotfiles_readme_useful_packages",
+      "community": 123,
+      "norm_label": "useful packages"
+    },
+    {
       "label": "CLAUDE.md",
       "file_type": "document",
       "source_file": "CLAUDE.md",
@@ -18448,7 +18574,7 @@
       "label": "Starship cross-system bootstrap",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L121",
+      "source_location": "L123",
       "id": "dotfiles_claude_starship_cross_system_bootstrap",
       "community": 19,
       "norm_label": "starship cross-system bootstrap"
@@ -18457,7 +18583,7 @@
       "label": "code:bash (cp ~/.config/starship.toml ~/dotfiles/starship.toml)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L129",
+      "source_location": "L131",
       "id": "dotfiles_claude_codeblock_6",
       "community": 19,
       "norm_label": "code:bash (cp ~/.config/starship.toml ~/dotfiles/starship.toml)"
@@ -18466,7 +18592,7 @@
       "label": "Docs",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L133",
+      "source_location": "L135",
       "id": "dotfiles_claude_docs",
       "community": 19,
       "norm_label": "docs"
@@ -18475,7 +18601,7 @@
       "label": "Doc inventory",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L137",
+      "source_location": "L139",
       "id": "dotfiles_claude_doc_inventory",
       "community": 19,
       "norm_label": "doc inventory"
@@ -18484,7 +18610,7 @@
       "label": "Doc template",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L146",
+      "source_location": "L148",
       "id": "dotfiles_claude_doc_template",
       "community": 19,
       "norm_label": "doc template"
@@ -18493,7 +18619,7 @@
       "label": "Update rule",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L156",
+      "source_location": "L158",
       "id": "dotfiles_claude_update_rule",
       "community": 19,
       "norm_label": "update rule"
@@ -18502,7 +18628,7 @@
       "label": "No duplication",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L160",
+      "source_location": "L162",
       "id": "dotfiles_claude_no_duplication",
       "community": 19,
       "norm_label": "no duplication"
@@ -18511,7 +18637,7 @@
       "label": "NerdFont Glyphs",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L165",
+      "source_location": "L167",
       "id": "dotfiles_claude_nerdfont_glyphs",
       "community": 19,
       "norm_label": "nerdfont glyphs"
@@ -18520,91 +18646,10 @@
       "label": "graphify",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L175",
+      "source_location": "L177",
       "id": "dotfiles_claude_graphify",
       "community": 19,
       "norm_label": "graphify"
-    },
-    {
-      "label": "README.md",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L1",
-      "id": "readme_md",
-      "community": 123,
-      "norm_label": "readme.md"
-    },
-    {
-      "label": "Uraxii Dotfiles",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L1",
-      "id": "dotfiles_readme_uraxii_dotfiles",
-      "community": 123,
-      "norm_label": "uraxii dotfiles"
-    },
-    {
-      "label": "Quick start",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L5",
-      "id": "dotfiles_readme_quick_start",
-      "community": 123,
-      "norm_label": "quick start"
-    },
-    {
-      "label": "code:bash (sudo pacman -S git stow         # Arch / Manjaro)",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L9",
-      "id": "dotfiles_readme_codeblock_1",
-      "community": 123,
-      "norm_label": "code:bash (sudo pacman -s git stow         # arch / manjaro)"
-    },
-    {
-      "label": "First-time setup (per machine)",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L18",
-      "id": "dotfiles_readme_first_time_setup_per_machine",
-      "community": 123,
-      "norm_label": "first-time setup (per machine)"
-    },
-    {
-      "label": "code:bash (# 1. zsh: redirect to $ZDOTDIR (zsh always reads ~/.zshenv, )",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L22",
-      "id": "dotfiles_readme_codeblock_2",
-      "community": 123,
-      "norm_label": "code:bash (# 1. zsh: redirect to $zdotdir (zsh always reads ~/.zshenv, )"
-    },
-    {
-      "label": "code:bash (rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && )",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L36",
-      "id": "dotfiles_readme_codeblock_3",
-      "community": 123,
-      "norm_label": "code:bash (rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && )"
-    },
-    {
-      "label": "Component inventory",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L43",
-      "id": "dotfiles_readme_component_inventory",
-      "community": 123,
-      "norm_label": "component inventory"
-    },
-    {
-      "label": "Useful packages",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": "L65",
-      "id": "dotfiles_readme_useful_packages",
-      "community": 123,
-      "norm_label": "useful packages"
     },
     {
       "label": "desktop.md",
@@ -19640,6 +19685,42 @@
       "id": "docs_theming_external_dependencies",
       "community": 134,
       "norm_label": "external dependencies"
+    },
+    {
+      "label": "KDE Plasma footgun",
+      "file_type": "document",
+      "source_file": "docs/theming.md",
+      "source_location": "L75",
+      "id": "docs_theming_kde_plasma_footgun",
+      "community": 134,
+      "norm_label": "kde plasma footgun"
+    },
+    {
+      "label": "code:bash (gsettings set org.gnome.desktop.interface color-scheme prefe)",
+      "file_type": "document",
+      "source_file": "docs/theming.md",
+      "source_location": "L94",
+      "id": "docs_theming_codeblock_1",
+      "community": 134,
+      "norm_label": "code:bash (gsettings set org.gnome.desktop.interface color-scheme prefe)"
+    },
+    {
+      "label": "code:bash (systemctl --user restart xdg-desktop-portal.service xdg-desk)",
+      "file_type": "document",
+      "source_file": "docs/theming.md",
+      "source_location": "L98",
+      "id": "docs_theming_codeblock_2",
+      "community": 134,
+      "norm_label": "code:bash (systemctl --user restart xdg-desktop-portal.service xdg-desk)"
+    },
+    {
+      "label": "code:bash (# Should be unset in KDE)",
+      "file_type": "document",
+      "source_file": "docs/theming.md",
+      "source_location": "L104",
+      "id": "docs_theming_codeblock_3",
+      "community": 134,
+      "norm_label": "code:bash (# should be unset in kde)"
     },
     {
       "label": "Pipeline Shards.md",
@@ -26896,6 +26977,15 @@
       "norm_label": "boot"
     },
     {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_soul_md",
+      "community": 418,
+      "norm_label": "soul.md"
+    },
+    {
       "label": "SKILL.md",
       "file_type": "document",
       "source_file": ".hermes/skills/pipeline-agent-brief-format/SKILL.md",
@@ -27094,10 +27184,19 @@
       "norm_label": "research gate"
     },
     {
-      "label": "Output structure",
+      "label": "Grilling / intake rounds",
       "file_type": "document",
       "source_file": ".hermes/skills/pipeline/requirements-clarifier/SKILL.md",
       "source_location": "L18",
+      "id": "requirements_clarifier_skill_grilling_intake_rounds",
+      "community": 171,
+      "norm_label": "grilling / intake rounds"
+    },
+    {
+      "label": "Output structure",
+      "file_type": "document",
+      "source_file": ".hermes/skills/pipeline/requirements-clarifier/SKILL.md",
+      "source_location": "L22",
       "id": "requirements_clarifier_skill_output_structure",
       "community": 171,
       "norm_label": "output structure"
@@ -27106,7 +27205,7 @@
       "label": "Rules",
       "file_type": "document",
       "source_file": ".hermes/skills/pipeline/requirements-clarifier/SKILL.md",
-      "source_location": "L27",
+      "source_location": "L31",
       "id": "requirements_clarifier_skill_rules",
       "community": 171,
       "norm_label": "rules"
@@ -27115,7 +27214,7 @@
       "label": "Self-check",
       "file_type": "document",
       "source_file": ".hermes/skills/pipeline/requirements-clarifier/SKILL.md",
-      "source_location": "L34",
+      "source_location": "L38",
       "id": "requirements_clarifier_skill_self_check",
       "community": 171,
       "norm_label": "self-check"
@@ -27407,6 +27506,240 @@
       "id": "caveman_skill_codeblock_1",
       "community": 108,
       "norm_label": "code:block1 (memory:save \"use caveman-full output style across all sessio)"
+    },
+    {
+      "label": "SKILL.md",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L1",
+      "id": "hermes_skills_productivity_agent_handoff_skill_md",
+      "community": 253,
+      "norm_label": "skill.md"
+    },
+    {
+      "label": "Agent Handoff",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L14",
+      "id": "agent_handoff_skill_agent_handoff",
+      "community": 253,
+      "norm_label": "agent handoff"
+    },
+    {
+      "label": "Overview",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L16",
+      "id": "agent_handoff_skill_overview",
+      "community": 253,
+      "norm_label": "overview"
+    },
+    {
+      "label": "When to Use",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L22",
+      "id": "agent_handoff_skill_when_to_use",
+      "community": 253,
+      "norm_label": "when to use"
+    },
+    {
+      "label": "Inputs",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L32",
+      "id": "agent_handoff_skill_inputs",
+      "community": 253,
+      "norm_label": "inputs"
+    },
+    {
+      "label": "Procedure: Consuming a Handoff",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L43",
+      "id": "agent_handoff_skill_procedure_consuming_a_handoff",
+      "community": 253,
+      "norm_label": "procedure: consuming a handoff"
+    },
+    {
+      "label": "Procedure: Creating a Handoff",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L68",
+      "id": "agent_handoff_skill_procedure_creating_a_handoff",
+      "community": 253,
+      "norm_label": "procedure: creating a handoff"
+    },
+    {
+      "label": "Recommended Document Structure",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L97",
+      "id": "agent_handoff_skill_recommended_document_structure",
+      "community": 253,
+      "norm_label": "recommended document structure"
+    },
+    {
+      "label": "code:markdown (# Handoff: <short title>)",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L99",
+      "id": "agent_handoff_skill_codeblock_1",
+      "community": 253,
+      "norm_label": "code:markdown (# handoff: <short title>)"
+    },
+    {
+      "label": "Common Pitfalls",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L132",
+      "id": "agent_handoff_skill_common_pitfalls",
+      "community": 253,
+      "norm_label": "common pitfalls"
+    },
+    {
+      "label": "Verification Checklist",
+      "file_type": "document",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L149",
+      "id": "agent_handoff_skill_verification_checklist",
+      "community": 253,
+      "norm_label": "verification checklist"
+    },
+    {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L1",
+      "id": "hermes_patches_readme_md",
+      "community": 409,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "Hermes Nerd Font Icon Patches",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L1",
+      "id": "patches_readme_hermes_nerd_font_icon_patches",
+      "community": 409,
+      "norm_label": "hermes nerd font icon patches"
+    },
+    {
+      "label": "What's here",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L6",
+      "id": "patches_readme_what_s_here",
+      "community": 409,
+      "norm_label": "what's here"
+    },
+    {
+      "label": "Why this exists",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L13",
+      "id": "patches_readme_why_this_exists",
+      "community": 409,
+      "norm_label": "why this exists"
+    },
+    {
+      "label": "Skin `tool_emojis` vs `display.tool_progress_overrides`",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L24",
+      "id": "patches_readme_skin_tool_emojis_vs_display_tool_progress_overrides",
+      "community": 409,
+      "norm_label": "skin `tool_emojis` vs `display.tool_progress_overrides`"
+    },
+    {
+      "label": "To regenerate the patch after Hermes updates (if it diverges)",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L34",
+      "id": "patches_readme_to_regenerate_the_patch_after_hermes_updates_if_it_diverges",
+      "community": 409,
+      "norm_label": "to regenerate the patch after hermes updates (if it diverges)"
+    },
+    {
+      "label": "code:bash (cd ~/.hermes/hermes-agent)",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L36",
+      "id": "patches_readme_codeblock_1",
+      "community": 409,
+      "norm_label": "code:bash (cd ~/.hermes/hermes-agent)"
+    },
+    {
+      "label": "Codepoints in use",
+      "file_type": "document",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L42",
+      "id": "patches_readme_codepoints_in_use",
+      "community": 409,
+      "norm_label": "codepoints in use"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/architect-designer/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_architect_designer_soul_md",
+      "community": 265,
+      "norm_label": "soul.md"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/big-pickle-simple-tasks/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_big_pickle_simple_tasks_soul_md",
+      "community": 412,
+      "norm_label": "soul.md"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/implementation-specialist/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_implementation_specialist_soul_md",
+      "community": 413,
+      "norm_label": "soul.md"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/requirements-clarifier/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_requirements_clarifier_soul_md",
+      "community": 414,
+      "norm_label": "soul.md"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/skeptic-gate/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_skeptic_gate_soul_md",
+      "community": 415,
+      "norm_label": "soul.md"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/tech-lead/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_tech_lead_soul_md",
+      "community": 416,
+      "norm_label": "soul.md"
+    },
+    {
+      "label": "SOUL.md",
+      "file_type": "document",
+      "source_file": ".hermes/profiles/test-automation-engineer/SOUL.md",
+      "source_location": "L1",
+      "id": "hermes_profiles_test_automation_engineer_soul_md",
+      "community": 417,
+      "norm_label": "soul.md"
     },
     {
       "label": "CLAUDE.md",
@@ -51094,6 +51427,16 @@
       "target": "pipeline_core_tools_friction_audit"
     },
     {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/reapply-hermes-desktop-skins.sh",
+      "source_location": "L26",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "hermes_patches_reapply_hermes_desktop_skins_sh",
+      "target": "patches_reapply_hermes_desktop_skins_backup"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "nvim/lua/plugins/gitsigns.lua",
@@ -56529,6 +56872,86 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "readme_md",
+      "target": "dotfiles_readme_uraxii_dotfiles"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_uraxii_dotfiles",
+      "target": "dotfiles_readme_quick_start"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_uraxii_dotfiles",
+      "target": "dotfiles_readme_first_time_setup_per_machine"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_uraxii_dotfiles",
+      "target": "dotfiles_readme_component_inventory"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L65",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_uraxii_dotfiles",
+      "target": "dotfiles_readme_useful_packages"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_quick_start",
+      "target": "dotfiles_readme_codeblock_1"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L22",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_first_time_setup_per_machine",
+      "target": "dotfiles_readme_codeblock_2"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "dotfiles_readme_first_time_setup_per_machine",
+      "target": "dotfiles_readme_codeblock_3"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
       "source_location": "L1",
       "weight": 1.0,
@@ -56769,86 +57192,6 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "readme_md",
-      "target": "dotfiles_readme_uraxii_dotfiles"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_uraxii_dotfiles",
-      "target": "dotfiles_readme_quick_start"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_uraxii_dotfiles",
-      "target": "dotfiles_readme_first_time_setup_per_machine"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L43",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_uraxii_dotfiles",
-      "target": "dotfiles_readme_component_inventory"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L65",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_uraxii_dotfiles",
-      "target": "dotfiles_readme_useful_packages"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L9",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_quick_start",
-      "target": "dotfiles_readme_codeblock_1"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L22",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_first_time_setup_per_machine",
-      "target": "dotfiles_readme_codeblock_2"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "README.md",
-      "source_location": "L36",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "dotfiles_readme_first_time_setup_per_machine",
-      "target": "dotfiles_readme_codeblock_3"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
       "source_file": "docs/desktop.md",
       "source_location": "L1",
       "weight": 1.0,
@@ -56972,9 +57315,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L93",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_waybar",
-      "target": "docs_desktop_key_files_93",
-      "confidence_score": 1.0
+      "target": "docs_desktop_key_files_93"
     },
     {
       "relation": "contains",
@@ -56982,9 +57325,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L116",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_waybar",
-      "target": "docs_desktop_theming_integration_116",
-      "confidence_score": 1.0
+      "target": "docs_desktop_theming_integration_116"
     },
     {
       "relation": "contains",
@@ -57002,9 +57345,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L139",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_waybar",
-      "target": "docs_desktop_external_dependencies_139",
-      "confidence_score": 1.0
+      "target": "docs_desktop_external_dependencies_139"
     },
     {
       "relation": "contains",
@@ -57112,9 +57455,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L147",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_wofi",
-      "target": "docs_desktop_purpose_147",
-      "confidence_score": 1.0
+      "target": "docs_desktop_purpose_147"
     },
     {
       "relation": "contains",
@@ -57122,9 +57465,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L152",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_wofi",
-      "target": "docs_desktop_key_files_152",
-      "confidence_score": 1.0
+      "target": "docs_desktop_key_files_152"
     },
     {
       "relation": "contains",
@@ -57132,9 +57475,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L160",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_wofi",
-      "target": "docs_desktop_keybindings_ux_160",
-      "confidence_score": 1.0
+      "target": "docs_desktop_keybindings_ux_160"
     },
     {
       "relation": "contains",
@@ -57142,9 +57485,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L165",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_wofi",
-      "target": "docs_desktop_theming_integration_165",
-      "confidence_score": 1.0
+      "target": "docs_desktop_theming_integration_165"
     },
     {
       "relation": "contains",
@@ -57152,9 +57495,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L170",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_wofi",
-      "target": "docs_desktop_external_dependencies_170",
-      "confidence_score": 1.0
+      "target": "docs_desktop_external_dependencies_170"
     },
     {
       "relation": "contains",
@@ -57342,9 +57685,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L176",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_swaylock",
-      "target": "docs_desktop_purpose_176",
-      "confidence_score": 1.0
+      "target": "docs_desktop_purpose_176"
     },
     {
       "relation": "contains",
@@ -57352,9 +57695,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L180",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_swaylock",
-      "target": "docs_desktop_key_files_180",
-      "confidence_score": 1.0
+      "target": "docs_desktop_key_files_180"
     },
     {
       "relation": "contains",
@@ -57362,9 +57705,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L185",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_swaylock",
-      "target": "docs_desktop_keybindings_ux_185",
-      "confidence_score": 1.0
+      "target": "docs_desktop_keybindings_ux_185"
     },
     {
       "relation": "contains",
@@ -57372,9 +57715,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L189",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_swaylock",
-      "target": "docs_desktop_external_dependencies_189",
-      "confidence_score": 1.0
+      "target": "docs_desktop_external_dependencies_189"
     },
     {
       "relation": "contains",
@@ -57542,9 +57885,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L195",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_networkmanager_dmenu",
-      "target": "docs_desktop_purpose_195",
-      "confidence_score": 1.0
+      "target": "docs_desktop_purpose_195"
     },
     {
       "relation": "contains",
@@ -57552,9 +57895,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L200",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_networkmanager_dmenu",
-      "target": "docs_desktop_key_files_200",
-      "confidence_score": 1.0
+      "target": "docs_desktop_key_files_200"
     },
     {
       "relation": "contains",
@@ -57562,9 +57905,9 @@
       "source_file": "docs/desktop.md",
       "source_location": "L204",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_desktop_networkmanager_dmenu",
-      "target": "docs_desktop_external_dependencies_204",
-      "confidence_score": 1.0
+      "target": "docs_desktop_external_dependencies_204"
     },
     {
       "relation": "contains",
@@ -58505,6 +58848,46 @@
       "confidence_score": 1.0,
       "source": "docs_theming_theming",
       "target": "docs_theming_external_dependencies"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/theming.md",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "docs_theming_external_dependencies",
+      "target": "docs_theming_kde_plasma_footgun",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/theming.md",
+      "source_location": "L94",
+      "weight": 1.0,
+      "source": "docs_theming_kde_plasma_footgun",
+      "target": "docs_theming_codeblock_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/theming.md",
+      "source_location": "L98",
+      "weight": 1.0,
+      "source": "docs_theming_kde_plasma_footgun",
+      "target": "docs_theming_codeblock_2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/theming.md",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "docs_theming_kde_plasma_footgun",
+      "target": "docs_theming_codeblock_3",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -66362,6 +66745,16 @@
       "source_file": ".hermes/skills/pipeline/requirements-clarifier/SKILL.md",
       "source_location": "L18",
       "weight": 1.0,
+      "source": "requirements_clarifier_skill_requirements_clarifier",
+      "target": "requirements_clarifier_skill_grilling_intake_rounds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/pipeline/requirements-clarifier/SKILL.md",
+      "source_location": "L18",
+      "weight": 1.0,
       "confidence_score": 1.0,
       "source": "requirements_clarifier_skill_requirements_clarifier",
       "target": "requirements_clarifier_skill_output_structure"
@@ -66655,6 +67048,176 @@
       "confidence_score": 1.0,
       "source": "caveman_skill_activation",
       "target": "caveman_skill_codeblock_1"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "hermes_skills_productivity_agent_handoff_skill_md",
+      "target": "agent_handoff_skill_agent_handoff",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_overview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_when_to_use",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_inputs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_procedure_consuming_a_handoff",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_procedure_creating_a_handoff",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_recommended_document_structure",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L132",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_common_pitfalls",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L149",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_agent_handoff",
+      "target": "agent_handoff_skill_verification_checklist",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/skills/productivity/agent-handoff/SKILL.md",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "agent_handoff_skill_recommended_document_structure",
+      "target": "agent_handoff_skill_codeblock_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "hermes_patches_readme_md",
+      "target": "patches_readme_hermes_nerd_font_icon_patches"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "patches_readme_hermes_nerd_font_icon_patches",
+      "target": "patches_readme_what_s_here"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "patches_readme_hermes_nerd_font_icon_patches",
+      "target": "patches_readme_why_this_exists"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L24",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "patches_readme_hermes_nerd_font_icon_patches",
+      "target": "patches_readme_skin_tool_emojis_vs_display_tool_progress_overrides"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "patches_readme_hermes_nerd_font_icon_patches",
+      "target": "patches_readme_to_regenerate_the_patch_after_hermes_updates_if_it_diverges"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L42",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "patches_readme_hermes_nerd_font_icon_patches",
+      "target": "patches_readme_codepoints_in_use"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".hermes/patches/README.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "patches_readme_to_regenerate_the_patch_after_hermes_updates_if_it_diverges",
+      "target": "patches_readme_codeblock_1"
     },
     {
       "relation": "contains",
@@ -67308,5 +67871,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "08439267d3f0caa9d91334ebfdd4256ec80c4fee"
+  "built_at_commit": "deec61126f508c765574b0c0c499b8c395ead89e"
 }
