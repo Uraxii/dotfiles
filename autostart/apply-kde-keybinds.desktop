@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Apply KDE Keybinds (Sway-style)
+Comment=Replicate Sway keybindings in KDE Plasma 6 (Meta+hjkl, Meta+1-0, etc.)
+Exec=${HOME}/.config/sway/scripts/apply-kde-keybinds.sh
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2

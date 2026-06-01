@@ -10,7 +10,8 @@ Prerequisites: `git`, `stow`.
 sudo pacman -S git stow         # Arch / Manjaro
 git clone <this-repo> ~/dotfiles
 cd ~/dotfiles
-./setup.sh                      # runs `stow .`
+./setup.sh                      # runs `stow .` (headless)
+./setup.py                      # Textual TUI (stow + KDE keybinds)
 stow -R .                       # restow after changes
 stow -n -v .                    # dry run
 ```
@@ -56,6 +57,8 @@ rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.clau
 | opencode | AI agent stack (legacy) | [docs/tooling.md](docs/tooling.md) |
 | Claude Code | AI agent stack — `.claude/` pipeline + skills | [docs/tooling.md](docs/tooling.md) |
 | Hermes Agent | AI agent stack — `.hermes/` port of pipeline | [docs/tooling.md](docs/tooling.md) |
+| KDE keybinds | Sway-style + Mac-style (Meta) shortcuts in Plasma 6 | [docs/desktop.md](docs/desktop.md) |
+| setup.py | Textual TUI installer (stow + keybinds) | `./setup.py` |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
 | comms provider | Pipeline notification / Slack abstraction layer | [docs/comms.md](docs/comms.md) |
