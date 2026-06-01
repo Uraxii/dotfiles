@@ -54,7 +54,78 @@ Tiling Wayland compositor. Repo-managed config split across
 | `XF86Audio{Mute,Lower,Raise,MicMute}` | pactl sink/source |
 | `XF86MonBrightness{Up,Down}` | brightnessctl ±5% |
 | `Print` / `Shift+Print` / `Ctrl+Print` | grim full / region / region→clipboard |
-| `$mod+Ctrl+V` | Open clipboard history picker (cliphist + wofi) |
+|`$mod+Ctrl+V` | Open clipboard history picker (cliphist + wofi) |
+
+## KDE Plasma 6 — Sway-like shortcuts
+
+The script `sway/scripts/apply-kde-keybinds.sh` replicates Sway-style
+keybindings in KDE Plasma 6. Apply it from the setup TUI or manually:
+
+```bash
+~/.config/sway/scripts/apply-kde-keybinds.sh
+```
+
+> ⚠️ **Wayland: log out and back in.** On Plasma 6 Wayland, KWin itself is the
+> global-shortcut server and reads `kglobalshortcutsrc` only at startup. There
+> is no separate `kglobalacceld` to restart and no live "reload shortcuts"
+> call, so the script writes the config but the new binds **only take effect
+> after a logout/login**. (On X11, `kglobalacceld` is standalone and the script
+> restarts it in place.)
+
+### Mapping
+
+| Sway | KDE | Action |
+|------|-----|--------|
+| `$mod+Return` | `Meta+Return` | ghostty |
+| `$mod+d` | `Meta+d` | wofi (toggle) |
+| `$mod+Space` | `Meta+Space` | wofi (Spotlight-style alias) |
+| — | `Alt+Space` | KRunner (fallback) |
+| `$mod+h/j/k/l` or arrows | `Meta+h/j/k/l` or `Meta+arrows` | Focus window |
+| `$mod+Shift+h/j/k/l` or arrows | `Meta+Shift+h/j/k/l` or `Meta+Shift+arrows` | Move window |
+| `$mod+1..9,0` | `Meta+1..9,0` | Switch desktop |
+| `$mod+Shift+1..9,0` | `Meta+Shift+1..9,0` | Window to desktop |
+| `$mod+f` | `Meta+f` | Fullscreen |
+| `$mod+r` | `Meta+r` | Resize mode |
+| `$mod+Shift+b` | `Meta+Shift+b` | Toggle window border |
+| `$mod+L` | `Meta+L` | Lock (KDE default) |
+
+### Mac-style global/window additions
+
+`Meta` is the Cmd-position key. Where the **Krohnkite** KWin tiling script is
+installed it owns vim navigation (`Meta+h/j/k/l` focus, `Meta+Shift+h/j/k/l`
+move, `Meta+m` monocle) — the script defers to it and does **not** override
+those. The Mac reflexes layer on top:
+
+| KDE bind | Action | Mac analog |
+|----------|--------|-----------|
+| `Meta+Tab` · `Meta+Shift+Tab` | Cycle windows / reverse | ⌘Tab |
+| `` Meta+` `` | Cycle windows of current app | ⌘` |
+| `Meta+m` | Minimize window (Krohnkite monocle → `Meta+Shift+m`) | ⌘M |
+| `Meta+q` | Close window (Activity Switcher → `Meta+Shift+q`) | ⌘Q |
+| `Meta+o` · `Meta+W` | Overview / Exposé | Mission Control |
+
+Screenshots are **not** remapped to `Meta+Shift+3/4/5` — that collides with
+`Meta+Shift+1-0` (move-to-desktop). Spectacle keeps `Print` / `Shift+Print` /
+`Meta+Print`.
+
+### Conflicts resolved
+
+- Task manager entries: `Meta+1-9` → `Meta+Ctrl+1-9`
+- Quick Tile: `Meta+arrows` → `Meta+Ctrl+arrows`
+- Show Desktop: `Meta+d` → `Meta+Shift+d`
+- Activity Switcher: `Meta+q` → `Meta+Shift+q`
+- Krohnkite monocle: `Meta+m` → `Meta+Shift+m` (if installed)
+
+### Not replicated
+
+- Scratchpad, split layouts, floating toggle, focus parent
+- Layout modes (stacking/tabbed/split) — KDE handles this via tiling editor
+- swaylock-specific bindings
+
+### External dependencies
+
+`kwriteconfig6` (shipped with Plasma). `spectacle` for the `Meta+Shift+3/4/5`
+screenshot binds — the script skips that block if Spectacle isn't installed.
 
 Input: `caps:swapescape` xkb option.
 
