@@ -1,0 +1,107 @@
+/* ========================================================================
+   Hermes Desktop Skins + Transparency Patch
+   Insert these [data-theme="..."] blocks right after the light theme block
+   in out/renderer/assets/index-*.css
+   ======================================================================== */
+
+/* ----- Synthwave-84 Skin ----- */
+[data-theme="synthwave-84"] {
+  --bg-primary: rgba(26, 11, 46, 0.85);
+  --bg-secondary: rgba(18, 6, 38, 0.80);
+  --bg-tertiary: rgba(36, 20, 66, 0.75);
+  --bg-elevated: rgba(45, 27, 78, 0.70);
+  --bg-hover: rgba(53, 36, 83, 0.70);
+  --bg-active: rgba(61, 45, 88, 0.70);
+  --accent: #ff2d95;
+  --accent-hover: #ff5cad;
+  --accent-subtle: rgba(255, 45, 149, 0.15);
+  --accent-text: #ff7ec8;
+  --text-primary: #e8d5f5;
+  --text-secondary: #b894d6;
+  --text-muted: #8a6fad;
+  --border: rgba(255, 45, 149, 0.08);
+  --border-bright: rgba(255, 45, 149, 0.15);
+  --border-focus: #ff2d95;
+  --success: #36f9f6;
+  --success-bg: rgba(54, 249, 246, 0.1);
+  --error: #ff2d95;
+  --error-bg: rgba(255, 45, 149, 0.1);
+  --warning: #f6c945;
+  --warning-bg: rgba(246, 201, 69, 0.1);
+  --user-bubble: #ff2d95;
+  --user-bubble-text: #ffffff;
+  --agent-bubble: rgba(45, 27, 78, 0.85);
+  --agent-bubble-text: #e8d5f5;
+  --code-bg: rgba(14, 4, 30, 0.90);
+  --scrollbar-thumb: rgba(61, 45, 88, 0.70);
+  --scrollbar-hover: rgba(77, 61, 104, 0.70);
+  --selection: rgba(255, 45, 149, 0.4);
+}
+
+/* ----- Gruvbox Skin ----- */
+[data-theme="gruvbox"] {
+  --bg-primary: rgba(40, 40, 40, 0.85);
+  --bg-secondary: rgba(29, 32, 33, 0.80);
+  --bg-tertiary: rgba(50, 48, 47, 0.75);
+  --bg-elevated: rgba(60, 56, 54, 0.70);
+  --bg-hover: rgba(69, 64, 61, 0.70);
+  --bg-active: rgba(80, 73, 69, 0.70);
+  --accent: #d79921;
+  --accent-hover: #e5b83a;
+  --accent-subtle: rgba(215, 153, 33, 0.15);
+  --accent-text: #d8a657;
+  --text-primary: #ebdbb2;
+  --text-secondary: #a89984;
+  --text-muted: #7c6f64;
+  --border: rgba(235, 219, 178, 0.06);
+  --border-bright: rgba(235, 219, 178, 0.1);
+  --border-focus: #d79921;
+  --success: #98971a;
+  --success-bg: rgba(152, 151, 26, 0.1);
+  --error: #cc241d;
+  --error-bg: rgba(204, 36, 29, 0.1);
+  --warning: #d79921;
+  --warning-bg: rgba(215, 153, 33, 0.1);
+  --user-bubble: #d79921;
+  --user-bubble-text: #282828;
+  --agent-bubble: rgba(60, 56, 54, 0.85);
+  --agent-bubble-text: #ebdbb2;
+  --code-bg: rgba(29, 32, 33, 0.90);
+  --scrollbar-thumb: rgba(80, 73, 69, 0.70);
+  --scrollbar-hover: rgba(102, 92, 84, 0.70);
+  --selection: rgba(215, 153, 33, 0.4);
+}
+
+/* ----- Nord Skin ----- */
+[data-theme="nord"] {
+  --bg-primary: rgba(46, 52, 64, 0.85);
+  --bg-secondary: rgba(36, 41, 51, 0.80);
+  --bg-tertiary: rgba(59, 66, 82, 0.75);
+  --bg-elevated: rgba(67, 76, 94, 0.70);
+  --bg-hover: rgba(76, 86, 106, 0.70);
+  --bg-active: rgba(76, 86, 106, 0.70);
+  --accent: #88c0d0;
+  --accent-hover: #8fbcbb;
+  --accent-subtle: rgba(136, 192, 208, 0.15);
+  --accent-text: #81a1c1;
+  --text-primary: #eceff4;
+  --text-secondary: #d8dee9;
+  --text-muted: #81a1c1;
+  --border: rgba(236, 239, 244, 0.06);
+  --border-bright: rgba(236, 239, 244, 0.1);
+  --border-focus: #88c0d0;
+  --success: #a3be8c;
+  --success-bg: rgba(163, 190, 140, 0.1);
+  --error: #bf616a;
+  --error-bg: rgba(191, 97, 106, 0.1);
+  --warning: #ebcb8b;
+  --warning-bg: rgba(235, 203, 139, 0.1);
+  --user-bubble: #5e81ac;
+  --user-bubble-text: #eceff4;
+  --agent-bubble: rgba(59, 66, 82, 0.85);
+  --agent-bubble-text: #eceff4;
+  --code-bg: rgba(36, 41, 51, 0.90);
+  --scrollbar-thumb: rgba(76, 86, 106, 0.70);
+  --scrollbar-hover: rgba(97, 110, 136, 0.70);
+  --selection: rgba(136, 192, 208, 0.4);
+}
