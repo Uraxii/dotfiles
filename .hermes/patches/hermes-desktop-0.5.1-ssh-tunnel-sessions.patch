@@ -1,0 +1,67 @@
+--- /home/nikki/.local/share/hermes-desktop-patched/0.5.1/squashfs-root/resources/app/out/main/index.js.bak.ssh-state-20260529-154337	2026-05-29 15:43:37.455947898 -0400
++++ /home/nikki/.local/share/hermes-desktop-patched/0.5.1/squashfs-root/resources/app/out/main/index.js	2026-05-29 15:50:29.665037844 -0400
+@@ -2609,12 +2609,18 @@
+ let tunnelRunning = false;
+ function getSshTunnelUrl() {
+   if (process.env.HERMES_DESKTOP_FORCE_SSH_URL) return process.env.HERMES_DESKTOP_FORCE_SSH_URL.replace(/\/+$/, "");
+-  if (!activeConfig || !tunnelRunning) return null;
+-  return `http://127.0.0.1:${activeConfig.localPort}`;
++  if (activeConfig && tunnelRunning) return `http://127.0.0.1:${activeConfig.localPort}`;
++  const conn = getConnectionConfig();
++  if (conn.mode === "ssh" && conn.ssh && conn.ssh.localPort) {
++    return `http://127.0.0.1:${conn.ssh.localPort}`;
++  }
++  return null;
+ }
+ function isSshTunnelActive() {
+   if (process.env.HERMES_DESKTOP_FORCE_SSH_URL) return true;
+-  return tunnelRunning && activeConfig !== null;
++  if (tunnelRunning && activeConfig !== null) return true;
++  const conn = getConnectionConfig();
++  return conn.mode === "ssh" && !!(conn.ssh && conn.ssh.localPort);
+ }
+ function checkTunnelHealth(port, timeoutMs = 3e3) {
+   return new Promise((resolve) => {
+@@ -2644,7 +2650,12 @@
+   throw new Error(`SSH tunnel health check failed after ${timeoutMs}ms`);
+ }
+ async function isSshTunnelHealthy() {
+-  return activeConfig !== null && tunnelRunning ? checkTunnelHealth(activeConfig.localPort) : false;
++  if (activeConfig !== null && tunnelRunning) return checkTunnelHealth(activeConfig.localPort);
++  const conn = getConnectionConfig();
++  if (conn.mode === "ssh" && conn.ssh && conn.ssh.localPort) {
++    return checkTunnelHealth(conn.ssh.localPort);
++  }
++  return false;
+ }
+ function findFreePort(preferred) {
+   return new Promise((resolve) => {
+@@ -13293,7 +13304,18 @@
+   if (stdin === void 0) {
+     return sshExec(config, "python3 -", script, timeoutMs);
+   }
+-  return sshExec(config, `python3 -c ${shellQuote(script)}`, stdin, timeoutMs);
++  const scriptB64 = Buffer.from(script, "utf-8").toString("base64");
++  const stdinB64 = Buffer.from(stdin, "utf-8").toString("base64");
++  const wrapper = `import base64, io, os, sys\n` +
++    `sys.stdin = io.StringIO(base64.b64decode(os.environ["HERMES_DESKTOP_STDIN_B64"]).decode("utf-8"))\n` +
++    `code = base64.b64decode(os.environ["HERMES_DESKTOP_SCRIPT_B64"]).decode("utf-8")\n` +
++    `exec(compile(code, "<hermes-desktop-ssh>", "exec"), {"__name__": "__main__"})\n`;
++  return sshExec(
++    config,
++    `bash -lc ${shellQuote(`HERMES_DESKTOP_SCRIPT_B64=${scriptB64} HERMES_DESKTOP_STDIN_B64=${stdinB64} python3 -`)}`,
++    wrapper,
++    timeoutMs
++  );
+ }
+ function sanitizeSshError(stderr) {
+   const cleaned = stderr.split("\n").map((line) => line.trim()).filter((line) => line && !/^Warning: Permanently added /.test(line)).filter((line) => !/identity file .* not accessible/i.test(line)).join("\n").trim();
+@@ -15355,6 +15377,8 @@
+         if (!gatewayRunning || !tunnelHealthy) {
+           await sshStartGateway(conn.ssh);
+           await startSshTunnel(conn.ssh);
++        }
++        if (!_sshRemoteApiKey) {
+           const key = await sshReadRemoteApiKey(conn.ssh);
+           setSshRemoteApiKey(key);
+         }
