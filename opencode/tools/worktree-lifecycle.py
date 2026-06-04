@@ -1,1 +1,0 @@
-../../../.claude/skills/worktree-lifecycle/worktree-lifecycle.py
