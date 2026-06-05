@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Write a handoff document for agent session rotation.
+"""Write a context-rotation summary for agent session rotation.
 
-Writes <run-dir>/handoff-<role>-<iso8601>.md and prints the path.
+Writes <run-dir>/context-rotation-<role>-<iso8601>.md and prints the path.
 
 Usage:
   python3 handoff-doc.py --role <role> --run-dir <path> --next-focus <text>
@@ -20,7 +20,7 @@ from pathlib import Path
 __all__ = ["main"]
 
 TEMPLATE = """\
-# Handoff: {role} -> fresh session
+# Context rotation: {role} -> fresh session
 
 **Run**: {run_id}
 **Timestamp**: {timestamp}
@@ -29,6 +29,7 @@ TEMPLATE = """\
 {next_focus}
 
 ## Referenced artifacts (by path)
+- context-digest: {run_dir}/context-digest.md
 - pipeline: {run_dir}/pipeline.md
 - brief: {run_dir}/brief.md
 
@@ -40,7 +41,7 @@ if supported by harness; otherwise spawn fresh + read referenced artifacts.
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Write handoff document for agent session rotation."
+        description="Write context-rotation summary for agent session rotation."
     )
     parser.add_argument("--role", required=True)
     parser.add_argument("--run-dir", required=True)
@@ -54,7 +55,7 @@ def main() -> int:
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_id = run_dir.name
-    out_path = run_dir / f"handoff-{args.role}-{ts}.md"
+    out_path = run_dir / f"context-rotation-{args.role}-{ts}.md"
 
     content = TEMPLATE.format(
         role=args.role,

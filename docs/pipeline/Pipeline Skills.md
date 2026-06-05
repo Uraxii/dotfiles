@@ -16,7 +16,7 @@ Claude Code discovers skills by scanning `.claude/skills/` for direct subdirecto
 ├── caveman/SKILL.md
 ├── decision-elicitation/SKILL.md
 ├── frontend-design/SKILL.md
-├── handoff-doc/SKILL.md
+├── context-rotation-summary/SKILL.md
 ├── prod-diff-sha/SKILL.md
 ├── test-path-resolve/SKILL.md
 ├── verdict-parse/SKILL.md
@@ -57,8 +57,11 @@ sha=$(printf '%s' "$PROD_DIFF" | sha1sum | cut -c1-40)
 
 Empty diff returns the sentinel `00…00` SHA (cannot collide with non-empty sha1sum output).
 
-### `handoff-doc`
-Persistence-rotation summary template. Used by any persistent role at its context threshold (architect 70%, all other persistent roles 80%). The skill writes a markdown doc that **references existing artifacts by path** rather than duplicating content. Threshold + task_id key are role config — the skill owns the template + write path only.
+### `context-rotation-summary`
+Local context-rotation summary template for Claude Code persistent roles. Used at context threshold (architect 70%, all other persistent roles 80%). Writes a markdown doc that references existing artifacts by path and includes `context-digest.md`; it never duplicates brief/design/build-contract content. Distinct from Hermes `pipeline-handoff-doc`, which is GitHub/inline delegate handoff.
+
+### `record-verdict`
+MCP/tool entrypoint for gate verdicts. Validates schema, writes `findings:` rows to the SQLite Ledger, writes `verdict-<type>-r<N>.md`, and returns structured success/error. Prose body is optional and should be compressed.
 
 ### `worktree-lifecycle`
 Wraps `git worktree` primitives: `op=create | probe | cleanup | scope-check`. Used by orchestrator for shard management and by build for self-verify before writing evidence. See [[Pipeline Shards]].

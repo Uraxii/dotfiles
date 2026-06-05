@@ -34,12 +34,13 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 3. Resolve canonical artifact-id: Generate slug via `Skill(skill: "pipeline-artifact-slug", args: "seed=none")` (Claude) or `artifact-slug` custom tool (OC). Bind once; reuse same value for run dir + plan id everywhere in intake.
 4. Create `<repo>/.pipeline/runs/<artifact-id>/`.
 5. Write `brief.md` via `Skill(skill: "pipeline-agent-brief-format", args: "run-dir=<RUN_DIR>, raw-request=<RAW_REQUEST>")`. Template enforces durable-over-precise framing.
-6. Init `pipeline.md` (orchestrator-only ledger). Capture `base_ref` + `base_sha = git rev-parse <base_ref>` into frontmatter. Set `phase: intake`.
+6. Init SQLite Ledger run row. Write compact `pipeline.md` manifest/pointers only. Capture `base_ref` + `base_sha = git rev-parse <base_ref>` in Ledger; mirror only manifest-safe refs in `pipeline.md`.
 7. If plan exists, write `plan.ref` (id + absolute plan path).
+7.5. Write `context-digest.md` from Ledger + artifact pointers. This is mandatory common handoff input for every spawn; do not copy full brief/design into spawn context.
 8. Spawn `plan` only when needed:
    - Spawn: multi-task, new subsystem, ambiguous scope.
    - Skip: single clear bugfix, pure research, ops-only, pure docs.
-9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in pipeline.md `decision_points:` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`. Set `phase: compose`.
+9. Scan brief.md + plan (if exists) for `decision_points:` YAML block. Record declared points in SQLite Ledger `decision_points` map; orchestrator injects `decision-elicitation` stage after each declared `after: <role>`. Set Ledger phase to `compose`.
 9.5. Open-question scan: parse `brief.md` `## Open questions` section for unresolved OQs.
      For each:
      - If brief offers options → invoke `Skill(skill: "pipeline-decision-elicitation", args: "run-dir=<path>, decision-id=oq<N>, mode=sync")` BEFORE Phase 2.
@@ -51,7 +52,7 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 ### Phase 2: Compose + Execute
 1. Compose role list + dep graph:
    `Skill(skill: "pipeline-dep-graph-compose", args: "payload-json=<JSON>")`.
-   Output: `{ordered_roles, decision_inject_points, K, warnings}`. Set `phase: execute`.
+   Output: `{ordered_roles, decision_inject_points, K, warnings}`. Set Ledger phase to `execute`.
 2. Execute by Dependency Graph. When a declared `decision_points:` entry's `after:` role
    completes, inject decision-elicitation stage before continuing.
 3. Parse gate verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=<type>")`.
@@ -61,13 +62,13 @@ Orchestrator surfaces rule paths via spawn template `## Read` block; role decide
 5. Publish PRs: for each shard branch in `pipeline.md` `shards:` map, commit + push + open PR
    via the available PR-opening skill (`yeet` by default). For K=1 (single shard), one PR.
    For K≥2 (multi-shard), open one PR per shard; merge in `depends_on` topology order;
-   `git fetch origin <base_ref>` between merges. Set `phase: close`. Then invoke friction-audit
+   `git fetch origin <base_ref>` between merges. Set Ledger phase to `close`. Then invoke friction-audit
    skill (orchestrator writes findings file).
 6. Emit completion report.
 
 ### Build Stage Contract
 - Every build runs in worktree (K=1 min). Worktree primitives via `Skill(skill: "pipeline-worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
-- Every build revision produces `build-evidence-r<N>-s<K>.md` + `prebuild-skeptic-code-r<N>-s<K>.md` per shard.
+- Every build revision produces `build-evidence-r<N>-s<K>.md` per shard. Evidence includes the prebuild skeptic section. Separate `prebuild-skeptic-code-r<N>-s<K>.md` only when a distinct pre-implementation precheck is required.
 - If UI/UX scope present and `ui-ux-designer` did not run, build writes fallback `frontend-handoff.md`.
 - Skeptic code gate (skeptic with review_type=code) enumerates declared shards from pipeline.md `shards:` map; any missing artifact = Blocked.
 - When UI changed and `ui-ux-designer` did not run, skeptic/security/tester must read fallback `frontend-handoff.md`; missing artifact = Blocked.
@@ -87,7 +88,7 @@ Re-spawn failing shard. Check position: Phase 2 step 2 (after all build evidence
 - Worktree lifecycle: `Skill(skill: "pipeline-worktree-lifecycle", args: "op=create|probe|cleanup|scope-check, ...")`.
 - Spawn: K=1 → single build into `s1`. K≥2 → independent shards launched in single message (parallel tool calls). Dependent shards wait until all `depends_on` shards `passed`. Any dep `failed` → dependent shard `skipped_due_to_dep`.
 - Failure (fail-deferred): shard non-zero exit → `failed`; siblings continue. Wait all terminal. ≥1 failed → revision loop on failed shards only.
-- Gate stage (single spawn per gate type): reads union of `git diff <base_sha>...pipeline/<artifact-id>/s<K>` + union of evidence + prebuild artifacts.
+- Gate stage (single spawn per gate type): reads union of `git diff <base_sha>...pipeline/<artifact-id>/s<K>` + union of build evidence. Separate prebuild artifacts are read only when explicitly referenced by evidence.
 - Tester combined-state (K≥2 only): pre-cleanup `git update-ref -d`, merge shards `--no-ff` onto `base_sha` into `pipeline/<artifact-id>/test-merge`, run suite, attribution probe on failure. Temp ref deleted after verdict.
 
 ### Decision Elicitation Stage
@@ -99,7 +100,7 @@ Flow:
 1. Spawn `options_source` role w/ `decision_emission: d<N>` flag → emits `options-r<N>.md` (N ≤ 4 options).
 2. Invoke decision-elicitation skill: `sync` → `AskUserQuestion`; `async` → Slack button (requires
    session binding; `pipeline_notify.py --kind decision`; orchestrator never calls Slack directly).
-   Async: write `awaiting-decision-r<N>.md`, set `paused_on_decision:` in pipeline.md,
+   Async: write `awaiting-decision-r<N>.md`, set `paused_on_decision` in SQLite Ledger,
    `ScheduleWakeup(delaySeconds=600)`. Async pre-check failure → degrade to sync. Never silently hang.
 3. On pick: write `decision-r<N>.md` → re-spawn `options_source` → emits final pinned artifact.
 4. Async wake: check for `decision-r<N>.md`; absent → re-wake (timeout 7d → halt).
@@ -108,7 +109,7 @@ Resume sentinel: `<<resume-pipeline-<artifact-id>>>`. Scan `awaiting-decision-*.
 
 ### Resume handler — base_sha drift recheck
 
-On resume (sentinel, `paused_on_decision:` or `paused_on_drift:` set):
+On resume (sentinel, SQLite Ledger `paused_on_decision` or `paused_on_drift` set):
 1. **Priority**: if BOTH set, drift recheck first; decision-elicitation defers.
 2. Read `base_ref` + `base_sha` from `pipeline.md`. `git rev-parse <base_ref>` → `new_sha`. Equal → resume.
 3. Else: `git diff --name-only <base_sha>..<new_sha>` → changed paths.
@@ -118,11 +119,11 @@ On resume (sentinel, `paused_on_decision:` or `paused_on_drift:` set):
    `~/.pipeline/adr/**` `**/CLAUDE.md` `pipeline.toml` `.gitignore` `.claude/settings.json`.
 5. Union = `intersecting_paths`. Empty → resume. Non-empty → step 6.
 6. `AskUserQuestion` drift menu (sync; locked format in Appendix). Record pick →
-   `resume-drift-r<N>.md` (N = max revision + 1). Write `paused_on_drift:` sentinel block. Route:
+   `resume-drift-r<N>.md` (N = max revision + 1). Write `paused_on_drift` in SQLite Ledger. Route:
    - **Rebase**: record-and-halt (ADR-0006). Halt report + `git -C <worktree> rebase <new-base>`
      + resume sentinel. On resume: invalidate pinned verdicts; re-spawn Standards-axis + security-code.
    - **Abort**: write halted, emit report, exit.
-   - **Proceed**: Edit-delete `paused_on_drift:` block; do NOT update `base_sha`; continue.
+   - **Proceed**: Mark Ledger drift status resolved; do NOT update `base_sha`; continue.
 
 ### Friction Audit (non-gating)
 
@@ -135,7 +136,7 @@ Findings never block PR merge — inform pipeline-improvement backlog grooming o
 
 1. Verify base SHA stable: `git rev-parse <base_ref>` matches `pipeline.md` `base_sha`.
    Mismatch → abort + surface to user.
-2. For each shard in `pipeline.md` `shards:` map (K=1 typical, K≥2 supported):
+2. For each shard from SQLite Ledger shard map (K=1 typical, K≥2 supported):
    - Resolve merge order from `depends_on` topology (Kahn; independent shards first).
    - Commit + push the shard branch + open a PR via available PR-opening skill (`yeet`).
    - PR title format: K=1 `<type>(<scope>): <subject>` (conventional); K≥2 append `(shard s<K>/<total>)`.
@@ -170,14 +171,14 @@ Enforce only for included roles.
 |------|------------|-------|
 | researcher | brief.md | brief.md |
 | plan | brief.md | brief.md, research.md |
-| architect | plan.ref or brief.md | plan.ref, brief.md; `~/.pipeline/adr/<NNNN>-<topic>.md` only if related prior decision exists. CLAUDE.md auto-injected. |
-| ui-ux-designer | plan.ref or brief.md (after architect if ran) | plan.ref, brief.md, design.md (if architect ran) |
+| architect | plan.ref or brief.md | context-digest.md, plan.ref or brief.md; `~/.pipeline/adr/<NNNN>-<topic>.md` only if related prior decision exists. CLAUDE.md auto-injected. |
+| ui-ux-designer | plan.ref or brief.md (after architect if ran) | context-digest.md, plan.ref/brief refs, frontend-relevant design/build-contract sections only when needed |
 | decision-elicitation | declared in `decision_points:`; inserted after `after:` role. Orchestrator-owned. | options-r<N>.md (from options_source), brief.md |
 | skeptic (review_type=design) | architect complete | design.md, prior verdict |
-| build | skeptic (review_type=design) approved (if design ran). Spawned per shard (K≥1). | plan.ref, design.md, prior verdict, Shard block |
-| skeptic (review_type=code) | all build shards terminal AND zero failed | design.md, union of shard diffs, evidence + prebuild artifacts, prior verdict |
-| security-auditor | build or architect complete | design.md, union of shard diffs (if post-build), frontend-handoff.md (if UI), prior verdict |
-| tester | skeptic (review_type=code) + security approved | latest verdicts, all shard branches, frontend-handoff.md (if UI) |
+| build | skeptic (review_type=design) approved (if design ran). Spawned per shard (K≥1). | context-digest.md, build-contract.md, prior verdict findings, Shard block |
+| skeptic (review_type=code) | all build shards terminal AND zero failed | context-digest.md, build-contract.md, union of shard diffs, build evidence, prior verdict findings |
+| security-auditor | build or architect complete | context-digest.md, design.md for security-design OR build-contract.md + union of shard diffs for security-code, frontend-handoff.md (if UI), prior verdict findings |
+| tester | skeptic (review_type=code) + security approved | context-digest.md, latest verdict findings, all shard branches, frontend-handoff.md (if UI) |
 | pr_publish | all gates approved | pipeline.md, shard branches. Orchestrator-owned, no subagent. |
 | friction-audit (skill) | pr_publish complete | invoked by orchestrator; reads pipeline.md, gate verdicts, build evidence |
 
@@ -204,8 +205,11 @@ Dir: <repo>/.pipeline/runs/<artifact-id>/
 First line of your return: `Preflight: role=<name>, verdict-enum=Approved|Conditional|Blocked, doctrine-loaded-from=<path>.`
 Apply pre-emit verification + pre-emit critique before returning. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
+## Context Digest
+context-digest.md (mandatory; compact ledger/artifact pointers, current objective, latest findings)
+
 ## Read
-[artifact files]
+[role-specific artifact files only; do not paste full brief/design/build-contract unless this role owns that input]
 # Conditional (read only if applicable to this role's scope):
 # - .claude/rules/<lang>.md — only if role writes/reviews code in <lang>
 # - ~/.pipeline/adr/<NNNN>-<topic>.md — only if role makes/audits architectural decisions
@@ -266,7 +270,7 @@ Rules:
   tester, ui-ux-designer, content-designer.
 - **Cross-stage spawns are fresh.** skeptic design ≠ skeptic code.
 - **One-shot** (no loop): researcher, plan. friction-audit is a skill.
-- Context threshold: 70% (architect) / 80% (all others) → `handoff-doc` skill → record task_id.
+- Context threshold: 70% (architect) / 80% (all others) → `context-rotation-summary` skill → record task_id in SQLite Ledger.
 - Versioned verdict files only: `verdict-<type>-r<N>.md`. Loop limits: design 3, code 3, ops 1.
 - Build revisions: resume only `failed` shards in existing worktree/branch.
 - `Conditional` → orchestrator verifies `## Conditions`; failure → re-spawn upstream.
@@ -292,8 +296,8 @@ Tally `blocker_class` across all Blocked verdicts in run dir. Include in halt re
 Run dir: `<repo>/.pipeline/runs/<artifact-id>/`. Plan dir: `~/.pipeline/plans/-home-nikki-dotfiles/<artifact-id>.md`.
 `<project-slug>`: absolute project path w/ `/` replaced by `-`.
 
-Required artifacts (per run): `brief.md`, `pipeline.md`, `plan.ref` (if plan), `research.md`/`design.md`
-(if role ran), `build-evidence-r<N>-s<K>.md` + `prebuild-skeptic-code-r<N>-s<K>.md` per shard,
+Required artifacts (per run): `brief.md`, `context-digest.md`, `pipeline.md`, `plan.ref` (if plan), `research.md`/`design.md`/`build-contract.md`
+(if role ran), `build-evidence-r<N>-s<K>.md` per shard,
 `frontend-handoff.md` (UI), `verdict-<type>-r<N>.md` per gate type,
 `friction-findings-r<N>.md` (non-gating), `pr-report.md`, `options-r<N>.md`, `decision-r<N>.md`,
 `awaiting-decision-r<N>.md` (async; transient). Optional: `test-paths.txt`.
@@ -302,51 +306,37 @@ Optional: `awaiting-decision-r<N>.md` (cleared on pick), `resume-drift-r<N>.md` 
 unified `r<N>` ns). Orchestrator-owned: `pipeline.md`, `plan.ref`, `pr-report.md`, `decision-r<N>.md`,
 `awaiting-decision-r<N>.md`, `friction-findings-r<N>.md`, `resume-drift-r<N>.md`.
 
-`pipeline.md` schema (constrained YAML subset — scalar + one-level flow maps/seqs; no anchors):
+`pipeline.md` manifest (constrained YAML subset — scalar + one-level flow maps/seqs; no anchors). Runtime state source is SQLite Ledger; manifest is pointers only:
 ```yaml
 ---
 run_id: <artifact-id>
-plan_id: <artifact-id|none>
+ledger_id: <sqlite-row-id-or-uuid>
 brief: <one-line>
 roles_included: [..]
 roles_skipped: {role: reason}
-design_handoff: required|n/a
 parallel: true|false
 base_ref: <base-branch>
 base_sha: <sha-at-intake>
-phase: intake | compose | execute | close
 github_delivery: pr|branches-only
-shards:
-  s1: {status: pending|running|passed|failed|skipped_due_to_dep, branch: <ref>, worktree: <path>, evidence: <file>, depends_on: [..]}
-pr_urls: {s1: <url>}
-merge_shas: {s1: <sha|null>}
-reuse_freshness:
-  plan: {checked_at: <iso8601>, source_commit: <sha|none>, source_path: <abs|none>}
-decision_points:
-  d1: {after: <role>, options_source: <role>, delivery: sync|async, timeout_days: 7, status: pending|active|resolved|timeout|cancelled}
-paused_on_decision: {decision_id: d<N>, stage: <role>, delivery_mode: sync|async, opened_at: <iso8601>}
-# BEGIN paused_on_drift
-# paused_on_drift: true
-# drift_detected_at: <iso8601>
-# stored_base_sha: <sha>
-# new_base_sha: <sha>
-# intersecting_paths: [scope:src/foo.py, doctrine:.claude/rules/python.md]
-# drift_resolution_status: pending|rebase_pending|resolved
-# END paused_on_drift
+artifacts:
+  context_digest: context-digest.md
+  brief: brief.md
+  plan: plan.ref
+  design: design.md
+  build_contract: build-contract.md
+  ledger_query: query-ledger --run <artifact-id>
 ---
 ## Stages
-- role: status (rN)
-- pr_publish: <pending|complete>
+- See Ledger: query-ledger --run <artifact-id> --view stages
 ## Summary
-Loops: design <D>, code <C>, ops <O>
-Status: in-progress|paused_on_decision|complete|halted
-PRs: <count> opened
+Status: see Ledger
+PRs: see Ledger
 ```
 
 ## Persistence
 
 - Architect threshold 70% context. Build threshold 80%.
-- On threshold hit: invoked role uses `Skill(skill: "pipeline-handoff-doc", args: "role=<role>, run-dir=<path>, next-focus=<text>")` to emit rotation summary; orchestrator records old/new task_id in pipeline.md.
+- On threshold hit: invoked role uses `Skill(skill: "context-rotation-summary", args: "role=<role>, run-dir=<path>, next-focus=<text>")` to emit rotation summary; orchestrator records old/new task_id in the SQLite Ledger.
 
 ## Completion Report
 

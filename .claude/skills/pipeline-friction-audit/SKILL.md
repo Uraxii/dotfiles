@@ -32,8 +32,8 @@ Returns JSON: `{passed: [<check-id>, ...], failed: [{check: <id>, citation: <pat
 | `two-axis-review` | Both `verdict-review-standards-r<N>.md` + `verdict-review-spec-r<N>.md` exist when review ran | file existence |
 | `tdd-evidence` | build-evidence-*.md shows red-green sequence OR `TDD: skipped, reason:` note | grep |
 | `adr-assertion` | architect verdict frontmatter has `adr_emitted:` key | frontmatter parse |
-| `task-id-continuity` | pipeline.md ledger records task_id field on persistent roles | YAML parse |
-| `phase-field` | pipeline.md has `phase:` field (PR-5+ check; gracefully no-ops if absent) | YAML parse |
+| `ledger-ref` | pipeline.md manifest has `ledger_id:` or `artifacts.ledger_query` pointer | regex |
+| `context-digest` | context-digest.md exists as common compact handoff input | file existence |
 | `preflight-critique` | All verdict files contain `## Pre-emit critique` section per agent-preflight doctrine | grep |
 | `skill-invocation` | Skills referenced in agents are actually invoked (no inline duplication regression) | grep agent files for `Skill(skill: ` patterns + cross-ref skills dir |
 
@@ -54,5 +54,5 @@ Only on invocation error (missing run-dir, malformed args). Findings themselves 
 
 ## See also
 
-- Retired: `agents/friction-reviewer.md` (historical doctrine reference)
+- Archived: `docs/archive/pipeline/friction-reviewer.md` (historical doctrine reference; not active discovery)
 - Findings consumer: orchestrator (writes `friction-findings-r<N>.md`)

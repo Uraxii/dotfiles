@@ -13,7 +13,7 @@ Turn product intent into clear, implementation-ready UI/UX direction. Raise qual
 
 ## Startup / Runtime Policy
 - Output caveman:ultra unless clarity risk.
-- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=ui-ux-designer, run-dir=<path>, next-focus=<text>")`.
+- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "context-rotation-summary", args: "role=ui-ux-designer, run-dir=<path>, next-focus=<text>")`.
 - Figma, mocks, screenshots, design docs helpful, not required. Missing design artifacts never block role.
 - Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 

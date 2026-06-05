@@ -1,1517 +1,1262 @@
 {
   "/home/nikki/dotfiles/install.py": {
-    "mtime": 1779470002.7557733,
+    "mtime": 1779470261.3847268,
     "ast_hash": "9de23f194057ab4dff435d460daf469d",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/setup.sh": {
-    "mtime": 1779470492.5849683,
-    "ast_hash": "e37f70bb08863d656cec969a154d9a43",
+    "mtime": 1780075252.3584404,
+    "ast_hash": "252652c13413447a6894100865ae5f15",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/statusline.sh": {
-    "mtime": 1778885856.7395904,
+    "mtime": 1779470261.381897,
     "ast_hash": "e9b991e72c46034e51329c5c0fbeb208",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/artifact-serve/scripts/artifact-serve.py": {
-    "mtime": 1779372466.7673113,
+    "mtime": 1779470693.2163908,
     "ast_hash": "4aed6d19278b0624450758ec136de17b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/diagnose/scripts/hitl-loop.template.sh": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2168343,
     "ast_hash": "46a2a00761be2785e59661f0e3c11471",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-dep-graph-compose/dep-graph-compose.py": {
-    "mtime": 1779421840.6609752,
+    "mtime": 1779470693.2174873,
     "ast_hash": "c9a7252d2253e338fc7348f4b150f9b4",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-dep-graph-compose/test_dep_graph_compose.py": {
-    "mtime": 1779421840.6609752,
+    "mtime": 1779470693.2174873,
     "ast_hash": "f3fc9d2815b0e0e60d406061b8932422",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-friction-audit/friction-audit.py": {
-    "mtime": 1779421840.6609752,
-    "ast_hash": "07447477681b07a2e65d15b04f0c9868",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.claude/skills/pipeline-handoff-doc/handoff-doc.py": {
-    "mtime": 1779421840.6643088,
-    "ast_hash": "97c72d1c28bb6c05f4d2c03418f8fa46",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.claude/skills/pipeline-handoff-doc/test_handoff_doc.py": {
-    "mtime": 1779421840.6643088,
-    "ast_hash": "2d920d15da46fb56e618adf6c54a8fe0",
+    "mtime": 1780371247.7685606,
+    "ast_hash": "4faea1bbd3d4c609a7ad430b34449942",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-prod-diff-sha/prod-diff-sha.py": {
-    "mtime": 1779421840.6643088,
+    "mtime": 1779470693.217875,
     "ast_hash": "3880ade940949fc6a1ad34616e276cc8",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-prod-diff-sha/test_prod_diff_sha.py": {
-    "mtime": 1779421840.6643088,
+    "mtime": 1779470693.217875,
     "ast_hash": "fa09dd826b7b857f0bce00dae3cffeb5",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-revision-route/revision-route.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2180002,
     "ast_hash": "8d9ca1b10fbd51fc75492d314d426104",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-revision-route/test_revision_route.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2180002,
     "ast_hash": "5cb3669177cb581b514907a93e54d172",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-test-path-resolve/test-path-resolve.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2181487,
     "ast_hash": "f65736343f83927e503478aa7e32d049",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-test-path-resolve/test_test_path_resolve.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2181487,
     "ast_hash": "aced640fe7572a247f62e1b9a8ba1f1e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-verdict-parse/test_verdict_parse.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2182527,
     "ast_hash": "f6ad8dc02a77605df87812c12645209f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-verdict-parse/verdict-parse.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2182527,
     "ast_hash": "b0d36c6228e71d438c32a0d3cd6a0a26",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-worktree-lifecycle/test_worktree_lifecycle.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2183785,
     "ast_hash": "6add4ac8a5ecf9b6609e544566f0b7dd",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-worktree-lifecycle/worktree-lifecycle.py": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2183785,
     "ast_hash": "c10119e940f0768d4bc15e6533531c06",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/sdk/artifact-slug-example.ts": {
-    "mtime": 1778520884.8705552,
+    "mtime": 1779470693.2160807,
     "ast_hash": "94fa98de1785d5d14a09ece25aad12ea",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/sdk/artifact-slug-server.ts": {
-    "mtime": 1778520884.8705552,
+    "mtime": 1779470693.2162046,
     "ast_hash": "c9e6415b0156e2f5d931f505dc67ed18",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/inbox_wait.py": {
-    "mtime": 1778744250.4161363,
+    "mtime": 1779470693.2148404,
     "ast_hash": "0fe5be1a63594dc7a86737e64908f370",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/verdict_read.py": {
-    "mtime": 1778744250.422803,
+    "mtime": 1779470693.2154157,
     "ast_hash": "e87674dfc58c353f7583d1cab67f20bc",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/inbox_drain.py": {
-    "mtime": 1778903269.979845,
+    "mtime": 1779470693.2148404,
     "ast_hash": "651ce1c71564016c61d44d56412acac2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/pipeline_ask.py": {
-    "mtime": 1778903269.979845,
+    "mtime": 1779470693.2148404,
     "ast_hash": "0ac29756e8782c0716ba45321ccdac72",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/pipeline_notify.py": {
-    "mtime": 1778903269.9831786,
+    "mtime": 1779470693.2148404,
     "ast_hash": "84b5f3abed029987ab7fae2f95f11342",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/pipeline_state.py": {
-    "mtime": 1778903269.9831786,
+    "mtime": 1779470693.2148404,
     "ast_hash": "1d25bc9201d35aeceb913fcde6886e52",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/session_bind.py": {
-    "mtime": 1778903269.9831786,
+    "mtime": 1779470693.2154157,
     "ast_hash": "c0a4c5a3770306403281edd8f3369b51",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/setup.sh": {
-    "mtime": 1778903269.9831786,
+    "mtime": 1779470693.2154157,
     "ast_hash": "353172a616e93aea139066ddf154c793",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/verdict_write.py": {
-    "mtime": 1778903269.9831786,
+    "mtime": 1779470693.2154157,
     "ast_hash": "e24f993d6b5ad3f03039df68cc1841f0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/__init__.py": {
-    "mtime": 1778903269.9731784,
+    "mtime": 1779470693.2143219,
     "ast_hash": "d74dcb1fe780bc4687d237c5d6868994",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/env.py": {
-    "mtime": 1778903269.9731784,
+    "mtime": 1779470693.214358,
     "ast_hash": "396a10a363a4edba683c2f841a02b15c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/provider.py": {
-    "mtime": 1778903269.9731784,
+    "mtime": 1779470693.214358,
     "ast_hash": "e1be4394d5450e2d0b107d76748104c7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/registry.py": {
-    "mtime": 1778903269.9765117,
+    "mtime": 1779470693.214358,
     "ast_hash": "92b6e65a2633abc37cd67252bc45b118",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/router.py": {
-    "mtime": 1778903269.9765117,
+    "mtime": 1779470693.2144158,
     "ast_hash": "f547e41db7d09366e3e466974480ea43",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/session.py": {
-    "mtime": 1778903269.9765117,
+    "mtime": 1779470693.2144158,
     "ast_hash": "72da8ba8304da9a80476f65a87cfc95a",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/types.py": {
-    "mtime": 1778903269.979845,
+    "mtime": 1779470693.2148404,
     "ast_hash": "0ea00351176d2446bb0150baa8ac5776",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/slack/__init__.py": {
-    "mtime": 1778903269.9765117,
+    "mtime": 1779470693.2144158,
     "ast_hash": "9e1fbe7f90382c946a4a3183d41fae8a",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/slack/blocks.py": {
-    "mtime": 1778903269.9765117,
+    "mtime": 1779470693.2148404,
     "ast_hash": "89f6ac772d99ea5507501f26c2b370ca",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/slack/inbound.py": {
-    "mtime": 1778903269.9765117,
+    "mtime": 1779470693.2148404,
     "ast_hash": "3b913649b5fcb55eca02b56f19e778b7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/slack/provider.py": {
-    "mtime": 1778903269.979845,
+    "mtime": 1779470693.2148404,
     "ast_hash": "1ab826c1fbc7ac7cabed8342e1c6aa95",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/comms/slack/recovery.py": {
-    "mtime": 1778903269.979845,
+    "mtime": 1779470693.2148404,
     "ast_hash": "aadb81556e28003c75bd4336dae238d3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/hooks/cap_bash_timeout.py": {
-    "mtime": 1778701809.0442636,
+    "mtime": 1779470261.3769674,
     "ast_hash": "80c1d246a352e9c5efbbb9d1f5b2b42c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/themes/synthwave-84.json": {
-    "mtime": 1779481372.0481768,
+    "mtime": 1779480925.3771446,
     "ast_hash": "fbe4f6d786f7af350173e016dc283307",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_inbox_drain.py": {
-    "mtime": 1778744250.432803,
+    "mtime": 1779470261.3968446,
     "ast_hash": "dc593b1420fc8c99acaf022a2f80cda3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_pipeline_state.py": {
-    "mtime": 1778744250.432803,
+    "mtime": 1779470261.3968446,
     "ast_hash": "8272866bc696fd146eda213ad8f06eea",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_verdict_io.py": {
-    "mtime": 1778744250.4361362,
+    "mtime": 1779470261.3968446,
     "ast_hash": "fc2e863ee7474ece89fad81cf9795793",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/conftest.py": {
-    "mtime": 1778903269.9898453,
+    "mtime": 1779470261.3967123,
     "ast_hash": "ce693f5b75281cd79bc572b744e3a7ed",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_adversarial.py": {
-    "mtime": 1778903269.996512,
+    "mtime": 1779470261.3968446,
     "ast_hash": "8af19ca2fcf05ca0d271f2ec6be13a8f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_atomic_write.py": {
-    "mtime": 1778903269.996512,
+    "mtime": 1779470261.3968446,
     "ast_hash": "515ff242a54e27470d52aabf2fc8a664",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_env_file_perms.py": {
-    "mtime": 1778903269.996512,
+    "mtime": 1779470261.3968446,
     "ast_hash": "724bc078663cd8634f2a74e5783117f4",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_inbox_event.py": {
-    "mtime": 1778903269.996512,
+    "mtime": 1779470261.3968446,
     "ast_hash": "3d565164d32e9f124bb4b499152a4afb",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_session_bind.py": {
-    "mtime": 1778903269.9998453,
+    "mtime": 1779470261.3968446,
     "ast_hash": "140b541ed9f9dbc416596f5f13a20c17",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_session_slack.py": {
-    "mtime": 1778903269.9998453,
+    "mtime": 1779470261.3968446,
     "ast_hash": "4aeeb11c14a1b19662f0d98bafb843f5",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/test_sid_validation.py": {
-    "mtime": 1778903269.9998453,
+    "mtime": 1779470261.3968446,
     "ast_hash": "f4ae9a95c5d1ea2478357e0336e71fe8",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_slack_router.py": {
-    "mtime": 1778903269.996512,
+    "mtime": 1779470261.3968446,
     "ast_hash": "f91bcbd802efc2007dd6a7c4760f2e65",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/__init__.py": {
-    "mtime": 1778903269.9898453,
+    "mtime": 1779470261.3968043,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/conftest.py": {
-    "mtime": 1778903269.9898453,
+    "mtime": 1779470261.3968446,
     "ast_hash": "cc17fd7c964de950f67d175558561bd0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_cli_surface.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "0d642daa112c89f414dffb1d56bc74f0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_recovery.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "b49969bfad38c5ac23e9fc8bf2dc7c56",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_registry.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "3310e9857fa152f659b022c93f6236be",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_router_dispatch.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "7b295f9684584e0377a3ae24a2004c99",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_session_provider_field.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "fe8f15374526bdce2c9b7da39c5e4c1f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_slack_inbound.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "4ff73731a28d65ba49ae1940322a3328",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_slack_provider.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "db7d165b593c74ccb5705ea39f3d745f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tests/pipeline/test_comms/test_types.py": {
-    "mtime": 1778903269.9931786,
+    "mtime": 1779470261.3968446,
     "ast_hash": "01233563b88c61c9b7beda0c10b732e9",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/scripts/nerd-glyph": {
-    "mtime": 1778896717.04567,
+    "mtime": 1779470261.3899941,
     "ast_hash": "4451d91169ec8196df26a42c8692943a",
     "semantic_hash": ""
   },
-  "/home/nikki/dotfiles/.hermes/policy.json": {
-    "mtime": 1779426451.7713058,
-    "ast_hash": "d67bf295eff06ca5f14630f9158358c5",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/role-policy.json": {
-    "mtime": 1779426494.2051802,
-    "ast_hash": "5cd66d8f30f9c19f9a792a09ec0efd4f",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/hooks/cap_bash_timeout.py": {
-    "mtime": 1779426411.000806,
-    "ast_hash": "1b925e0821b19e65fc451b8a3c3fbe22",
-    "semantic_hash": ""
-  },
   "/home/nikki/dotfiles/.hermes/hooks/graphify_advice.sh": {
-    "mtime": 1779426427.29767,
+    "mtime": 1779470261.382456,
     "ast_hash": "c285c9e3d3c2afadd4c18776911e004c",
     "semantic_hash": ""
   },
-  "/home/nikki/dotfiles/.hermes/hooks/terminal_policy.py": {
-    "mtime": 1779426445.4045596,
-    "ast_hash": "381212fe405c8473da642b924d4fe182",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/hooks/role_policy.py": {
-    "mtime": 1779426482.3716938,
-    "ast_hash": "f0dc6401ea04fc4d98b2e2335208fa26",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/plugins/pipeline-core/__init__.py": {
-    "mtime": 1779426712.9649172,
-    "ast_hash": "c52564a6270ecc29d60736861c45031b",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/plugins/pipeline-core/schemas.py": {
-    "mtime": 1779426936.8484182,
-    "ast_hash": "068561ff987f43b32b563741209c5109",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/plugins/pipeline-core/tools.py": {
-    "mtime": 1779427031.373306,
-    "ast_hash": "922fa0714f6177026fb7108724be5a12",
-    "semantic_hash": ""
-  },
   "/home/nikki/dotfiles/nvim/init.lua": {
-    "mtime": 1771598530.8108037,
+    "mtime": 1779470261.3858476,
     "ast_hash": "d7005b5913eb46a69831847073fd3518",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/autopairs.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3862355,
     "ast_hash": "70f69cbe1a988d5c5b90978a44e96db1",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/conform.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "8a918e271aa594e6a8a000bf56ed71d4",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/diffview.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "f68952718c8bf5c1b3ad8e51276608fc",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/gitsigns.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "ed00eb08520e7eb70270237a73af6b07",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/health.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "3c7ff811c40289216bb3f79b9bb98b43",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/indent_line.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "3b1c96c77b29d096ae37c6de1b673b30",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/lazydev.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "8820225769bc04eaf8e7c8cd07c62088",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/lint.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "f3a7b7cfe44a3da6b7a041b3d1cca050",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/luvit-meta.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "ab60f8c104da0e871164a1b2dcc95544",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/mini.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "65166f837f192ff2693c8af71abf5b25",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/neo-tree.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "df12e9da7d30505666a093a0974ed3d0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/neogit.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "1a797bf6a94b401c88eae4e00a87f613",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/notify.lua": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3864267,
     "ast_hash": "27b571cdd150fa8180c1021344b89777",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/oil.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3864267,
     "ast_hash": "e8c5a6c298f06145099105b264b88b6e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/telescope-file-browser.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3864267,
     "ast_hash": "c6a4465b337e4b9baa8437fdc3b2ee30",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/todo-comments.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3872135,
     "ast_hash": "3dcedf9ce2a8123a2b98fddc42d087a1",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/vim-slueth.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3872135,
     "ast_hash": "58a496f04c4a66f2dab4447c7c7c189e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/which-key.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3872135,
     "ast_hash": "f2540c54a04a21aba9b3e8324bf78c91",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/yazi.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3872135,
     "ast_hash": "cbc3fa4e398853d95262b1ee703540f1",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/mason.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3864267,
     "ast_hash": "ef12915ea3206e7a373a93d8bc61ee61",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/debug.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3864267,
     "ast_hash": "749256420eafaa877c69844ec7ab6631",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/nvim-treesitter.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3864267,
     "ast_hash": "f18a098e1cc10aa2bc3456e7e3f4c46e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/noice.lua": {
-    "mtime": 1778885856.742924,
+    "mtime": 1779470261.3864267,
     "ast_hash": "e08e7fda15bb5b01c098565f1b0c6517",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/nvim-cmp.lua": {
-    "mtime": 1778885856.742924,
+    "mtime": 1779470261.3864267,
     "ast_hash": "621563d27212e981297d9ddee6706304",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/telescope.lua": {
-    "mtime": 1778885856.742924,
+    "mtime": 1779470261.3864267,
     "ast_hash": "3851c8b75f4fda9c195228d34129790b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/obsidian.lua": {
-    "mtime": 1779421868.7195444,
+    "mtime": 1779470261.3864267,
     "ast_hash": "83c00062b99da58d13a4d97a94bfeafd",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/render-markdown.lua": {
-    "mtime": 1779421868.7195444,
+    "mtime": 1779470261.3864267,
     "ast_hash": "1253e8068521283ae4c09d7885638462",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/themes/tokyonight.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3872135,
     "ast_hash": "9427ba843bc1bd1276e72db7907117d8",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/plugins/themes/kanagawa.lua": {
-    "mtime": 1773693373.5745118,
+    "mtime": 1779470261.3864267,
     "ast_hash": "95ea679f4dc4da8e67ff3d638cb4531a",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/config/globals.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3862355,
     "ast_hash": "f987a95254524d03268d4a748c2dba92",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/config/keymaps.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3862355,
     "ast_hash": "12cb65ab66adbb57340e81f3e9ead952",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/config/lsp.lua": {
-    "mtime": 1773947644.968637,
+    "mtime": 1779470261.3862355,
     "ast_hash": "264c19740a1c52dd5dc0dd5a3c68b00a",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/config/autocommands.lua": {
-    "mtime": 1778885856.7395904,
+    "mtime": 1779470261.3861654,
     "ast_hash": "f3eb318a200ea2c44cf57fc7933699fc",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/config/options.lua": {
-    "mtime": 1778885856.742924,
+    "mtime": 1779470261.3862355,
     "ast_hash": "23f4b40ddb02e8753b6cbdfc417d2960",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lua/config/lazy_plugin_manager.lua": {
-    "mtime": 1779421868.7195444,
+    "mtime": 1779470261.3862355,
     "ast_hash": "832b04a3378f006f53019e8887f57c01",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lsp/lua_ls.lua": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3860965,
     "ast_hash": "55091651a3533cbc9921db9e3a278adf",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lsp/gdscript.lua": {
-    "mtime": 1771598530.8108037,
+    "mtime": 1779470261.3858476,
     "ast_hash": "4044dce2a8598701725c7063d1100619",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/lsp/pyright.lua": {
-    "mtime": 1773947764.337949,
+    "mtime": 1779470261.3860965,
     "ast_hash": "7f03799f21fea4d83b0670e58bb17931",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/omp/atomic.omp.json": {
-    "mtime": 1771598530.8108037,
+    "mtime": 1779470261.3872135,
     "ast_hash": "1716621c9fd2ddaf1440f051867e7549",
     "semantic_hash": ""
   },
-  "/home/nikki/dotfiles/opencode/update-models.py": {
-    "mtime": 1778330868.3557045,
-    "ast_hash": "adb64aed09329cb5093ea2d50333f517",
-    "semantic_hash": ""
-  },
   "/home/nikki/dotfiles/opencode/opencode.json": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "7ab37d471d53c771dec56791ce326569",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/themes/makima.json": {
-    "mtime": 1778885856.742924,
-    "ast_hash": "187216a87b9b2d4b5baabadd7eb82ae4",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/themes/manjaro.json": {
-    "mtime": 1778885856.742924,
-    "ast_hash": "034910c52af410f8098d64674cd44369",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/artifact-slug.py": {
-    "mtime": 1778330868.3557045,
-    "ast_hash": "d63caf124ad16ab9325e0bad6f09564a",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/artifact-slug.ts": {
-    "mtime": 1778330868.3557045,
-    "ast_hash": "e868287a9a46d4f22e0c708d037c6a0c",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/handoff-doc.ts": {
-    "mtime": 1778614640.9529076,
-    "ast_hash": "7f86e9e82f8d1ec275ab4ecd7997a8cc",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/prod-diff-sha.ts": {
-    "mtime": 1778614640.9529076,
-    "ast_hash": "f68945189e9c49c71e2b318629d32043",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/test-path-resolve.ts": {
-    "mtime": 1778614640.9529076,
-    "ast_hash": "778c78b8eec886688126b445b493c710",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/verdict-parse.ts": {
-    "mtime": 1778614640.9529076,
-    "ast_hash": "b42c55489ee0649e92a0adbb1ca60dba",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/tools/worktree-lifecycle.ts": {
-    "mtime": 1778614640.9529076,
-    "ast_hash": "b2e0aba44e1e84f547f171f3566db437",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/inbox_drain.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "651ce1c71564016c61d44d56412acac2",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/inbox_wait.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "0fe5be1a63594dc7a86737e64908f370",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/pipeline_ask.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "0ac29756e8782c0716ba45321ccdac72",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/pipeline_notify.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "84b5f3abed029987ab7fae2f95f11342",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/pipeline_state.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "1d25bc9201d35aeceb913fcde6886e52",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/session_bind.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "c0a4c5a3770306403281edd8f3369b51",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/setup.sh": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "353172a616e93aea139066ddf154c793",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/verdict_read.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "e87674dfc58c353f7583d1cab67f20bc",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/verdict_write.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "e24f993d6b5ad3f03039df68cc1841f0",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/__init__.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "d74dcb1fe780bc4687d237c5d6868994",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/env.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "396a10a363a4edba683c2f841a02b15c",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/provider.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "e1be4394d5450e2d0b107d76748104c7",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/registry.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "92b6e65a2633abc37cd67252bc45b118",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/router.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "f547e41db7d09366e3e466974480ea43",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/session.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "72da8ba8304da9a80476f65a87cfc95a",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/types.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "0ea00351176d2446bb0150baa8ac5776",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/slack/__init__.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "9e1fbe7f90382c946a4a3183d41fae8a",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/slack/blocks.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "89f6ac772d99ea5507501f26c2b370ca",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/slack/inbound.py": {
-    "mtime": 1779372466.7773113,
-    "ast_hash": "3b913649b5fcb55eca02b56f19e778b7",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/slack/provider.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "1ab826c1fbc7ac7cabed8342e1c6aa95",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/comms/slack/recovery.py": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "aadb81556e28003c75bd4336dae238d3",
+    "mtime": 1780612415.4328146,
+    "ast_hash": "80e54d31e57e667aea629209872045ab",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/scripts/lock_system.sh": {
-    "mtime": 1771621077.3200796,
+    "mtime": 1779470261.3905993,
     "ast_hash": "3b9be3c276e054cfc30eae2e2db6dcea",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/scripts/idle_monitor.sh": {
-    "mtime": 1773681054.2789946,
+    "mtime": 1779470261.3905993,
     "ast_hash": "5ce8011f82ff6749aa6310e629e1bb89",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/scripts/battery_monitor.sh": {
-    "mtime": 1777309784.2003732,
+    "mtime": 1779470261.3903306,
     "ast_hash": "20a7550d5bf00d163da08b29d1b58825",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/scripts/waybar-strip-omarchy.py": {
-    "mtime": 1778885983.633613,
+    "mtime": 1779470261.3905993,
     "ast_hash": "9521fab1f93a396eae64aebab9ad6e14",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/scripts/set-theme.sh": {
-    "mtime": 1779481372.05151,
+    "mtime": 1779480925.3776238,
     "ast_hash": "5c8d5fbe0b65549678d770cf4ff0994e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tmux/scripts/git-branch.sh": {
-    "mtime": 1778896053.7619147,
+    "mtime": 1779470261.398029,
     "ast_hash": "99047e11edc2822a289d58c144b9be6e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tmux/scripts/battery.sh": {
-    "mtime": 1778897645.7492347,
+    "mtime": 1779470261.3979661,
     "ast_hash": "80ac5c89a118d421a3b6d22bdbb9fe0e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tmux/scripts/pwd-display.sh": {
-    "mtime": 1778900533.0297964,
+    "mtime": 1779470261.398029,
     "ast_hash": "267959e9a21d760669fdc023f5a18a75",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/tmux/scripts/glyphs.sh": {
-    "mtime": 1779458608.7094023,
+    "mtime": 1779470261.398029,
     "ast_hash": "6c9abf0c6bda9c9c58b44f8ab1da69e9",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/amixer-toggle.sh": {
-    "mtime": 1778885983.6369464,
+    "mtime": 1779470261.398677,
     "ast_hash": "eac3badcf484f0bf879cc422535b21a0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/brightness.sh": {
-    "mtime": 1778885983.6369464,
+    "mtime": 1779470261.3987236,
     "ast_hash": "5a1a184dbe0426d0acc9c7f272d5be03",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/myUpdates.sh": {
-    "mtime": 1778885983.6402798,
+    "mtime": 1779470261.3987236,
     "ast_hash": "748718374389f9fcf0ecfa5203ff31f3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/myupdate.sh": {
-    "mtime": 1778885983.6402798,
+    "mtime": 1779470261.3987236,
     "ast_hash": "3edc747b937477ad13a50f04700f33e2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/powerdraw.sh": {
-    "mtime": 1778885983.6402798,
+    "mtime": 1779470261.3987236,
     "ast_hash": "98f9416241f63a3241c3ca1058c8ff8e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/powermenu.sh": {
-    "mtime": 1778885983.6402798,
+    "mtime": 1779470261.3987236,
     "ast_hash": "5f8c0710dd92a404c238f071b7d59c8e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/weather.sh": {
-    "mtime": 1778885983.6402798,
+    "mtime": 1779470261.3987236,
     "ast_hash": "14752cc56618bbd1e77c1a1d73b3cad2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/themes/minimal/scripts/colorpicker.sh": {
-    "mtime": 1779485335.6017354,
+    "mtime": 1779487476.7981274,
     "ast_hash": "a7ae64a7a394ab0b39eacb5e447d8129",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/amixer-toggle.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.2575302,
     "ast_hash": "eac3badcf484f0bf879cc422535b21a0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/brightness.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.2575593,
     "ast_hash": "5a1a184dbe0426d0acc9c7f272d5be03",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/myUpdates.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.257603,
     "ast_hash": "748718374389f9fcf0ecfa5203ff31f3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/myupdate.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.2577474,
     "ast_hash": "3edc747b937477ad13a50f04700f33e2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/powerdraw.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.2577684,
     "ast_hash": "98f9416241f63a3241c3ca1058c8ff8e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/powermenu.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.2577875,
     "ast_hash": "5f8c0710dd92a404c238f071b7d59c8e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/weather.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779480733.2578058,
     "ast_hash": "14752cc56618bbd1e77c1a1d73b3cad2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/waybar/scripts/colorpicker.sh": {
-    "mtime": 1779603185.1327496,
+    "mtime": 1779487476.7971275,
     "ast_hash": "a7ae64a7a394ab0b39eacb5e447d8129",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/CONTEXT.md": {
-    "mtime": 1779030857.4687967,
+    "mtime": 1779470261.3836646,
     "ast_hash": "9d81b639701b6a2373cba29b162c7d26",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/AGENTS.md": {
-    "mtime": 1779421868.7195444,
+    "mtime": 1779470261.3836646,
     "ast_hash": "62c05a2bf20bf036a0b2633478663e64",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/CLAUDE.md": {
-    "mtime": 1779468361.7924101,
+    "mtime": 1779470261.3836646,
     "ast_hash": "1012a6b45e458a6b8b4f7310394988e7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/README.md": {
-    "mtime": 1779468382.0092332,
+    "mtime": 1779470261.3836646,
     "ast_hash": "a76e876a1c75c818de9745b87c17ffce",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/desktop.md": {
-    "mtime": 1779603258.7899108,
+    "mtime": 1779651773.942809,
     "ast_hash": "ab20c5725a17b283200f4dda0afda136",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/comms.md": {
-    "mtime": 1778903269.9898453,
+    "mtime": 1779470261.3836646,
     "ast_hash": "27bd277459bfcad7ca8f123e10d09dbe",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/tooling.md": {
-    "mtime": 1779428151.365538,
-    "ast_hash": "9bf32d2c4175ee542d161133bff98395",
+    "mtime": 1780612514.473525,
+    "ast_hash": "ad9872107652bbe8ed9e3b11e59fb8e8",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/shell.md": {
-    "mtime": 1779481372.0481768,
-    "ast_hash": "9010d7d672df3f7b92707744619f15c1",
+    "mtime": 1780621998.2801244,
+    "ast_hash": "7109c7db9e59b241e4b422c661539a17",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/theming.md": {
-    "mtime": 1779481372.05151,
+    "mtime": 1779480925.3776238,
     "ast_hash": "2a17d1ed15b25a52dc098628753775ba",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Shards.md": {
-    "mtime": 1778602499.3095853,
+    "mtime": 1779470261.3844929,
     "ast_hash": "7f84805e03200a4ac388333cd8b9a306",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Gates.md": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "fd55031383c87451c0dba55c553a27d1",
+    "mtime": 1780370992.8690093,
+    "ast_hash": "41e5acf4d43c1f7a2d3850a606ad8161",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Overview.md": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "4df484d94c160ff01e84a36f7fdc2ea9",
+    "mtime": 1780370637.8864958,
+    "ast_hash": "a9441c9b9c23156ae352efd3390cf2d6",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Permissions.md": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "cd3c40aab5bee32716ec8bd671b77a8d",
+    "mtime": 1780371208.26239,
+    "ast_hash": "8d33589962d4dc4ddb07fb9e26e15d84",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Stages.md": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "9c49741d2c398d95d4fb5e7c870d3a78",
+    "mtime": 1780370701.534381,
+    "ast_hash": "7ad5db2b00cd1c55203475df06c5be03",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Artifacts.md": {
-    "mtime": 1778698176.7751365,
-    "ast_hash": "d4abb9ba3e9ecae4f78e5702a54972d4",
+    "mtime": 1780371008.8774834,
+    "ast_hash": "0be9cdc98b627a731bc303ac7844ed7b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Decisions Rollout.md": {
-    "mtime": 1778698176.7751365,
-    "ast_hash": "4e5067e48184264f6a618a3505becc4c",
+    "mtime": 1780371208.1083853,
+    "ast_hash": "de327fd74427260de64d29ced83a696c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Decisions.md": {
-    "mtime": 1778698176.7751365,
-    "ast_hash": "013c08ad852193ad3d500f6a50d29d8f",
+    "mtime": 1780371207.798376,
+    "ast_hash": "4c8d29b71045e2f23da324a39a913a1b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Skills.md": {
-    "mtime": 1778698176.7751365,
-    "ast_hash": "4f59688c3ab0ee417d1f340307180199",
+    "mtime": 1780370714.2177565,
+    "ast_hash": "f0a80af1f0bdf589d1850afa42873864",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/docs/pipeline/Pipeline Slack Setup.md": {
-    "mtime": 1778885856.8162575,
+    "mtime": 1779470261.3844929,
     "ast_hash": "115870490981044c7e312d513f23d194",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/CLAUDE.md": {
-    "mtime": 1778897394.539987,
+    "mtime": 1779470693.2124157,
     "ast_hash": "ec71d4ee76502937e922f806d340c73e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/progenitor.md": {
-    "mtime": 1778806532.5524385,
+    "mtime": 1779470693.2134159,
     "ast_hash": "b4e8fc21da1e3ca1bddf05f69615da86",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/plan.md": {
-    "mtime": 1779403684.3763845,
+    "mtime": 1779470693.2134159,
     "ast_hash": "7eb26568ba64ba5bbe6348bed51d25e1",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/researcher.md": {
-    "mtime": 1779403684.3763845,
+    "mtime": 1779470693.2134159,
     "ast_hash": "0e22c6dba1dec3d498cd7823aa81bbcc",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/architect.md": {
-    "mtime": 1779421840.6443076,
-    "ast_hash": "6889941d471acb07fdf393556eed0279",
+    "mtime": 1780370858.1470191,
+    "ast_hash": "1f7b05e4e6d7dbef0d9ecae1e65fe156",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/build.md": {
-    "mtime": 1779421840.6476412,
-    "ast_hash": "32e340e47f3b087e2c2f2fa4b4de0750",
+    "mtime": 1780371113.7505894,
+    "ast_hash": "73e7e14b367d7f8979675dd6c81ff967",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/content-designer.md": {
-    "mtime": 1779421840.6476412,
-    "ast_hash": "afdf2ef1833043ad91974512784b37e5",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.claude/agents/friction-reviewer.md": {
-    "mtime": 1779421840.654308,
-    "ast_hash": "1f0da3b53f63e6df20365c7ef2c068a7",
+    "mtime": 1780371113.2535746,
+    "ast_hash": "6809ae1a9215f9800cd2df73241d02e3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/security-auditor.md": {
-    "mtime": 1779421840.6576416,
-    "ast_hash": "a7de4bde66949db089936803d9d127b7",
+    "mtime": 1780370935.3973072,
+    "ast_hash": "e5d580345a4042c80dd3c318fe7e8da1",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/skeptic.md": {
-    "mtime": 1779421840.6576416,
-    "ast_hash": "da2a804b1a77158ba9cd41af696ecc6d",
+    "mtime": 1780370927.6380773,
+    "ast_hash": "872fdb446d4a7008265324531ea6542f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/tester.md": {
-    "mtime": 1779421840.6576416,
-    "ast_hash": "d8f366c7ca2f2c4d704ae850644a4ccb",
+    "mtime": 1780370958.827001,
+    "ast_hash": "ac709ce30ff7bea3f3c24de670b278ae",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/ui-ux-designer.md": {
-    "mtime": 1779421840.6576416,
-    "ast_hash": "6e978ced602dc13a4940962ec2664c67",
+    "mtime": 1780371113.09457,
+    "ast_hash": "8a824bd160ed993571253cdc7de6980c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/agents/orchestrator.md": {
-    "mtime": 1779421960.288365,
-    "ast_hash": "981e65ba935ad4f70bd550cbb49671f8",
+    "mtime": 1780371207.492367,
+    "ast_hash": "08af39364048210f32cd9295dd7ede83",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/rules/csharp.md": {
-    "mtime": 1778602499.312919,
+    "mtime": 1779470693.2154157,
     "ast_hash": "eb6e8a92533fb673c021946684800b62",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/rules/gdscript.md": {
-    "mtime": 1778602499.312919,
+    "mtime": 1779470693.2160807,
     "ast_hash": "5d5542d79033739fb40af357ea02f664",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/rules/python.md": {
-    "mtime": 1778602499.312919,
+    "mtime": 1779470693.2160807,
     "ast_hash": "1189f79a184d48acd88ade5dfa07a532",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/rules/typescript.md": {
-    "mtime": 1778602499.312919,
+    "mtime": 1779470693.2160807,
     "ast_hash": "d6c10119c9f0dade338b696f7c7d0645",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/README.md": {
-    "mtime": 1779421960.288365,
-    "ast_hash": "b4a9d463bea0a8c5ebe02a77e66928ad",
+    "mtime": 1780371113.4435802,
+    "ast_hash": "1abc3b2f41d446f8f60fc54985f0219e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/caveman/SKILL.md": {
-    "mtime": 1778621324.3489695,
+    "mtime": 1779470693.216416,
     "ast_hash": "53dd05db7ca400411564370d1fc423dd",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/question-elicitation/SKILL.md": {
-    "mtime": 1778769279.1939116,
+    "mtime": 1779470693.2185302,
     "ast_hash": "52a51cd375e582a61adda6870605714c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/grill-with-docs/ADR-FORMAT.md": {
-    "mtime": 1778772809.864099,
+    "mtime": 1779470693.2168343,
     "ast_hash": "bb327bab674f400796f64b6e2ef5850c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/grill-with-docs/CONTEXT-FORMAT.md": {
-    "mtime": 1778772809.864099,
+    "mtime": 1779470693.216925,
     "ast_hash": "57e7e26a1a46884f8f952c67fb233af2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/grill-with-docs/SKILL.md": {
-    "mtime": 1778772809.864099,
+    "mtime": 1779470693.216925,
     "ast_hash": "8bf29044d7890561fe964b884498ff9e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/artifact-serve/REFERENCE.md": {
-    "mtime": 1779372466.7673113,
+    "mtime": 1779470693.2162907,
     "ast_hash": "39ca9e0bc53bfbf45936767eb9867b9b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/artifact-serve/SKILL.md": {
-    "mtime": 1779372466.7673113,
+    "mtime": 1779470693.2163908,
     "ast_hash": "c855efee26646bcec7055d6fb81be962",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/diagnose/SKILL.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.216416,
     "ast_hash": "70cd92c9a5219eb8db60629b1bf59949",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/handoff/SKILL.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.216925,
     "ast_hash": "a75a18be9ed43c7e61fd53c32d4df280",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/improve-codebase-architecture/DEEPENING.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.216925,
     "ast_hash": "ebdd48f7e3b0afeb8085d797df543e1a",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/improve-codebase-architecture/INTERFACE-DESIGN.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2170887,
     "ast_hash": "aee2c0695396f8c6432ba5bfe547f195",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/improve-codebase-architecture/LANGUAGE.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2170887,
     "ast_hash": "680627d828b489f96b92d4a2d7fa3bb6",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/improve-codebase-architecture/SKILL.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2170887,
     "ast_hash": "38f2089311c7cb0fa42d2dc4a3e1340e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/prototype/LOGIC.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2183785,
     "ast_hash": "d57721452aacaa04caacd0bc7c5c2f49",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/prototype/SKILL.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2185302,
     "ast_hash": "cff567de82e277cfd0e3b9e12b67cd2c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/prototype/UI.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2185302,
     "ast_hash": "c1eaad6437c90d5660b2ffc9ff91ffb4",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/tdd/SKILL.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2185302,
     "ast_hash": "7ca080c0a0b0986e031fe6a47771d57e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/tdd/deep-modules.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2189322,
     "ast_hash": "fee2c44ab025f43e10ed717bb42cc9c2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/tdd/interface-design.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2189322,
     "ast_hash": "fc309d957e5735a1ac3d27023842fa1b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/tdd/mocking.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2189322,
     "ast_hash": "c5505e8da8f516c7dacebd01c58a4c2c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/tdd/refactoring.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2189322,
     "ast_hash": "ecbf516d99a591169adce39a8a933f2e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/tdd/tests.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2189322,
     "ast_hash": "253c991bba867959c0146c72b93a6f6f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/triage/AGENT-BRIEF.md": {
-    "mtime": 1779372466.7706447,
+    "mtime": 1779470693.2189322,
     "ast_hash": "7f815fa62b523f97710dde414f98e70b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/triage/OUT-OF-SCOPE.md": {
-    "mtime": 1779372466.7773113,
+    "mtime": 1779470693.219127,
     "ast_hash": "d3fcb04f7f250f2d07ce4ccbc3a26c7d",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/triage/SKILL.md": {
-    "mtime": 1779421840.670976,
+    "mtime": 1779470693.219127,
     "ast_hash": "c44374d876a4dd8a2820a191d5941dd7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/write-a-skill/SKILL.md": {
-    "mtime": 1779372466.7773113,
+    "mtime": 1779470693.219127,
     "ast_hash": "492ef034b4fc9e497cc69b8fed78a742",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/zoom-out/SKILL.md": {
-    "mtime": 1779372466.7773113,
+    "mtime": 1779470693.219127,
     "ast_hash": "204f114b01386f4a0a8e6c7784266369",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/slack-bind/SKILL.md": {
-    "mtime": 1779400830.8536084,
+    "mtime": 1779470693.2185302,
     "ast_hash": "5f5dd19b2e8a7e547402e55b53281e4c",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/slack-status/SKILL.md": {
-    "mtime": 1779400830.8536084,
+    "mtime": 1779470693.2185302,
     "ast_hash": "f9aeb0c964721c7a63fec222c96b290b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/slack-unbind/SKILL.md": {
-    "mtime": 1779400830.8536084,
+    "mtime": 1779470693.2185302,
     "ast_hash": "5d2595aa233814218265038331d20887",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-agent-brief-format/SKILL.md": {
-    "mtime": 1779421840.6576416,
+    "mtime": 1779470693.2170887,
     "ast_hash": "a05199fa8113d0ab9dbc4df5b63affb5",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-agent-preflight/SKILL.md": {
-    "mtime": 1779421840.6609752,
+    "mtime": 1779470693.2170887,
     "ast_hash": "59ca62c397c8a4e322eb7366e8e94fde",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-artifact-slug/SKILL.md": {
-    "mtime": 1779421840.6609752,
+    "mtime": 1779470693.2170887,
     "ast_hash": "4b95b549406f9c66d333f875c74a00c2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-decision-elicitation/SKILL.md": {
-    "mtime": 1779421840.6609752,
-    "ast_hash": "b48890445abf50bdd9ca080b9b32311c",
+    "mtime": 1780371219.2267148,
+    "ast_hash": "6d674775991348ed987ec472ca9f710d",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-dep-graph-compose/SKILL.md": {
-    "mtime": 1779421840.6609752,
+    "mtime": 1779470693.2170887,
     "ast_hash": "0265cd97c785ae2203415e0d3d690cac",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-friction-audit/SKILL.md": {
-    "mtime": 1779421840.6609752,
-    "ast_hash": "42fbc72596445ba75a9d35511b64ef26",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.claude/skills/pipeline-handoff-doc/SKILL.md": {
-    "mtime": 1779421840.6643088,
-    "ast_hash": "faa29dcb6d62e7500954bb2d7585af2f",
+    "mtime": 1780371114.0535984,
+    "ast_hash": "041bb0b2d5e204e550256fcd61861cf3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-prod-diff-sha/SKILL.md": {
-    "mtime": 1779421840.6643088,
+    "mtime": 1779470693.2177408,
     "ast_hash": "53df5c51503d2dfbcdff31f76c3387e7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-revision-route/SKILL.md": {
-    "mtime": 1779421840.6643088,
+    "mtime": 1779470693.217875,
     "ast_hash": "e080f94c18371362ae655c801760fbe2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-test-path-resolve/SKILL.md": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2180002,
     "ast_hash": "4420de662b49f644242799f0b62809d0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-verdict-parse/SKILL.md": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2181487,
     "ast_hash": "d7107ebbf9438384053e119d3acdf1d7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/pipeline-worktree-lifecycle/SKILL.md": {
-    "mtime": 1779421840.6676424,
+    "mtime": 1779470693.2182527,
     "ast_hash": "22efc5a889297c4085e22ffda90f9755",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/yeet/SKILL.md": {
-    "mtime": 1779421960.288365,
+    "mtime": 1779470693.219127,
     "ast_hash": "4b458febf569d98b03771c23cf556dc2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/skills/gdscript-graph/SKILL.md": {
-    "mtime": 1779485335.5850685,
+    "mtime": 1779479144.4773114,
     "ast_hash": "85055161860c0e8a4272f570f1b63b9e",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/templates/role-template.md": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "dbcaec69cef85b045b9b63a72fab2d62",
+    "mtime": 1780371205.7843165,
+    "ast_hash": "8325e0e866bbd1f3b77952a323c967e7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/pipeline/slack-app-manifest.yaml": {
-    "mtime": 1778744250.4194696,
+    "mtime": 1779470693.2154157,
     "ast_hash": "b705d4b8bca2e1bf48cc916c835c3544",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/commands/slack-bind.md": {
-    "mtime": 1778744250.4161363,
+    "mtime": 1779470693.2134159,
     "ast_hash": "07206130bc493150a18a8ad45719f2e0",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/commands/slack-status.md": {
-    "mtime": 1778744250.4161363,
+    "mtime": 1779470693.214254,
     "ast_hash": "6cec1025da3eb918e7dd3f3cf8f8981b",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.claude/commands/slack-unbind.md": {
-    "mtime": 1778744250.4161363,
+    "mtime": 1779470693.214254,
     "ast_hash": "411938e2d418e2833738e305a17a5406",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.hermes/README.md": {
-    "mtime": 1779428116.2154014,
-    "ast_hash": "3f6d37f6ef3b583f7ea34c2dcd89c0f3",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/plugins/pipeline-core/plugin.yaml": {
-    "mtime": 1779426684.654497,
-    "ast_hash": "a08f41eecbff7068d75cc883fb4b533e",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline-agent-brief-format/SKILL.md": {
-    "mtime": 1779427060.616696,
-    "ast_hash": "ef17c65dafd97ee300cdd1993026f665",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline-handoff-doc/SKILL.md": {
-    "mtime": 1779427090.4486496,
-    "ast_hash": "34ecc251293a8b717dea5f6d709fa47d",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline-decision-elicitation/SKILL.md": {
-    "mtime": 1779427816.4084556,
-    "ast_hash": "300af9bae24e1899e460c90549321036",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline-agent-preflight/SKILL.md": {
-    "mtime": 1779427167.8055103,
-    "ast_hash": "36984b5f5f1f4d139027e8d68e7ec834",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline/tech-lead/SKILL.md": {
-    "mtime": 1779458875.2972658,
-    "ast_hash": "7d56712731b9fb286b74669edcb19082",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline/requirements-clarifier/SKILL.md": {
-    "mtime": 1779458875.2972658,
-    "ast_hash": "e9f1cd9ceb012b76a2a69909e323aa1c",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline/architect-designer/SKILL.md": {
-    "mtime": 1779458875.2772658,
-    "ast_hash": "7ae24b402965989a567d7ef3ecbb79ae",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline/implementation-specialist/SKILL.md": {
-    "mtime": 1779458875.2772658,
-    "ast_hash": "805e02b3391fa36fbf3ac1c14f4c83e6",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline/test-automation-engineer/SKILL.md": {
-    "mtime": 1779458875.2772658,
-    "ast_hash": "f6e8dc43901257f60359d95e9c975a54",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/.hermes/skills/pipeline/big-pickle-simple-tasks/SKILL.md": {
-    "mtime": 1779458875.3039324,
-    "ast_hash": "a6e65fa35181e1d3d6f8d5bb1ce64473",
+    "mtime": 1780613015.3063557,
+    "ast_hash": "c17cdeae82d00360f4976ec04ab881a2",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.hermes/skills/caveman/SKILL.md": {
-    "mtime": 1779427736.3753994,
+    "mtime": 1780612603.8731725,
     "ast_hash": "2c5035e732f6dd4726d1fd87bee27fcc",
     "semantic_hash": ""
   },
-  "/home/nikki/dotfiles/.hermes/skill-bundles/pipeline.yaml": {
-    "mtime": 1779427705.5922234,
-    "ast_hash": "90d093bec57ac461fe1508273fff17b7",
-    "semantic_hash": ""
-  },
   "/home/nikki/dotfiles/.hermes/skins/gruvbox.yaml": {
-    "mtime": 1779485335.5850685,
-    "ast_hash": "7da563bad28b6427777deef869ed6f41",
+    "mtime": 1779651773.942809,
+    "ast_hash": "a15f8eefd4eb35ad650d6248351603ca",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/.hermes/skins/synthwave-84.yaml": {
-    "mtime": 1779485335.5884018,
-    "ast_hash": "59208436fcc909d0cac321e17e694c4e",
+    "mtime": 1779651773.942809,
+    "ast_hash": "73e06e39980b2d01b6711a1ba54193ed",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/CLAUDE.md": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3858476,
     "ast_hash": "4a5ff69f883d53046cc86dbc3591025f",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/LICENSE.md": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3858476,
     "ast_hash": "7ae2be7fb1637141840314b51970a9f7",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/README.md": {
-    "mtime": 1771598530.804137,
+    "mtime": 1779470261.3858476,
     "ast_hash": "f647d28a42733598e8568f205be85964",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/nvim/doc/kickstart.txt": {
-    "mtime": 1771598530.8008037,
+    "mtime": 1779470261.3858476,
     "ast_hash": "6c72ce75a2f1c2b43ca9ac1c39b8b784",
     "semantic_hash": ""
   },
-  "/home/nikki/dotfiles/opencode/agent_tmpl.md": {
-    "mtime": 1778330868.3557045,
-    "ast_hash": "2ece22f4439b435770f4062de6fb5c7e",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/templates/role-template.md": {
-    "mtime": 1778693525.5288773,
-    "ast_hash": "14925cf97d28fdffe8ad1056b593171f",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/rules/csharp.md": {
-    "mtime": 1776446291.8942697,
-    "ast_hash": "eb6e8a92533fb673c021946684800b62",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/rules/gdscript.md": {
-    "mtime": 1776446291.8942697,
-    "ast_hash": "5d5542d79033739fb40af357ea02f664",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/rules/python.md": {
-    "mtime": 1776446291.897603,
-    "ast_hash": "1189f79a184d48acd88ade5dfa07a532",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/rules/typescript.md": {
-    "mtime": 1776446291.897603,
-    "ast_hash": "d6c10119c9f0dade338b696f7c7d0645",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/architect.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "172a255d172745a491a73e67f6427e99",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/build.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "775b547b713cd65ce4c20068a1ae411b",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/content-designer.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "c5ac6881b858804e3588f4d77545ae49",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/friction-reviewer.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "65ec922e6c646a98bc0dcfe056d00bc6",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/orchestrator.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "63078d9a592ebc4739ba1d46f340b94e",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/plan.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "2efff4c0bc9fa12c7ba5e651e9578ce0",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/progenitor.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "36d0bc20283ccedcdeb4e13741b8e241",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/researcher.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "8f976fedf683ce0a8b26b8590a0ac90e",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/reviewer.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "2314dacad1dc4afd985d5fd71db6a4e5",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/security-auditor.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "b850254ad14569e0ed4e5e73f1d392d3",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/skeptic.md": {
-    "mtime": 1778806532.5557718,
-    "ast_hash": "e434f0201b9bd1a257d1b1553ee448fe",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/tester.md": {
-    "mtime": 1778806532.5591052,
-    "ast_hash": "a01cb7ec05ebc3538468c596ae0bb2fc",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/agents/ui-ux-designer.md": {
-    "mtime": 1778806532.5591052,
-    "ast_hash": "36bf62a4070db518a44c190eb126d735",
-    "semantic_hash": ""
-  },
-  "/home/nikki/dotfiles/opencode/pipeline/slack-app-manifest.yaml": {
-    "mtime": 1779372466.7806444,
-    "ast_hash": "b705d4b8bca2e1bf48cc916c835c3544",
-    "semantic_hash": ""
-  },
   "/home/nikki/dotfiles/sway/themes/gruvbox/images/makima.png": {
-    "mtime": 1779481372.0581768,
+    "mtime": 1779480925.3837852,
     "ast_hash": "f9a833861f5071cdc3323c48c64e5dd3",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/themes/synthwave-84/images/78101446-smooth-sailing-with-manjaro-wallpaper.jpg": {
-    "mtime": 1779481372.0581768,
+    "mtime": 1779480925.3854036,
     "ast_hash": "d91ab43b9977b4e0b34ff821d90bd090",
     "semantic_hash": ""
   },
   "/home/nikki/dotfiles/sway/scripts/toggle-wofi.sh": {
-    "mtime": 1779592515.5757277,
+    "mtime": 1779651773.9668097,
     "ast_hash": "e7034bf532f41a7cce06c9522cef8e87",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/SOUL.md": {
+    "mtime": 1780612814.3032215,
+    "ast_hash": "955b5e32eb7968402dcaea7bf2e82a05",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/profiles/test-automation-engineer/SOUL.md": {
+    "mtime": 1780612415.4325924,
+    "ast_hash": "55d9baaac3be0c1baae39c5c0efaeb54",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/profiles/big-pickle-simple-tasks/SOUL.md": {
+    "mtime": 1780612415.4324446,
+    "ast_hash": "de1da634ff1ebb517d5fca75936ca8cd",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/profiles/implementation-specialist/SOUL.md": {
+    "mtime": 1780612415.4324446,
+    "ast_hash": "4e0fab35a44740ef9f432ccad5526a7b",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/profiles/requirements-clarifier/SOUL.md": {
+    "mtime": 1780612415.4324446,
+    "ast_hash": "e77a68e58af256d46a03231a05419b91",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/profiles/architect-designer/SOUL.md": {
+    "mtime": 1780612415.4323897,
+    "ast_hash": "eef2f1859da56695b637f28861f88839",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/profiles/tech-lead/SOUL.md": {
+    "mtime": 1780612814.303378,
+    "ast_hash": "955b5e32eb7968402dcaea7bf2e82a05",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.claude/skills/context-rotation-summary/handoff-doc.py": {
+    "mtime": 1780370760.3641233,
+    "ast_hash": "fa57b092ee79436aea5d5f7db619d07d",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.claude/skills/context-rotation-summary/test_handoff_doc.py": {
+    "mtime": 1780370773.1895032,
+    "ast_hash": "1af0dfc14839da828c2e58ff735c0364",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/docs/archive/pipeline/friction-reviewer.md": {
+    "mtime": 1780371014.1656399,
+    "ast_hash": "cfc54e5dd56df247be3924fc1ae50a12",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.claude/skills/context-rotation-summary/SKILL.md": {
+    "mtime": 1780370735.0853746,
+    "ast_hash": "364a19b49dc387e5b3ef6fcd081e20ac",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/tui.json": {
+    "mtime": 1780612415.432847,
+    "ast_hash": "9777dfae6da8279c970516df25042029",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/skills/software-development/graphify/SKILL.md": {
+    "mtime": 1780609985.9266362,
+    "ast_hash": "1f049ae4f001eca67270b7555c89f153",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/command/scan.md": {
+    "mtime": 1780612786.4832246,
+    "ast_hash": "d9d28e98f7c037992b2be7868462235f",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/command/build.md": {
+    "mtime": 1780612786.4831533,
+    "ast_hash": "f5a629df6b7ff4fb8b1488daedbfcb39",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/skills/ship/SKILL.md": {
+    "mtime": 1780612415.432847,
+    "ast_hash": "bb0f01039bdc1029ead1be46392349f0",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/agent/requirements-clarifier.md": {
+    "mtime": 1780612415.4324446,
+    "ast_hash": "e77a68e58af256d46a03231a05419b91",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/agent/big-pickle-simple-tasks.md": {
+    "mtime": 1780612415.4324446,
+    "ast_hash": "de1da634ff1ebb517d5fca75936ca8cd",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/agent/architect-designer.md": {
+    "mtime": 1780612415.4323897,
+    "ast_hash": "eef2f1859da56695b637f28861f88839",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/agent/tech-lead.md": {
+    "mtime": 1780612814.3030589,
+    "ast_hash": "955b5e32eb7968402dcaea7bf2e82a05",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/agent/implementation-specialist.md": {
+    "mtime": 1780612415.4324446,
+    "ast_hash": "4e0fab35a44740ef9f432ccad5526a7b",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/agent/test-automation-engineer.md": {
+    "mtime": 1780612415.4325924,
+    "ast_hash": "55d9baaac3be0c1baae39c5c0efaeb54",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/.hermes/skills/productivity/session-transfer/SKILL.md": {
+    "mtime": 1780613949.44201,
+    "ast_hash": "d2d44cbab73cf11e09f1debe0a05636e",
+    "semantic_hash": ""
+  },
+  "/home/nikki/dotfiles/opencode/skills/github-feature-branch-integration/SKILL.md": {
+    "mtime": 1780613734.278641,
+    "ast_hash": "1d10ea44098ff45216f339ebb5780bac",
     "semantic_hash": ""
   }
 }

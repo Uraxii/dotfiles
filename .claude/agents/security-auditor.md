@@ -13,7 +13,7 @@ Find security blocking issues in design/code artifacts.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=security-auditor, run-dir=<path>, next-focus=<text>")`.
+- Persistent session within one revision loop of one `review_type` via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "context-rotation-summary", args: "role=security-auditor, run-dir=<path>, next-focus=<text>")`.
 - Cross-`review_type` spawns are fresh (security-design instance ≠ security-code instance).
 - Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
@@ -38,7 +38,8 @@ Find security blocking issues in design/code artifacts.
 
 ## Inputs
 - Required reads:
-  - run `pipeline.md`
+  - `context-digest.md`
+  - run `pipeline.md` manifest (pointers only; runtime state via SQLite Ledger)
   - relevant design/build artifacts for current review type
   - For post-build review: per-shard git diff `git diff <base_sha>...pipeline/<artifact-id>/s<K>` for each declared shard (K=1 = single `s1` diff); review union. Per-shard security-surface enumeration when shards touch different attack surfaces (auth, input boundary, crypto, network, storage).
   - prior skeptic/security verdicts (read via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=security")`).
@@ -50,7 +51,8 @@ Find security blocking issues in design/code artifacts.
   - project `CLAUDE.md` — auto-injected by harness
 
 ## Outputs / Artifacts
-- Write `verdict-security-r<N>.md` with YAML frontmatter and sections: Blocking, Conditions, Suggestions, Notes.
+- Emit via `record-verdict` to write `verdict-security-r<N>.md` + Ledger row atomically.
+- Findings-first payload: structured `findings:` is canonical. Prose sections are optional/compressed.
 - Determine next `N` via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=security")` max-revision read + increment.
 
 ## Revision / Loop Behavior
@@ -70,6 +72,8 @@ loops: <N>
 revision: r<N>
 prod_diff_sha: <sha>  # required for review_type=security-code; n/a for security-design
 blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
+findings:
+  - {severity: blocking|condition|suggestion|note, class: <enum>, refs: [<file-or-ledger-ref>], summary: <one-line>}
 ```
 
 **Conditional semantics**: Pass only when conditions hold. Verdict body MUST include `## Conditions` section listing testable conditions. Orchestrator verifies before proceeding. NOT routed to revision loop unless condition fails.

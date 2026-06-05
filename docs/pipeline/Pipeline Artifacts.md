@@ -1,6 +1,6 @@
 # Pipeline Artifacts
 
-A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artifact-id>/`. Each agent owns specific files; the orchestrator owns only the ledger + a couple of cross-cutting reports.
+A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artifact-id>/`. Runtime state lives in the SQLite Ledger. Files in the run dir are artifacts, manifests, or pointers; they must not duplicate ledger state.
 
 ## Naming
 
@@ -13,20 +13,21 @@ A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artif
 
 ```
 <repo>/.pipeline/runs/<artifact-id>/
-├── pipeline.md                              # orchestrator ledger
+├── pipeline.md                              # compact manifest/pointers; not runtime source of truth
 ├── brief.md                                 # AGENT-BRIEF template (intake)
+├── context-digest.md                        # common compact handoff input for every spawn
 ├── plan.ref                                 # canonical plan pointer (if plan exists)
 ├── research.md                              # researcher output
 ├── ideation.md                              # content-designer output
-├── design.md                                # architect output
+├── design.md                                # architect decisions/rationale/ADR refs
+├── build-contract.md                        # implementation handoff: interfaces, AC map, file/module map
 ├── frontend-handoff.md                      # ui-ux-designer OR build fallback
 ├── options-r<N>.md                          # decision-point options (per d<N>; owned by options_source role)
 ├── options-r<N>.html                        # optional visual companion (Phase 1+)
 ├── awaiting-decision-r<N>.md                # transient async state; removed on resume (orchestrator-owned)
 ├── decision-r<N>.md                         # decision verdict + pick (orchestrator-owned)
 ├── test-paths.txt                           # build-emitted manifest (overrides default test-path globs)
-├── prebuild-skeptic-code-r<N>-s<K>.md       # per shard, per revision
-├── build-evidence-r<N>-s<K>.md              # per shard, per revision
+├── build-evidence-r<N>-s<K>.md              # per shard, per revision; includes prebuild skeptic section
 ├── verdict-design-r<N>.md
 ├── verdict-code-r<N>.md
 ├── verdict-ops-r<N>.md
@@ -36,8 +37,7 @@ A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artif
 ├── verdict-security-r<N>.md
 ├── verdict-test-r<N>.md
 ├── verdict-test-audit-r<N>.md               # skeptic test-audit gate (when included)
-├── verdict-friction-r<N>.md                 # friction-reviewer Approved/Blocked
-├── friction-report-r<N>.md
+├── friction-findings-r<N>.md                # deterministic non-gating friction audit
 ├── pr-report.md                             # orchestrator after pr_publish
 └── worktrees/
     ├── s1/                                  # shard 1 git worktree
@@ -47,14 +47,15 @@ A pipeline run produces a directory of files under `<repo>/.pipeline/runs/<artif
 
 Worktrees are cleaned up after merge. The artifact files remain.
 
-## Ledger schema (`pipeline.md`)
+## Run manifest (`pipeline.md`)
 
-Orchestrator-only. Capped at ~40 lines. YAML frontmatter + a couple of markdown sections:
+Orchestrator-only. Capped at ~40 lines. Manifest/pointers only. The SQLite Ledger is canonical for runtime state: phase, task ids, shard status, gate status, decision state, continuation tokens, and timestamps. `pipeline.md` exists for human orientation and path lookup; never mirror full ledger rows into it.
 
 ```yaml
 ---
 run_id: <artifact-id>
-plan_id: <artifact-id|none>
+ledger_id: <sqlite-row-id-or-uuid>
+plan_ref: <artifact-id|none>
 brief: <one-line>
 roles_included: [..]
 roles_skipped: {role: reason}
@@ -62,35 +63,24 @@ parallel: true|false                                  # true when K>=2
 base_ref: <branch-name>
 base_sha: <sha-at-intake>
 github_delivery: pr|branches-only
-shards:
-  s1: {status: pending|running|passed|failed|skipped_due_to_dep, branch: <ref>, worktree: <path>, evidence: <file>, depends_on: [..]}
-pr_urls:
-  s1: <url>
-merge_shas:
-  s1: <sha|null>
-decision_points:                                      # if brief/plan declared any
-  d1: {after: <role>, options_source: <role>, delivery: sync|async, timeout_days: 7, status: pending|active|resolved|timeout|cancelled}
-paused_on_decision:                                   # present only while waiting on async decision
-  decision_id: d<N>
-  delivery_mode: async
-  slack_channel: <channel-id>
-  opened_at: <iso8601>
-  timeout_at: <iso8601>
-  next_wake_at: <iso8601>
+artifacts:
+  context_digest: context-digest.md
+  brief: brief.md
+  plan: plan.ref
+  design: design.md
+  build_contract: build-contract.md
+  ledger_query: query-ledger --run <artifact-id>
 ---
 
 ## Stages
-- role: status (rN)
-- decision-elicitation: d<N> (sync|async) → chosen|timeout|cancelled
-- pr_publish: <pending|complete>
+- See Ledger: `query-ledger --run <artifact-id> --view stages`
 
 ## Summary
-Loops: design <D>, code <C>, ops <O>
-Status: in-progress|paused_on_decision|complete|halted
-PRs: <count> opened
+Status: see Ledger
+PRs: see Ledger
 ```
 
-The `shards:` map is the canonical build status — build does not write a row in `## Stages`.
+Shard/build/gate/decision status belongs in the SQLite Ledger. `pipeline.md` may point to latest artifacts but must not duplicate ledger state.
 
 ## Verdict schema (all gate roles)
 
@@ -99,8 +89,8 @@ YAML frontmatter on every `verdict-<type>-r<N>.md`:
 ```yaml
 ---
 verdict: Approved | Blocked | Conditional
-role: <skeptic|reviewer|tester|security-auditor|friction-reviewer>
-review_type: <design|code|ops|review|security|test|test-audit|friction>
+role: <skeptic|reviewer|tester|security-auditor>
+review_type: <design|code|ops|review|security|test|test-audit>
 loops: <N>
 revision: r<N>
 prod_diff_sha: <40-hex>      # required on skeptic code + test-audit; enables pin validation
@@ -108,7 +98,7 @@ axis: standards | spec       # required on reviewer per-axis verdicts
 ---
 ```
 
-Body sections vary by role (typically Blocking / Conditions / Suggestions / Nits / Notes).
+Verdicts are emitted through `record-verdict`, which validates schema, writes ledger rows, and writes the markdown artifact atomically. `findings:` is canonical. Body prose is optional; when present it should be compressed.
 
 ## Brief schema (`brief.md`)
 
@@ -149,6 +139,7 @@ Set by the [[Pipeline Skills|agent-brief-format]] skill. Durability over precisi
 - key failure logs (if any)
 - TDD section: red-green sequence OR the literal line `TDD: skipped, reason: <eco-detail>`
 - optional `commit_sha` (pipeline-internal audit anchor; the PR commit is opaque post-squash)
+- prebuild skeptic section: change-risk scan, failure-mode assertions, targeted test scaffold, precheck result. Use a separate `prebuild-skeptic-code-r<N>-s<K>.md` only when an actual separate precheck run must happen before implementation.
 
 Missing evidence file for a declared shard = `skeptic-code` gate Blocks with the specific shard cited.
 

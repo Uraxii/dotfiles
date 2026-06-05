@@ -5,7 +5,7 @@ Reusable procedures invoked by pipeline agents via the `Skill` tool. Files are e
 | Skill | Description |
 |-------|-------------|
 | [pipeline-verdict-parse](pipeline-verdict-parse/SKILL.md) | Glob `verdict-<type>-r<N>.md`, pick max N, parse YAML frontmatter. |
-| [pipeline-handoff-doc](pipeline-handoff-doc/SKILL.md) | Persistence-rotation summary template for persistent roles at context threshold. |
+| [context-rotation-summary](context-rotation-summary/SKILL.md) | Local context-rotation summary for persistent roles at context threshold; references digest/artifacts, does not duplicate content. |
 | [pipeline-agent-brief-format](pipeline-agent-brief-format/SKILL.md) | `brief.md` template: durable-over-precise (no file paths/line numbers). |
 | [pipeline-artifact-slug](pipeline-artifact-slug/SKILL.md) | Resolve canonical artifact-id via runtime-aware artifact-slug tool. |
 | [pipeline-test-path-resolve](pipeline-test-path-resolve/SKILL.md) | Canonical test-path glob set; reads optional `test-paths.txt` manifest. |

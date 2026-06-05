@@ -81,7 +81,7 @@ If `pipeline.toml` is missing the `[slack]` block, the orchestrator falls back t
 1. Verify preconditions; degrade to `sync` on failure.
 2. Ensure the per-run listener is alive (idempotent): read `<run-dir>/slack-listener.pid` + `os.kill(pid, 0)`. If dead/missing, spawn detached via `subprocess.Popen(..., start_new_session=True)`; redirect stdout/stderr to `<run-dir>/slack-listener.log`.
 3. Write `<run-dir>/awaiting-decision-r<N>.md` (single trigger for the listener — no API call from orchestrator).
-4. Update `pipeline.md`: `status: paused_on_decision`, add `paused_on_decision:` block.
+4. Update SQLite Ledger: `status=paused_on_decision`, decision row active.
 5. `ScheduleWakeup(delaySeconds=600, prompt="<<resume-pipeline-<artifact-id>>>", reason="polling decision d<N> @10min")`.
 6. Halt. Control returns to the user.
 
@@ -99,7 +99,7 @@ Each wake:
 
 1. Read `<run-dir>/awaiting-decision-r<N>.md` to recover state.
 2. Check `<run-dir>/decision-r<N>.md` existence:
-   - Exists → parse `verdict` + `chosen_option`, remove `paused_on_decision` block from `pipeline.md`, resume pipeline (re-spawn `options_source` with decision file in Read set).
+   - Exists → parse `verdict` + `chosen_option`, mark decision resolved in SQLite Ledger, resume pipeline (re-spawn `options_source` with decision file in Read set).
 3. Else check `now >= timeout_at`:
    - True → write `decision-r<N>.md` with `verdict: timeout`, halt + surface.
 4. Else check listener health: read `<run-dir>/slack-listener.pid`, then `os.kill(pid, 0)`.
@@ -125,7 +125,7 @@ Click a button. No text parsing.
 - Default timeout 7 days; override via `timeout_days` per point.
 - Confirmation message posted **before** the pipeline reads the decision file (listener writes the file last, after the Slack confirmation succeeds).
 - Optional `SLACK_ALLOWED_USERS` allowlist (comma-separated user IDs in `slack.env`) restricts who can click.
-- [[Pipeline Stages|friction-reviewer]] end-of-run audit scans `<run-dir>/awaiting-decision-*.md`. Any remaining = anomaly logged; orphan cleanup deferred to next orchestrator startup scan.
+- [[Pipeline Gates|pipeline-friction-audit]] end-of-run audit scans `<run-dir>/awaiting-decision-*.md`. Any remaining = anomaly logged; orphan cleanup deferred to next orchestrator startup scan.
 
 ## Failure modes
 

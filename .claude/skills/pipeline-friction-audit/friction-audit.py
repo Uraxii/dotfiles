@@ -79,38 +79,27 @@ def check_adr_assertion(run_dir: Path) -> dict | None:
     return None
 
 
-def check_task_id_continuity(run_dir: Path) -> dict | None:
+def check_ledger_ref(run_dir: Path) -> dict | None:
     pipeline_md = run_dir / "pipeline.md"
     if not pipeline_md.exists():
-        return {"check": "task-id-continuity", "citation": "pipeline.md missing", "severity": "high"}
+        return {"check": "ledger-ref", "citation": "pipeline.md missing", "severity": "high"}
     text = pipeline_md.read_text(encoding="utf-8", errors="replace")
-    # Persistent roles per orchestrator doctrine
-    persistent = ["architect", "build", "skeptic", "reviewer", "security-auditor",
-                  "tester", "ui-ux-designer", "content-designer"]
-    # Only flag roles that ran (mentioned in Stages section)
-    mentioned = [r for r in persistent if re.search(rf"^\s*-\s*{re.escape(r)}\b", text, re.MULTILINE)]
-    if not mentioned:
-        return None
-    # task_id keying tracked as 'task_id:' or 'task_ids:' anywhere in pipeline.md
-    if not re.search(r"task_id[s]?\s*:", text):
+    if not re.search(r"^ledger_id\s*:", text, re.MULTILINE) and "ledger_query:" not in text:
         return {
-            "check": "task-id-continuity",
-            "citation": f"pipeline.md has no task_id record; persistent roles ran: {', '.join(mentioned)}",
-            "severity": "low",
+            "check": "ledger-ref",
+            "citation": "pipeline.md manifest missing ledger_id or artifacts.ledger_query pointer",
+            "severity": "med",
         }
     return None
 
 
-def check_phase_field(run_dir: Path) -> dict | None:
-    pipeline_md = run_dir / "pipeline.md"
-    if not pipeline_md.exists():
-        return None
-    text = pipeline_md.read_text(encoding="utf-8", errors="replace")
-    if not re.search(r"^phase\s*:", text, re.MULTILINE):
+def check_context_digest(run_dir: Path) -> dict | None:
+    digest = run_dir / "context-digest.md"
+    if not digest.exists():
         return {
-            "check": "phase-field",
-            "citation": "pipeline.md missing phase: field (PR-5 deferred check)",
-            "severity": "low",
+            "check": "context-digest",
+            "citation": "context-digest.md missing",
+            "severity": "med",
         }
     return None
 
@@ -145,12 +134,19 @@ def check_skill_invocation(run_dir: Path, repo_root: Path) -> dict | None:
     for f in agents_dir.glob("*.md"):
         for m in pat.findall(f.read_text(encoding="utf-8", errors="replace")):
             invoked.add(m)
-    unreferenced = declared_skills - invoked - {"caveman"}  # filter known-external
+    unreferenced = declared_skills - invoked - {
+        "caveman",
+        "pipeline-agent-preflight",  # doctrine loaded by role text, not Skill tool
+        "pipeline-prod-diff-sha",    # script utility used by pin-validation tooling
+    }
     # Only flag pipeline-native skills
     pipeline_native = {
-        "agent-brief-format", "artifact-slug", "decision-elicitation", "handoff-doc",
-        "prod-diff-sha", "test-path-resolve", "verdict-parse", "worktree-lifecycle",
-        "friction-audit",
+        "pipeline-agent-brief-format", "pipeline-artifact-slug",
+        "pipeline-decision-elicitation", "context-rotation-summary",
+        "pipeline-prod-diff-sha", "pipeline-test-path-resolve",
+        "pipeline-verdict-parse", "pipeline-worktree-lifecycle",
+        "pipeline-friction-audit", "pipeline-revision-route",
+        "pipeline-dep-graph-compose", "pipeline-agent-preflight",
     }
     unreferenced &= pipeline_native
     if unreferenced:
@@ -167,8 +163,8 @@ CHECKS = [
     ("two-axis-review", check_two_axis_review),
     ("tdd-evidence", check_tdd_evidence),
     ("adr-assertion", check_adr_assertion),
-    ("task-id-continuity", check_task_id_continuity),
-    ("phase-field", check_phase_field),
+    ("ledger-ref", check_ledger_ref),
+    ("context-digest", check_context_digest),
     ("preflight-critique", check_preflight),
 ]
 

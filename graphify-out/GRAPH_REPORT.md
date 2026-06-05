@@ -1,16 +1,16 @@
-# Graph Report - dotfiles  (2026-05-24)
+# Graph Report - dotfiles  (2026-06-04)
 
 ## Corpus Check
-- 299 files · ~199,324 words
+- 246 files · ~174,185 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3193 nodes · 3795 edges · 409 communities (362 shown, 47 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 33 edges (avg confidence: 0.54)
+- 3650 nodes · 4438 edges · 427 communities (379 shown, 48 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 174 edges (avg confidence: 0.75)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `08439267`
+- Built from commit: `93f5221f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -264,7 +264,6 @@
 - [[_COMMUNITY_Community 250|Community 250]]
 - [[_COMMUNITY_Community 251|Community 251]]
 - [[_COMMUNITY_Community 252|Community 252]]
-- [[_COMMUNITY_Community 253|Community 253]]
 - [[_COMMUNITY_Community 254|Community 254]]
 - [[_COMMUNITY_Community 255|Community 255]]
 - [[_COMMUNITY_Community 256|Community 256]]
@@ -318,8 +317,6 @@
 - [[_COMMUNITY_Community 307|Community 307]]
 - [[_COMMUNITY_Community 312|Community 312]]
 - [[_COMMUNITY_Community 315|Community 315]]
-- [[_COMMUNITY_Community 316|Community 316]]
-- [[_COMMUNITY_Community 317|Community 317]]
 - [[_COMMUNITY_Community 318|Community 318]]
 - [[_COMMUNITY_Community 319|Community 319]]
 - [[_COMMUNITY_Community 320|Community 320]]
@@ -349,40 +346,56 @@
 - [[_COMMUNITY_Community 405|Community 405]]
 - [[_COMMUNITY_Community 406|Community 406]]
 - [[_COMMUNITY_Community 408|Community 408]]
+- [[_COMMUNITY_Community 409|Community 409]]
+- [[_COMMUNITY_Community 410|Community 410]]
+- [[_COMMUNITY_Community 411|Community 411]]
+- [[_COMMUNITY_Community 412|Community 412]]
+- [[_COMMUNITY_Community 413|Community 413]]
+- [[_COMMUNITY_Community 414|Community 414]]
+- [[_COMMUNITY_Community 415|Community 415]]
+- [[_COMMUNITY_Community 417|Community 417]]
+- [[_COMMUNITY_Community 418|Community 418]]
+- [[_COMMUNITY_Community 419|Community 419]]
+- [[_COMMUNITY_Community 420|Community 420]]
+- [[_COMMUNITY_Community 421|Community 421]]
+- [[_COMMUNITY_Community 423|Community 423]]
+- [[_COMMUNITY_Community 424|Community 424]]
+- [[_COMMUNITY_Community 425|Community 425]]
+- [[_COMMUNITY_Community 426|Community 426]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `theme` - 51 edges
+1. `keybinds` - 91 edges
 2. `theme` - 51 edges
-3. `bash` - 37 edges
-4. `overrides` - 34 edges
-5. `CommsProvider` - 25 edges
-6. `wofi` - 24 edges
-7. `SlackProvider` - 23 edges
-8. `swaylock` - 21 edges
-9. `run()` - 20 edges
-10. `Adapter` - 19 edges
+3. `theme` - 51 edges
+4. `bash` - 37 edges
+5. `overrides` - 34 edges
+6. `atomic_write_text()` - 28 edges
+7. `CommsProvider` - 25 edges
+8. `SlackProvider` - 24 edges
+9. `wofi` - 24 edges
+10. `ThreadRef` - 23 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Print block decision and exit cleanly.` --rationale_for--> `emit_block()`  [EXTRACTED]
-  .claude/hooks/cap_bash_timeout.py → .hermes/hooks/cap_bash_timeout.py
-- `CommsProvider` --uses--> `AuthCheck`  [INFERRED]
-  opencode/pipeline/comms/provider.py → opencode/pipeline/comms/types.py
-- `CommsProvider` --uses--> `DecisionPost`  [INFERRED]
-  opencode/pipeline/comms/provider.py → opencode/pipeline/comms/types.py
-- `CommsProvider` --uses--> `InboundConsumer`  [INFERRED]
-  opencode/pipeline/comms/provider.py → opencode/pipeline/comms/types.py
-- `CommsProvider` --uses--> `MessageRef`  [INFERRED]
-  opencode/pipeline/comms/provider.py → opencode/pipeline/comms/types.py
+- `test_message_ref_frozen()` --calls--> `MessageRef`  [INFERRED]
+  tests/pipeline/test_comms/test_types.py → .claude/pipeline/comms/types.py
+- `test_valid_sid_passes()` --calls--> `validate_sid()`  [INFERRED]
+  tests/test_sid_validation.py → .claude/pipeline/comms/env.py
+- `test_invalid_sid_raises()` --calls--> `validate_sid()`  [INFERRED]
+  tests/test_sid_validation.py → .claude/pipeline/comms/env.py
+- `test_atomic_write_creates_file()` --calls--> `atomic_write_text()`  [INFERRED]
+  tests/test_atomic_write.py → .claude/pipeline/comms/env.py
+- `test_atomic_write_no_tmp_remains()` --calls--> `atomic_write_text()`  [INFERRED]
+  tests/test_atomic_write.py → .claude/pipeline/comms/env.py
 
-## Communities (409 total, 47 thin omitted)
+## Communities (427 total, 48 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.10
 Nodes (46): _acquire_lock(), _atomic_write_state(), build_parser(), cmd_activate(), cmd_deactivate(), cmd_status(), _ensure_router_alive(), _get_pid_owner_uid() (+38 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.16
-Nodes (25): _acquire_pid_or_exit(), _build_snapshot(), _cleanup_orphan_tmps(), _cleanup_pidfile(), _install_signal_handlers(), _load_comms_context(), _load_comms_context_by_run_id(), main() (+17 more)
+Cohesion: 0.07
+Nodes (42): _acquire_pid_or_exit(), _build_snapshot(), _cleanup_orphan_tmps(), _cleanup_pidfile(), _gc_run_index(), IdleMonitor, _install_signal_handlers(), _load_comms_context() (+34 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.06
@@ -393,8 +406,8 @@ Cohesion: 0.05
 Nodes (37): *, gh auth login*, gh auth logout*, gh auth setup-git*, gh auth status*, gh pr close*, gh pr comment*, gh pr create* (+29 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.08
-Nodes (18): Post status/completion/friction-summary text., Post a question with option buttons and optional file attachments., Full-fidelity question post with explicit routing ids.          Used by pipeline, Full-fidelity decision post with explicit routing ids.          Used by pipeline, Scan conversations.replies for post with matching client_msg_id., Replace the body of a previously posted message., Post a thread-reply confirming an answer was recorded., Post a message visible ONLY to user_id. (+10 more)
+Cohesion: 0.06
+Nodes (34): MessageRef, Opaque handle to a single posted message.      For Slack: provider_data carries, build_decision_blocks(), build_question_blocks(), decode_button_payload(), encode_button_value(), Slack block builders for question/decision posts.  Owns BUTTON_LETTERS constant, Build Slack blocks for a decision post with option buttons. (+26 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.05
@@ -409,12 +422,12 @@ Cohesion: 0.10
 Nodes (10): Unit tests for glob_to_regex via scope-check with known change sets., dot glob normalizes to ** → matches everything., run(), TestCleanup, TestCreate, TestDriftIntersect, TestGlobToRegex, TestHelp (+2 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.06
-Nodes (32): Agent roles, code:bash (export OPENCODE_DISABLE_CLAUDE_CODE=1), code:javascript (// OPENCODE_DISABLE_CLAUDE_CODE sets q=true), code:bash (mkdir -p ~/.hermes), Custom tools, E8 empirical findings (bash matcher semantics + env-var), External dependencies, External dependencies (+24 more)
+Cohesion: 0.04
+Nodes (45): Agent roles, code:bash (export OPENCODE_DISABLE_CLAUDE_CODE=1), code:javascript (// OPENCODE_DISABLE_CLAUDE_CODE sets q=true), code:bash (mkdir -p ~/.hermes), Custom tools, E8 empirical findings (bash matcher semantics + env-var), External dependencies, External dependencies (+37 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.15
-Nodes (31): _atomic_write(), build_parser(), cmd_get(), cmd_read(), cmd_set(), cmd_stage(), _coerce_value(), dot_get() (+23 more)
+Cohesion: 0.07
+Nodes (48): _atomic_write(), build_parser(), cmd_get(), cmd_read(), cmd_set(), cmd_stage(), _coerce_value(), dot_get() (+40 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.12
@@ -434,7 +447,7 @@ Nodes (27): Clone kickstart.nvim, code:sh (git clone https://github.com/nvim-lua
 
 ### Community 14 - "Community 14"
 Cohesion: 0.07
-Nodes (26): awaiting-decision-r<N>.md schema, code:yaml (---), code:yaml (decision_points:), code:block3 (<topic>), code:yaml (---), code:yaml (---), code:yaml (paused_on_decision:), decision-r<N>.md schema (+18 more)
+Nodes (27): awaiting-decision-r<N>.md schema, code:yaml (---), code:yaml (decision_points:), code:toml ([slack]), code:yaml (---), code:yaml (---), code:yaml (paused_on_decision:), decision-r<N>.md schema (+19 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.07
@@ -442,15 +455,15 @@ Nodes (27): Allow-list categories, Anti-patterns observed in audit, Architect AD
 
 ### Community 16 - "Community 16"
 Cohesion: 0.07
-Nodes (26): code:bash (git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugin), External dependencies, External dependencies, External dependencies, External dependencies, ghostty, Key files, Key files (+18 more)
+Nodes (27): code:bash (git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugin), External dependencies, External dependencies, External dependencies, External dependencies, External dependencies, ghostty, Key files (+19 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.08
 Nodes (10): 5-char hex suffix rejected., 7-char hex suffix rejected., g' is not hex; rejected., Two word segments (not three) + hex rejected., Trailing newline: match() anchors at start but $ allows \\n in Python.         C, Tests for _RUN_ID_RE: ^[a-z]+(?:-[a-z]+){2}-[a-f0-9]{6}$, Standard artifact-slug accepted., Hex suffix with a-f digits accepted. (+2 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.08
-Nodes (25): Tests for session_bind.py: B4 SIGTERM-then-respawn, C3 two-step state, H3 dir mo, If cmdline contains session_inbox.py but different sid, verification fails., If /proc/<pid>/cmdline does not exist (pid gone), returns False., _sigterm_daemon(None) is a no-op., _sigterm_daemon sends SIGTERM when pid verification passes., _sigterm_daemon skips kill when pid does not belong to our daemon., _sigterm_daemon ignores ProcessLookupError (ESRCH) — pid already dead., Reactivate branch: state written with inbox_daemon_pid=None BEFORE spawn,     th (+17 more)
+Cohesion: 0.02
+Nodes (91): keybinds, agent_cycle, agent_cycle_reverse, agent_list, app_exit, command_list, display_thinking, editor_open (+83 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.08
@@ -465,8 +478,8 @@ Cohesion: 0.13
 Nodes (21): apply_profile(), _cmp(), default_profile_for(), detect_distro(), get_adapter(), is_headless(), main(), _parse_ver() (+13 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.19
-Nodes (13): AuthCheck, DecisionPost, InboundEvent, MessageRef, OptionSpec, QuestionPost, Provider-neutral value types for the comms abstraction.  Stdlib-only. No slack-b, Provider-neutral inbound interaction.      Emitted by the provider (push-side, s (+5 more)
+Cohesion: 0.07
+Nodes (34): AuthCheck, DecisionPost, InboundConsumer, OptionSpec, QuestionPost, Provider-neutral value types for the comms abstraction.  Stdlib-only. No slack-b, Push-side consumer the provider calls per normalized event.      Lives on the ro, Dispatch one normalized inbound event. (+26 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.08
@@ -474,43 +487,43 @@ Nodes (22): API endpoints, artifact-serve — reference, code:block1 (/tmp/claud
 
 ### Community 24 - "Community 24"
 Cohesion: 0.08
-Nodes (23): Adding a new skill, `agent-brief-format`, `artifact-slug`, `caveman`, code:block1 (.claude/skills/), code:yaml (---), code:bash (TEST_GLOBS=$(test -f test-paths.txt && cat test-paths.txt ||), code:block4 (Skill(skill: "<name>", args: "<key>=<value>, <key>=<value>")) (+15 more)
+Nodes (25): Adding a new skill, `agent-brief-format`, `artifact-slug`, `caveman`, code:block1 (.claude/skills/), code:yaml (---), code:bash (TEST_GLOBS=$(test -f test-paths.txt && cat test-paths.txt ||), code:block4 (Skill(skill: "<name>", args: "<key>=<value>, <key>=<value>")) (+17 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.17
-Nodes (10): build_slack_provider(), _EmptySnapshot, _project_hash(), SlackProvider — implements CommsProvider for Slack.  Sole module in the codebase, Post a decision-point with option buttons., Fallback snapshot when routing index not yet set., Zero-arg factory invoked by CommsRegistry. Loads env file once., Slack crash-recovery: recover_message_ts via conversations.replies scan. (+2 more)
+Cohesion: 0.18
+Nodes (10): Agent Handoff, code:markdown (# Handoff: <short title>), Common Pitfalls, Inputs, Overview, Procedure: Consuming a Handoff, Procedure: Creating a Handoff, Recommended Document Structure (+2 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.08
-Nodes (22): comms_root(), make_slack_json(), Fixtures for comms pipeline tests., Temporary ~/.claude/comms-router equivalent., Temporary ~/.claude/sessions equivalent., Fake pipeline run dir., Write a minimal slack.json. If provider is None, omits the field (legacy)., run_dir() (+14 more)
+Cohesion: 0.07
+Nodes (39): all_active_bindings(), _get_session_id(), inbox_dir(), is_bound(), _load_slack_json(), comms.session — provider-aware session binding reader.  Replaces session_slack.p, Return (channel_id, thread_ts) if an *active* binding exists.      Defaults to e, Provider-aware resolver. Returns ThreadRef or None.      The 2-tuple resolve_ses (+31 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.16
 Nodes (11): Tests for the payload split logic embedded in _resolve_route_dir_from_value., Call _resolve_route_dir_from_value with all filesystem ops stubbed out., Failure tuple has first=None and second=<reason>., Well-formed payload passes regex gates; index file missing → index_missing., Two pipes (3 fields) → malformed., split(|, 3) means 5th | stays in choice field — 4 parts still valid split., Path-traversal run_id rejected by regex., Bad qd_id (Q1 uppercase) rejected. (+3 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.09
-Nodes (7): Tests for pipeline_state.py: get/set/stage round trips, dot-path resolution., After a set, no .tmp file should remain., _write_with_lock must lock <path>.lock not <path> itself (B3).      Verify the s, The slack.warning field can be set via pipeline_state cmd_set (B2 pathway)., test_atomic_write_no_tmp_left(), test_warning_set_via_pipeline_state(), test_write_with_lock_uses_sidecar()
+Cohesion: 0.10
+Nodes (20): code:bash (git status), code:bash (git fetch origin), code:bash (git add <relevant files>), code:bash (git commit -m "<message>"), code:bash (git push -u origin <branch>), code:bash (git push), code:bash (gh pr create \), code:bash (gh pr comment <PR number> --body "/oc please review this PR ) (+12 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.15
-Nodes (15): CommsRegistry, get_registry(), Registry of available comms providers + active-provider resolver., Raised when [comms].provider names a key not in the registry., Process-global registry. Construct once via `get_registry()`., Idempotent: re-register same name replaces factory + clears cache., Return sorted list of registered provider names., Return provider instance by name. Raises UnknownProviderError on miss. (+7 more)
+Cohesion: 0.14
+Nodes (13): 1. High-Level Design, 2. Chosen Patterns, 3. Directory Structure Changes, 4. Technology Decisions, 5. Trade-off Analysis, code:mermaid (graph TB), Diagram Standards, Output Format (+5 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.23
-Nodes (20): build_parser(), _build_text(), main(), notify_decision(), notify_question(), notify_simple(), _now_iso(), _parse_awaiting_file() (+12 more)
+Cohesion: 0.20
+Nodes (22): get_registry(), Lazy global. First call triggers builtin registrations., build_parser(), _build_text(), main(), notify_decision(), notify_question(), notify_simple() (+14 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.10
 Nodes (20): Adapter families, Dashboard tech stack, Decision-elicitation contract, Delivery flow, Dotfiles Pipeline, Event Stream, Example dialogue, Flagged ambiguities (+12 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.10
-Nodes (20): _make_registry_with_fake(), Test comms/registry.py: R1, R2, R3., Re-registering same name replaces factory + clears cached instance., get_registry() returns same instance on repeated calls., get_registry() registers 'slack' as a builtin., R1: Missing [comms] section -> active_provider().name == 'slack'., Missing [comms].provider key -> default slack., R2: [comms].provider = 'discord' -> UnknownProviderError listing registered. (+12 more)
+Cohesion: 0.05
+Nodes (50): CommsRegistry, Registry of available comms providers + active-provider resolver., Raised when [comms].provider names a key not in the registry., Process-global registry. Construct once via `get_registry()`., Idempotent: re-register same name replaces factory + clears cache., Return sorted list of registered provider names., Return provider instance by name. Raises UnknownProviderError on miss., Resolve active provider from config + env. See resolve_provider_name. (+42 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.11
-Nodes (18): code:yaml (verdict: Approved | Blocked | Conditional), Completion / Reporting, Do, Don't, Inputs, Inputs, Lenses pushed elsewhere, Outputs / Artifacts (+10 more)
+Cohesion: 0.10
+Nodes (20): code:yaml (verdict: Approved | Conditional | Blocked), Completion / Reporting, Do, Don't, Inputs, Inputs, Inputs, Lenses pushed elsewhere (+12 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.14
@@ -525,20 +538,20 @@ Cohesion: 0.12
 Nodes (10): _project(), Tests for verdict_write.py + verdict_read.py: write→read round trip, latest-revi, Test write CLI by calling _atomic_write + _compose directly (no subprocess)., Frontmatter values written as `verdict: "approved"` should parse as 'approved'., Unquoted values are left as-is (regression guard)., _run_id(), test_parse_verdict_strips_double_quotes(), test_parse_verdict_unquoted_unchanged() (+2 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.20
-Nodes (17): all_active_bindings(), _get_session_id(), inbox_dir(), is_bound(), _load_slack_json(), comms.session — provider-aware session binding reader.  Replaces session_slack.p, Return (channel_id, thread_ts) if an *active* binding exists.      Defaults to e, Provider-aware resolver. Returns ThreadRef or None.      The 2-tuple resolve_ses (+9 more)
+Cohesion: 0.15
+Nodes (12): code:bash (graphify query "<question>"), code:bash (graphify path "<A>" "<B>"), code:bash (graphify explain "<concept>"), code:bash (graphify update .), Commands, Common Pitfalls, Graphify, Overview (+4 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.15
 Nodes (18): build_parser(), clear_runtime_files(), cmd_stop(), cmd_unexpose(), _injection_html(), main(), _make_handler(), parse_multipart_form() (+10 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.16
-Nodes (10): _now_iso(), SlackInboundStream — Bolt App + SocketModeHandler push-side adapter.  Owns the S, Start Bolt inbound transport. Idempotent (no-op if already started)., Watchdog: close handler when stop event fires., Return a Bolt action handler for the given button kind., Decode Slack-pipe action_id and emit InboundEvent (B6)., Write provider-internal audit file for unrouted/cross-channel events., Wraps Bolt App + SocketModeHandler. Push-side: invokes     consumer.dispatch(eve (+2 more)
+Cohesion: 0.08
+Nodes (24): _now_iso(), SlackInboundStream — Bolt App + SocketModeHandler push-side adapter.  Owns the S, Start Bolt inbound transport. Idempotent (no-op if already started)., Watchdog: close handler when stop event fires., Return a Bolt action handler for the given button kind., Decode Slack-pipe action_id and emit InboundEvent (B6)., Write provider-internal audit file for unrouted/cross-channel events., Wraps Bolt App + SocketModeHandler. Push-side: invokes     consumer.dispatch(eve (+16 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.11
-Nodes (16): Adversarial Probe, Blocking Patterns (cite file:line; require fix before Approved), code:yaml (verdict: Approved | Blocked | Conditional), Combined-State Step (K≥2 only), Completion / Reporting, Do, Don't, Heuristic Suggestions (flag in verdict; not auto-blocking) (+8 more)
+Nodes (16): Adversarial Probe, Blocking Patterns (cite file:line; require fix before Approved), code:yaml (verdict: Approved | Conditional | Blocked), Combined-State Step (K≥2 only), Completion / Reporting, Do, Don't, Heuristic Suggestions (flag in verdict; not auto-blocking) (+8 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.11
@@ -553,8 +566,8 @@ Cohesion: 0.11
 Nodes (17): Async delivery (Slack Socket Mode), code:yaml (decision_points:), code:toml ([slack]), Declaration, Failure modes, Flow, Guardrails, Per-project config (`<project>/.pipeline/pipeline.toml`) (+9 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.20
-Nodes (17): _make_thread(), _mock_client(), Test recover_message_ts: R9, R10., R9: history returns msg with matching metadata -> MessageRef populated., First matching message is returned even if later ones also match., R10: no match in history -> None (caller retries)., Empty history -> None., conversations_replies raises -> None (caller retries). (+9 more)
+Cohesion: 0.23
+Nodes (15): _build_provider(), _make_thread_ref(), _patch_app(), Test SlackProvider: R8, R15., All required scopes present -> AuthCheck(ok=True)., auth.test raises exception -> AuthCheck(ok=False) with message., Patch slack_bolt.App in sys.modules stub to return mock_app., R8: chat_postMessage mock receives metadata.event_payload.client_msg_id. (+7 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.12
@@ -585,8 +598,8 @@ Cohesion: 0.16
 Nodes (17): cmd_expose(), cmd_start(), cmd_status(), ensure_root(), _port_free(), Child process: close stdin, send stdout/stderr to LOG_FILE., Probe whether 127.0.0.1:<port> can be bound with SO_REUSEADDR.      Mirrors the, Publish 127.0.0.1:<port> via tailscale serve. Returns (ok, message). (+9 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.24
-Nodes (14): _make_index_with_route(), _make_message_ref(), _make_thread_ref(), Test InboundConsumerImpl dispatch: R4, R5, R6, R7, R16., R5: disallowed user button click -> ephemeral posted, no answer file., R6: button click -> answer-r<N>.md exists w/ delivery_mode: async (NOT slack)., R7: decision button -> decision-r<N>.md exists w/ delivery_mode: async., R16 (subset): second dispatch of same message_ts is ignored (idempotent). (+6 more)
+Cohesion: 0.17
+Nodes (11): 1. Clarified Requirements Summary, 2. User Stories, 3. Acceptance Criteria, 4. Edge Cases & Constraints, 5. Open Questions for Builder, 6. Suggested Implementation Phases (if applicable), Core Responsibilities, Escalation Triggers (+3 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.21
@@ -605,16 +618,16 @@ Cohesion: 0.12
 Nodes (6): Tests for _safe_yaml_scalar escaping., Slack U-prefixed user IDs are alphanumeric — no escaping needed., Escaped value loaded as YAML scalar round-trips correctly.          We parse the, Payload with \\ninjected_key: evil must not produce two YAML keys.          The, Document: function does NOT escape leading colon (security N2 gap).          Sla, TestSafeYamlScalar
 
 ### Community 58 - "Community 58"
-Cohesion: 0.23
-Nodes (15): _build_provider(), _make_thread_ref(), _patch_app(), Test SlackProvider: R8, R15., All required scopes present -> AuthCheck(ok=True)., auth.test raises exception -> AuthCheck(ok=False) with message., Patch slack_bolt.App in sys.modules stub to return mock_app., R8: chat_postMessage mock receives metadata.event_payload.client_msg_id. (+7 more)
+Cohesion: 0.29
+Nodes (6): Communication Style, Core Responsibilities, Decision Framework, Delegation Rules (Strict Adherence Required), Edge Case Handling, Operational Protocol
 
 ### Community 59 - "Community 59"
-Cohesion: 0.12
-Nodes (7): Test comms/types.py dataclass invariants., EventRole covers exactly the three expected values., ThreadRef is frozen — mutation must raise., B6: InboundEvent must not have a button_value field., test_event_role_literal_values(), test_inbound_event_has_no_button_value_field(), test_thread_ref_frozen()
+Cohesion: 0.06
+Nodes (58): dict, artifact_slug(), dep_graph_compose(), _err(), friction_audit(), _ok(), _parse_frontmatter(), prod_diff_sha() (+50 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.30
-Nodes (14): artifact_slug(), dep_graph_compose(), _err(), friction_audit(), _ok(), _parse_frontmatter(), prod_diff_sha(), pipeline-core tool handlers.  Each handler signature: `(args: dict, **kwargs) -> (+6 more)
+Cohesion: 0.18
+Nodes (10): code:bash (python3 .hermes/skills/github-pipeline-coordination/scripts/), code:bash (# Render/post an agent brief as an issue comment), code:bash (python3 .hermes/skills/github-pipeline-coordination/scripts/), GitHub Pipeline Coordination, Helper, Input JSON, Pitfalls, Policy (+2 more)
 
 ### Community 61 - "Community 61"
 Cohesion: 0.13
@@ -646,19 +659,19 @@ Nodes (12): ARCHIVED DOCUMENTATION, code:yaml (verdict: Approved | Blocked), Com
 
 ### Community 68 - "Community 68"
 Cohesion: 0.14
-Nodes (12): code:yaml (verdict: Approved | Blocked | Conditional), Completion / Reporting, Do, Don't, Inputs, Outputs / Artifacts, Review Types, Revision / Loop Behavior (+4 more)
+Nodes (12): code:yaml (verdict: Approved | Conditional | Blocked), Completion / Reporting, Do, Don't, Inputs, Outputs / Artifacts, Review Types, Revision / Loop Behavior (+4 more)
 
 ### Community 69 - "Community 69"
 Cohesion: 0.14
 Nodes (6): Adapter, ManualAdapter, PipAdapter, Subclass per package source. `dry_run` skips state changes., pip install --user. Auto-adds --break-system-packages on PEP 668     externally-, SkipAdapter
 
 ### Community 70 - "Community 70"
-Cohesion: 0.14
-Nodes (12): Args, code:markdown (---), Exit codes, Invocation, Lazy-read directive (M9), Output path, Per-role thresholds, pipeline-handoff-doc (+4 more)
+Cohesion: 0.12
+Nodes (17): Args, code:text (Role: <role>), Exit codes, Handoff block, Handoff block (embed in spawn return), Invocation, Lazy-read directive (M9), Output path (+9 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.14
-Nodes (13): Brief schema (`brief.md`), Build evidence, code:block1 (<repo>/.pipeline/runs/<artifact-id>/), code:yaml (---), code:yaml (---), code:markdown (## Brief), Ledger schema (`pipeline.md`), Naming (+5 more)
+Nodes (14): Brief schema (`brief.md`), Build evidence, code:block1 (<repo>/.pipeline/runs/<artifact-id>/), code:yaml (---), code:yaml (---), code:markdown (## Brief), Ledger schema (`pipeline.md`), Naming (+6 more)
 
 ### Community 72 - "Community 72"
 Cohesion: 0.14
@@ -673,8 +686,8 @@ Cohesion: 0.14
 Nodes (13): 1. Planning, 2. Tracer Bullet, 3. Incremental Loop, 4. Refactor, Anti-Pattern: Horizontal Slices, Checklist Per Cycle, code:block1 (WRONG (horizontal):), code:block2 (RED:   Write test for first behavior → test fails) (+5 more)
 
 ### Community 75 - "Community 75"
-Cohesion: 0.15
-Nodes (13): _make_snapshot_with_channel(), Test SlackInboundStream: R17, R18., R18: Slack-pipe action_id parsed inside adapter; InboundEvent has run_id/qd_id/o, Malformed button value -> ephemeral error posted, no InboundEvent., BUTTON_LETTERS[0] == A, [1] == B, etc., Return a fake routing snapshot stub., R17: SlackInboundStream receives event whose event.channel != bound channel, If no route found for thread_ts, no cross-channel check -> dispatch proceeds. (+5 more)
+Cohesion: 0.33
+Nodes (5): code:block1 (## Test Execution Summary), Edge Case Handling, Operational Protocol, Output Format, Quality Standards
 
 ### Community 76 - "Community 76"
 Cohesion: 0.15
@@ -697,8 +710,8 @@ Cohesion: 0.26
 Nodes (3): Tests for dep-graph-compose.py — stdlib unittest., run_script(), TestDepGraphCompose
 
 ### Community 81 - "Community 81"
-Cohesion: 0.15
-Nodes (7): Tests for B6 — atomic_write_text fsyncs tmp and parent dir before rename., Verify os.fsync is called at least once during an atomic write., pipeline_state._atomic_write delegates to atomic_write_text (B6)., verdict_write._atomic_write delegates to atomic_write_text (B6)., test_atomic_write_fsync_called(), test_pipeline_state_atomic_write_uses_helper(), test_verdict_write_atomic_write_uses_helper()
+Cohesion: 0.12
+Nodes (17): atomic_write_text(), Write *data* to *path* atomically with fsync.      Steps:     1. Write to ``<pat, atomic_write_text uses tmp + rename; no partial file on crash., If fsync fails, rename is NOT called — target stays absent., TestAtomicWriteSemantics, Tests for B6 — atomic_write_text fsyncs tmp and parent dir before rename., Verify os.fsync is called at least once during an atomic write., pipeline_state._atomic_write delegates to atomic_write_text (B6). (+9 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.15
@@ -761,24 +774,24 @@ Cohesion: 0.18
 Nodes (9): Completion / Reporting, Do, Don't, Inputs, Outputs / Artifacts, Revision / Loop Behavior, Role: Researcher, Stance (+1 more)
 
 ### Community 97 - "Community 97"
-Cohesion: 0.20
-Nodes (4): check_preflight(), check_skill_invocation(), main(), Check verdict files cite preflight + pre-emit critique sections per agent-prefli
+Cohesion: 0.15
+Nodes (5): check_preflight(), check_skill_invocation(), main(), Check verdict files cite preflight + pre-emit critique sections per agent-prefli, Check verdict files cite preflight + pre-emit critique sections per agent-prefli
 
 ### Community 98 - "Community 98"
-Cohesion: 0.25
-Nodes (9): atomic_write_text(), default_env_path(), load_env_file(), Generic 0o600-guarded env-file loader for pipeline scripts.  Verbatim move of le, Write *data* to *path* atomically with fsync.      Steps:     1. Write to ``<pat, Return the default env file path, honouring SLACK_ENV_FILE override., Validate session id matches ^[A-Za-z0-9_-]{8,64}$.      Returns sid unchanged on, Populate os.environ from a KEY=VAL env file. Existing env wins.      Tolerates: (+1 more)
+Cohesion: 0.40
+Nodes (4): Operational Principles, Self-Correction Protocol, When to Pause, Your Core Mandate
 
 ### Community 99 - "Community 99"
 Cohesion: 0.18
 Nodes (10): code:block1 (researcher ──► plan ──► architect ──► skeptic-design), code:md (## Task), Dependency graph, Inclusion rules, Persistence (long-running roles), Pipeline Stages, Related, Role catalog (+2 more)
 
 ### Community 100 - "Community 100"
-Cohesion: 0.18
-Nodes (9): Behavioral not procedural, code:markdown (# AGENT-BRIEF), Complete acceptance criteria, Durability over precision, Explicit scope boundaries, Invocation, pipeline-agent-brief-format, Principles (+1 more)
+Cohesion: 0.17
+Nodes (10): Behavioral not procedural, code:markdown (# AGENT-BRIEF), Complete acceptance criteria, Durability over precision, Explicit scope boundaries, Invocation, pipeline-agent-brief-format, Principles (+2 more)
 
 ### Community 101 - "Community 101"
-Cohesion: 0.18
-Nodes (9): 1. Preflight statement (first action of spawn), 2. Pre-emit verification (mandatory; tool-augmented), 3. Pre-emit adversarial critique (mandatory), code:block1 (Drift menu option 3 label "Proceed on original base_sha":), code:block2 (Label is 28 chars, within ≤30 ceiling.   # no tool output ci), Friction-audit checks, pipeline-agent-preflight, Returns (+1 more)
+Cohesion: 0.17
+Nodes (10): 1. Preflight statement (first action of spawn), 2. Pre-emit verification (mandatory; tool-augmented), 3. Pre-emit adversarial critique (mandatory), code:block1 (Drift menu option 3 label "Proceed on original base_sha":), code:block2 (Label is 28 chars, within ≤30 ceiling.   # no tool output ci), Friction-audit checks, Orchestrator validation, pipeline-agent-preflight (+2 more)
 
 ### Community 102 - "Community 102"
 Cohesion: 0.29
@@ -805,7 +818,7 @@ Cohesion: 0.20
 Nodes (9): artifact-serve, code:bash (# 1. Stage a directory (always symlinked — never copied). --), code:bash (alias as='python3 ~/.claude/skills/artifact-serve/scripts/ar), code:bash (chmod +x ~/.claude/skills/artifact-serve/scripts/artifact-se), Implementation, Quick start, Security, Setup (one-time) (+1 more)
 
 ### Community 108 - "Community 108"
-Cohesion: 0.29
+Cohesion: 0.40
 Nodes (8): Activation, Auto-Clarity, Boundaries, caveman, code:block1 (memory:save "Use caveman-full output style across all sessio), Intensity, Persistence, Rules
 
 ### Community 109 - "Community 109"
@@ -841,7 +854,7 @@ Cohesion: 0.20
 Nodes (6): _build_question_blocks and _build_decision_blocks emit canonical value format., Each question button value = <phash8>|<run-id>|<qid>|<key>., Each decision button value = <phash8>|<run-id>|<did>|<key>., Question button action_ids = question_pick_<KEY>., Decision button action_ids = decision_pick_<KEY>., TestButtonBlockConstruction
 
 ### Community 117 - "Community 117"
-Cohesion: 0.31
+Cohesion: 0.36
 Nodes (3): _recover_message_ts returns None on miss; ts on match., Messages without metadata field don't crash the scan., TestRecoverMessageTs
 
 ### Community 118 - "Community 118"
@@ -849,8 +862,8 @@ Cohesion: 0.20
 Nodes (9): Behaviour, code:bash (uv run --script ~/.claude/pipeline/session_bind.py activate), Invocation, Output contract, Related, Reverse, Side effects, slack-bind (+1 more)
 
 ### Community 119 - "Community 119"
-Cohesion: 0.16
-Nodes (10): InboundConsumerImpl, Write inbox/<msg_ts>.json atomically from InboundEvent. Returns True if written., Write unrouted/<msg_ts>.json for events with no route in index., Look up run-index by run_id + phash8. Returns (run_dir, run_id) or (None, reason, Implements InboundConsumer Protocol.      Provider's worker thread calls dispatc, Dispatch one normalized inbound event., Handle button click: resolve run_dir, write answer/decision, confirm., _resolve_route_dir_from_run_id() (+2 more)
+Cohesion: 0.67
+Nodes (3): dark, light, diffLineNumber
 
 ### Community 120 - "Community 120"
 Cohesion: 0.20
@@ -869,20 +882,20 @@ Cohesion: 0.22
 Nodes (8): code:bash (sudo pacman -S git stow         # Arch / Manjaro), code:bash (# 1. zsh: redirect to $ZDOTDIR (zsh always reads ~/.zshenv, ), code:bash (rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && ), Component inventory, First-time setup (per machine), Quick start, Uraxii Dotfiles, Useful packages
 
 ### Community 124 - "Community 124"
-Cohesion: 0.22
-Nodes (8): Code floor, implementation-specialist, Integration, Output, Pause, Scope, Self-review (before return), TDD
+Cohesion: 0.20
+Nodes (9): Code floor, code:text (Role: implementation-specialist), implementation-specialist, Integration, Output, Pause, Scope, Self-review (before return) (+1 more)
 
 ### Community 125 - "Community 125"
 Cohesion: 0.22
 Nodes (8): 1. In-process, 2. Local-substitutable, 3. Remote but owned (Ports & Adapters), 4. True external (Mock), Deepening, Dependency categories, Seam discipline, Testing strategy: replace, don't layer
 
 ### Community 126 - "Community 126"
-Cohesion: 0.56
-Nodes (7): _atomic_write(), build_parser(), _compose(), main(), _now_iso(), _run_dir(), _verdict_path()
+Cohesion: 0.67
+Nodes (3): dark, light, markdownCode
 
 ### Community 127 - "Community 127"
-Cohesion: 0.22
-Nodes (8): Friction verdict (end-of-run), Loop limits, Pipeline Gates, Related, Revision routing, Test-only revision (pin mechanism), Two-axis reviewer, Verdict types
+Cohesion: 0.20
+Nodes (9): Friction audit (end-of-run), Friction verdict (end-of-run), Loop limits, Pipeline Gates, Related, Revision routing, Test-only revision (pin mechanism), Two-axis reviewer (+1 more)
 
 ### Community 128 - "Community 128"
 Cohesion: 0.22
@@ -892,17 +905,13 @@ Nodes (9): 1. Create the channel + invite the bot, 2. Set the channel as global 
 Cohesion: 0.39
 Nodes (8): _assert_table_sync(), _default_orch_path(), _die(), main(), _parse_frontmatter(), Extract scalar key:value pairs from YAML frontmatter block., Drift guard (C3/C5): compare ROUTING_TABLE against orchestrator.md table., _route()
 
-### Community 130 - "Community 130"
-Cohesion: 0.22
-Nodes (3): atomic_write_text uses tmp + rename; no partial file on crash., If fsync fails, rename is NOT called — target stays absent., TestAtomicWriteSemantics
-
 ### Community 131 - "Community 131"
 Cohesion: 0.22
 Nodes (7): Claude Code frontmatter example, code:yaml (---), code:yaml (---), code:markdown (# Role: <Role Name>), OpenCode frontmatter example, Required body sections, Role Template
 
 ### Community 132 - "Community 132"
-Cohesion: 0.36
-Nodes (8): Tests for H2 — load_env_file refuses files with loose permissions., Read-only file (no write bits) should still load if other bits clear., test_force_load_override(), test_load_mode_400(), test_load_mode_600(), test_refuse_mode_644(), test_refuse_mode_664(), _write_env()
+Cohesion: 0.35
+Nodes (10): load_env_file(), Populate os.environ from a KEY=VAL env file. Existing env wins.      Tolerates:, Tests for H2 — load_env_file refuses files with loose permissions., Read-only file (no write bits) should still load if other bits clear., test_force_load_override(), test_load_mode_400(), test_load_mode_600(), test_refuse_mode_644() (+2 more)
 
 ### Community 133 - "Community 133"
 Cohesion: 0.17
@@ -949,16 +958,16 @@ Cohesion: 0.25
 Nodes (7): Adversarial tests — r0 tester additions.  Covers gaps identified in AC coverage, Tab, newline, carriage return all rejected., Probe: if channel check is removed, the wrong-channel event IS written.     Conf, pipeline_notify.notify returns 0 when no session binding is active., test_adversarial_probe_channel_mismatch_guard(), test_pipeline_notify_no_binding_is_noop(), test_validate_sid_control_chars()
 
 ### Community 144 - "Community 144"
-Cohesion: 0.29
-Nodes (6): ADR when, architect-designer, Constraint, Diagrams, Output, Quality
+Cohesion: 0.20
+Nodes (11): ADR when, architect-designer, code:text (Role: architect-designer), Constraint, Consuming handoff files, Diagrams, Output, Pipeline coordination for GitHub-visible review work (+3 more)
 
 ### Community 145 - "Community 145"
 Cohesion: 0.29
 Nodes (6): code:md (# {Context Name}), code:md (# Context Map), CONTEXT.md Format, Rules, Single vs multi-context repos, Structure
 
 ### Community 146 - "Community 146"
-Cohesion: 0.29
-Nodes (6): Boot, code:block1 (.hermes/), code:bash (mkdir -p ~/.hermes), Hermes Agent harness — pipeline port, Layout, Seeding the local-only files
+Cohesion: 0.25
+Nodes (8): Boot, code:text (.hermes/), code:bash (mkdir -p ~/.hermes), Current stance, Hermes Agent harness, Hermes Agent harness — pipeline port, Layout, Seeding the local-only files
 
 ### Community 147 - "Community 147"
 Cohesion: 0.29
@@ -1005,16 +1014,16 @@ Cohesion: 0.29
 Nodes (6): Bad Tests, code:typescript (// GOOD: Tests observable behavior), code:typescript (// BAD: Tests implementation details), code:typescript (// BAD: Bypasses interface to verify), Good and Bad Tests, Good Tests
 
 ### Community 160 - "Community 160"
-Cohesion: 0.29
-Nodes (6): Delegate rules, Direct vs pipeline, Flow, Handle vs delegate, Talk, tech-lead
+Cohesion: 0.25
+Nodes (7): Delegate rules, Direct vs pipeline, Flow, Handle vs delegate, Milestone launch, Talk, tech-lead
 
 ### Community 161 - "Community 161"
-Cohesion: 0.29
-Nodes (3): Tests for H1 — sid validation rejects path-traversal and malformed values., _get_sid calls validate_sid; bad sid → sys.exit(1)., test_inbox_drain_rejects_path_traversal()
+Cohesion: 0.18
+Nodes (10): default_env_path(), Generic 0o600-guarded env-file loader for pipeline scripts.  Verbatim move of le, Return the default env file path, honouring SLACK_ENV_FILE override., Validate session id matches ^[A-Za-z0-9_-]{8,64}$.      Returns sid unchanged on, validate_sid(), Tests for H1 — sid validation rejects path-traversal and malformed values., _get_sid calls validate_sid; bad sid → sys.exit(1)., test_inbox_drain_rejects_path_traversal() (+2 more)
 
 ### Community 162 - "Community 162"
-Cohesion: 0.33
-Nodes (5): big-pickle-simple-tasks, Method, Output per task, Rules, Stance
+Cohesion: 0.29
+Nodes (6): big-pickle-simple-tasks, code:text (Role: big-pickle-simple-tasks), Method, Output per task, Rules, Stance
 
 ### Community 163 - "Community 163"
 Cohesion: 0.47
@@ -1045,8 +1054,8 @@ Cohesion: 0.53
 Nodes (5): find_latest(), main(), parse_blocker_class(), parse_frontmatter(), Parse single-line YAML flow-seq '[a, b]' → ['a', 'b']. Empty list for [].
 
 ### Community 171 - "Community 171"
-Cohesion: 0.33
-Nodes (5): Output structure, requirements-clarifier, Research gate, Rules, Self-check
+Cohesion: 0.25
+Nodes (7): code:text (Role: requirements-clarifier), Grilling / intake rounds, Output structure, requirements-clarifier, Research gate, Rules, Self-check
 
 ### Community 172 - "Community 172"
 Cohesion: 0.33
@@ -1057,8 +1066,8 @@ Cohesion: 0.40
 Nodes (4): pipelineServer, artifactSlug, createArtifactSlugServer(), execFile
 
 ### Community 174 - "Community 174"
-Cohesion: 0.33
-Nodes (5): code:block1 (Status: PASS|FAIL | N run, N pass, N fail | X% coverage), Edge, Protocol, Quality, test-automation-engineer
+Cohesion: 0.29
+Nodes (6): code:block1 (Status: PASS|FAIL | N run, N pass, N fail | X% coverage), code:text (Role: test-automation-engineer), Edge, Protocol, Quality, test-automation-engineer
 
 ### Community 175 - "Community 175"
 Cohesion: 0.40
@@ -1073,8 +1082,8 @@ Cohesion: 0.40
 Nodes (4): code:typescript (// Easy to mock), code:typescript (// GOOD: Each function is independently mockable), Designing for Mockability, When to Mock
 
 ### Community 179 - "Community 179"
-Cohesion: 0.29
-Nodes (9): build_decision_blocks(), build_question_blocks(), decode_button_payload(), encode_button_value(), Slack block builders for question/decision posts.  Owns BUTTON_LETTERS constant, Build Slack blocks for a decision post with option buttons., Encode a Slack button value as the pipe-separated payload string., Decode pipe-separated button payload. Returns (phash8, run_id, qd_id, choice) or (+1 more)
+Cohesion: 0.16
+Nodes (20): InboundConsumerImpl, Implements InboundConsumer Protocol.      Provider's worker thread calls dispatc, Dispatch one normalized inbound event., Handle button click: resolve run_dir, write answer/decision, confirm., InboundEvent, Provider-neutral inbound interaction.      Emitted by the provider (push-side, s, _make_index_with_route(), _make_message_ref() (+12 more)
 
 ### Community 180 - "Community 180"
 Cohesion: 0.50
@@ -1089,8 +1098,8 @@ Cohesion: 0.50
 Nodes (3): blocks, $schema, version
 
 ### Community 183 - "Community 183"
-Cohesion: 0.50
-Nodes (3): default_agent, instructions, $schema
+Cohesion: 0.33
+Nodes (5): autoupdate, default_agent, instructions, model, $schema
 
 ### Community 184 - "Community 184"
 Cohesion: 0.83
@@ -1233,8 +1242,8 @@ Cohesion: 0.67
 Nodes (3): dark, light, background
 
 ### Community 234 - "Community 234"
-Cohesion: 0.16
-Nodes (11): Immutable point-in-time view of all active session routes., Owns the current RoutingSnapshot + shared lock for idle-counter., Swap snapshot if fingerprint differs. Resets idle counter on non-empty., RoutingIndex, RoutingSnapshot, InboundConsumer, Push-side consumer the provider calls per normalized event.      Lives on the ro, Dispatch one normalized inbound event. (+3 more)
+Cohesion: 0.25
+Nodes (7): Commands, Files / refs, Next steps, Pipeline brief: {role}, Risks / blockers, Scope, Summary
 
 ### Community 235 - "Community 235"
 Cohesion: 0.67
@@ -1277,12 +1286,12 @@ Cohesion: 0.67
 Nodes (3): dark, light, markdownStrong
 
 ### Community 245 - "Community 245"
-Cohesion: 0.67
-Nodes (3): dark, light, diffLineNumber
+Cohesion: 0.25
+Nodes (7): Blockers, Done, Files / refs, Handoff, Next steps, Pipeline handoff: {role}, Tests / verification
 
 ### Community 246 - "Community 246"
-Cohesion: 0.67
-Nodes (3): dark, light, markdownCode
+Cohesion: 0.29
+Nodes (6): Draft PR: {title}, Next steps, Risks / blockers, Scope, Summary, Verification
 
 ### Community 247 - "Community 247"
 Cohesion: 0.67
@@ -1307,10 +1316,6 @@ Nodes (3): dark, light, syntaxVariable
 ### Community 252 - "Community 252"
 Cohesion: 0.67
 Nodes (3): warning, dark, light
-
-### Community 253 - "Community 253"
-Cohesion: 0.22
-Nodes (11): _check_terminal_backend(), PluginGuardError, pipeline-core — Hermes plugin registering 8 deterministic pipeline tools.  Regis, Raised when host config violates pipeline-core invariants., Block plugin load if terminal.backend != local.      Hermes config lives at ~/.h, Hermes plugin entry point. Called once at session start., register(), compute_prod_diff_sha() (+3 more)
 
 ### Community 254 - "Community 254"
 Cohesion: 0.67
@@ -1357,8 +1362,8 @@ Cohesion: 0.67
 Nodes (3): dark, light, markdownHeading
 
 ### Community 265 - "Community 265"
-Cohesion: 0.18
-Nodes (4): _gc_run_index(), IdleMonitor, Prune stale run-index entries and old unrouted files. Returns count pruned., RoutingPoller
+Cohesion: 0.40
+Nodes (4): Current action, Evidence, Next step, Pipeline status: {role}
 
 ### Community 266 - "Community 266"
 Cohesion: 0.67
@@ -1496,6 +1501,22 @@ Nodes (3): dark, light, textMuted
 Cohesion: 0.67
 Nodes (3): warning, dark, light
 
+### Community 319 - "Community 319"
+Cohesion: 0.22
+Nodes (11): _check_terminal_backend(), PluginGuardError, pipeline-core — Hermes plugin registering 8 deterministic pipeline tools.  Regis, Raised when host config violates pipeline-core invariants., Block plugin load if terminal.backend != local.      Hermes config lives at ~/.h, Hermes plugin entry point. Called once at session start., register(), compute_prod_diff_sha() (+3 more)
+
+### Community 320 - "Community 320"
+Cohesion: 0.18
+Nodes (10): code:markdown (# Handoff: <short title>), Common Pitfalls, Inputs, Overview, Procedure: Consuming a Handoff, Procedure: Creating a Handoff, Recommended Document Structure, Session Transfer (+2 more)
+
+### Community 323 - "Community 323"
+Cohesion: 0.20
+Nodes (9): code:text (— tech-lead / orchestrator), Conflict-resolution checks for resource-heavy repos, Flow, GitHub feature-branch integration, Issue and PR linking, Project customization checklist, Role boundary, Scope (+1 more)
+
+### Community 324 - "Community 324"
+Cohesion: 0.56
+Nodes (7): _atomic_write(), build_parser(), _compose(), main(), _now_iso(), _run_dir(), _verdict_path()
+
 ### Community 400 - "Community 400"
 Cohesion: 0.12
 Nodes (16): Adding a new waybar theme, External dependencies, External dependencies, External dependencies, External dependencies, Key files, Key files, Key files (+8 more)
@@ -1516,33 +1537,73 @@ Nodes (3): dark, light, markdownImage
 Cohesion: 0.67
 Nodes (3): dark, light, accent
 
-### Community 406 - "Community 406"
+### Community 409 - "Community 409"
+Cohesion: 0.17
+Nodes (11): ARCHIVED DOCUMENTATION, code:yaml (verdict: Approved | Blocked), Completion / Reporting, Do, Doctrine audit (Phase 4 verdict criteria), Don't, Inputs, Outputs / Artifacts (+3 more)
+
+### Community 410 - "Community 410"
+Cohesion: 0.29
+Nodes (4): run(), TestErrorModes, TestHelp, TestOutput
+
+### Community 411 - "Community 411"
+Cohesion: 0.25
+Nodes (7): Args, context-rotation-summary, Exit codes, Invocation, Per-role thresholds, Returns, See also
+
+### Community 412 - "Community 412"
+Cohesion: 0.08
+Nodes (25): 1. High-Level Design, 2. Chosen Patterns, 3. Directory Structure Changes, 4. Technology Decisions, 5. Trade-off Analysis, ADR when, architect-designer, code:mermaid (graph TB) (+17 more)
+
+### Community 413 - "Community 413"
+Cohesion: 0.29
+Nodes (6): big-pickle-simple-tasks, code:text (Role: big-pickle-simple-tasks), Method, Output per task, Rules, Stance
+
+### Community 414 - "Community 414"
+Cohesion: 0.14
+Nodes (13): Code floor, code:text (Role: implementation-specialist), implementation-specialist, Integration, Operational Principles, Output, Pause, Scope (+5 more)
+
+### Community 415 - "Community 415"
+Cohesion: 0.11
+Nodes (18): 1. Clarified Requirements Summary, 2. User Stories, 3. Acceptance Criteria, 4. Edge Cases & Constraints, 5. Open Questions for Builder, 6. Suggested Implementation Phases (if applicable), code:text (Role: requirements-clarifier), Core Responsibilities (+10 more)
+
+### Community 417 - "Community 417"
+Cohesion: 0.14
+Nodes (13): Communication Style, Core Responsibilities, Decision Framework, Delegate rules, Delegation Rules (Strict Adherence Required), Direct vs pipeline, Edge Case Handling, Flow (+5 more)
+
+### Community 418 - "Community 418"
+Cohesion: 0.20
+Nodes (10): code:block1 (## Test Execution Summary), code:text (Role: test-automation-engineer), Edge, Edge Case Handling, Operational Protocol, Output Format, Protocol, Quality (+2 more)
+
+### Community 419 - "Community 419"
+Cohesion: 0.10
+Nodes (19): ADR when, architect-designer, code:text (Role: architect-designer), Communication Style, Constraint, Consuming handoff files, Core Responsibilities, Decision Framework (+11 more)
+
+### Community 420 - "Community 420"
 Cohesion: 0.67
 Nodes (3): dark, light, diffLineNumber
 
-### Community 408 - "Community 408"
+### Community 421 - "Community 421"
 Cohesion: 0.67
 Nodes (3): dark, light, markdownCode
 
 ## Knowledge Gaps
-- **1110 isolated node(s):** `pipelineServer`, `execFile`, `artifactSlug`, `name`, `base` (+1105 more)
+- **1432 isolated node(s):** `$schema`, `blocks`, `version`, `name`, `base` (+1427 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **47 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `build_slack_provider()` connect `Community 25` to `Community 4`, `Community 253`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `interactive_select()` connect `Community 78` to `Community 253`, `Community 109`, `Community 21`?**
-  _High betweenness centrality (0.003) - this node is a cross-community bridge._
-- **Why does `theme` connect `Community 93` to `Community 256`, `Community 258`, `Community 259`, `Community 260`, `Community 261`, `Community 262`, `Community 263`, `Community 264`, `Community 266`, `Community 267`, `Community 268`, `Community 269`, `Community 270`, `Community 271`, `Community 272`, `Community 273`, `Community 274`, `Community 275`, `Community 276`, `Community 405`, `Community 278`, `Community 279`, `Community 280`, `Community 281`, `Community 406`, `Community 277`, `Community 282`, `Community 408`, `Community 284`, `Community 287`, `Community 285`, `Community 289`, `Community 290`, `Community 288`, `Community 286`, `Community 292`, `Community 291`, `Community 295`, `Community 296`, `Community 297`, `Community 298`, `Community 299`, `Community 293`, `Community 294`, `Community 404`, `Community 254`, `Community 255`?**
-  _High betweenness centrality (0.002) - this node is a cross-community bridge._
-- **Are the 9 inferred relationships involving `CommsProvider` (e.g. with `AuthCheck` and `DecisionPost`) actually correct?**
-  _`CommsProvider` has 9 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `atomic_write_text()` connect `Community 81` to `Community 0`, `Community 161`, `Community 1`, `Community 324`, `Community 39`, `Community 9`, `Community 42`, `Community 337`, `Community 30`?**
+  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+- **Why does `TestAtomicWriteSemantics` connect `Community 81` to `Community 115`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `interactive_select()` connect `Community 78` to `Community 109`, `Community 21`, `Community 319`?**
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **What connects `Return a canonical distro id from /etc/os-release (or termux env).`, `Derive default sudo requirement from (source, distro).      Override via `sudo =`, `Merge defaults + entry + per-distro override into a Resolved spec.` to the rest of the system?**
-  _1533 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1856 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.10372340425531915 - nodes in this community are weakly interconnected._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.07337526205450734 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.060129509713228495 - nodes in this community are weakly interconnected._

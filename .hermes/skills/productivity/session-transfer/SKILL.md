@@ -1,6 +1,6 @@
 ---
-name: agent-handoff
-description: Use when the user asks to compact the current conversation into a handoff document for another agent to pick up.
+name: session-transfer
+description: Use when compacting current work into a durable brief for another session, agent, or future continuation.
 version: 1.0.0
 author: Hermes Agent
 license: MIT
@@ -11,7 +11,7 @@ metadata:
 argument-hint: "What will the next session be used for?"
 ---
 
-# Agent Handoff
+# Session Transfer
 
 ## Overview
 
@@ -25,9 +25,12 @@ Use this skill when:
 - The user asks for a handoff, session compact, continuity note, or next-agent brief.
 - The user wants another agent/session to pick up current work.
 - The user provides or references an existing handoff file to continue from, e.g. `@/tmp/handoff-*.md`.
+- The user asks how handoff docs / briefs work for agents, especially after attaching a handoff file.
 - Context is too large or fragile to rely on chat history alone.
 
 Do not use this skill to rewrite existing project documents when creating a handoff. Reference those documents by path or URL instead. When consuming a handoff, the handoff is an instruction source: read it, load any suggested relevant skills, inspect the named workspace/artifacts, then execute the immediate next steps rather than creating another handoff unless explicitly asked.
+
+If the user asks to explain how handoffs/briefs work, do not execute the handoff's next steps. Read the file, then explain the agent consumption model: handoff is temporary context, not source-of-truth; next agent loads suggested skills, verifies named artifacts, preserves constraints/risks, and only acts when the user asks continuation.
 
 ## Inputs
 

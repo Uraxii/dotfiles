@@ -97,7 +97,7 @@ Bash(gh api:*)
 ```
 Bash(printf:*)                       # prod-diff-sha
 Bash(sha1sum:*)                      # prod-diff-sha
-Bash(mktemp:*)                       # handoff-doc
+Bash(mktemp:*)                       # context-rotation-summary
 Bash(mkdir:*) Bash(mkdir -p:*)       # progenitor + intake
 Bash(command -v:*)                   # GitHub preconditions
 Bash(wc:*)

@@ -226,6 +226,20 @@ description = "Fast find alternative. Used by telescope find_files."
 ubuntu.pkg = "fd-find"
 fedora.pkg = "fd-find"
 
+[fzf]
+pkg = "fzf"
+bin = "fzf"
+description = "Fuzzy finder. Required by tmux-sessionx and tmux-fzf-url."
+
+[bat]
+pkg = "bat"
+bin = ["bat", "batcat"]
+description = "Syntax-highlighted file/command preview. Used by tmux-sessionx preview window."
+# Ubuntu ships bat as batcat (Debian packaging conflict w/ bacula). Create
+# /usr/local/bin/bat -> batcat symlink post-install so tools calling `bat`
+# (tmux-sessionx, etc.) find it without config overrides.
+ubuntu.post_install = "if [ ! -x /usr/local/bin/bat ]; then sudo ln -sf /usr/bin/batcat /usr/local/bin/bat; fi"
+
 [wl-clipboard]
 pkg = "wl-clipboard"
 bin = ["wl-copy", "wl-paste"]
@@ -570,7 +584,7 @@ termux.reason = "no GUI on android"
 
 [groups]
 desktop  = ["sway", "swayidle", "swaybg", "swaylock-effects", "waybar", "wofi", "networkmanager-dmenu", "pavucontrol"]
-terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer", "glow"]
+terminal = ["ghostty", "tmux", "zsh", "starship", "zoxide", "tealdeer", "glow", "fzf", "bat"]
 shells   = ["zsh", "xonsh"]
 editor   = ["neovim", "gcc", "gnumake", "unzip", "ripgrep", "fd", "wl-clipboard", "nodejs"]
 fonts    = ["nerd-fonts-0xproto"]

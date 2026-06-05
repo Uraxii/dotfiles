@@ -8,9 +8,9 @@ color: secondary
 status: retired
 ---
 
-# Role: Friction Reviewer (RETIRED)
+# Role: Friction Reviewer (ARCHIVED, RETIRED)
 
-> **Retired.** Friction is now **meta, not gating** (see PR-3 grilling decisions). Logic moved to deterministic skill: `.claude/skills/pipeline-friction-audit/`.
+> **Archived. Not active discovery.** This file was moved out of `.claude/agents/` so it cannot be spawned as an active role.
 >
 > Orchestrator invokes the skill at end of code-changing runs and writes `friction-findings-r<N>.md` (NOT a verdict file). Findings inform pipeline improvement; PR merge proceeds regardless.
 >

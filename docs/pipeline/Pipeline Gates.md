@@ -1,6 +1,6 @@
 # Pipeline Gates
 
-A gate is a role that writes a verdict file. The orchestrator parses the verdict frontmatter, then either advances or re-spawns the upstream role. Gates are how the pipeline enforces quality without coupling stages to each other.
+A gate emits a verdict through `record-verdict`. The tool validates schema, writes findings to the SQLite Ledger, and writes the markdown verdict artifact. The orchestrator routes from ledger/findings first; prose is optional/compressed.
 
 ## Verdict types
 
@@ -15,9 +15,9 @@ A gate is a role that writes a verdict file. The orchestrator parses the verdict
 | `verdict-security-r<N>.md` | `security-auditor` | design or post-build code |
 | `verdict-test-r<N>.md` | `tester` | test results + adversarial probe + smuggling scan |
 | `verdict-test-audit-r<N>.md` | `skeptic` (review_type=test-audit) | static audit of test design quality |
-| `verdict-friction-r<N>.md` | `friction-reviewer` | doctrine adherence end-of-run |
 
-`Approved | Blocked | Conditional` are the only values. Conditional routes identically to Blocked — the distinction exists for human readers, not for the routing engine.
+
+`Approved | Blocked | Conditional` are the only values. `findings:` is canonical. Conditional routes identically to Blocked unless the orchestrator can verify all listed conditions.
 
 ## Two-axis reviewer
 
@@ -39,7 +39,7 @@ Reporting them as one mixed verdict lets one axis mask the other.
 
 ## Revision routing
 
-Blocked or Conditional verdicts re-spawn the upstream role with the verdict findings:
+Blocked or Conditional verdicts re-spawn the upstream role with the structured verdict findings, not full prior artifacts:
 
 | Verdict | Re-spawns |
 |--------|-----------|
@@ -51,7 +51,7 @@ Blocked or Conditional verdicts re-spawn the upstream role with the verdict find
 | `verdict-security-r<N>.md` post-architect | `architect` |
 | `verdict-test-r<N>.md` | `tester` |
 | `verdict-test-audit-r<N>.md` | `build` (test-only revision; see below) |
-| `verdict-friction-r<N>.md` Blocked | USER decision: fix-forward via new revision OR rollback batch |
+
 
 All revising roles resume their persistent session via stored `task_id` within a single revision loop:
 - `architect`, `build` (per shard), `tester`, `ui-ux-designer`, `content-designer` — one task_id per role.
@@ -59,7 +59,7 @@ All revising roles resume their persistent session via stored `task_id` within a
 - `reviewer` — task_id keyed by `axis` (Standards and Spec are distinct persistent instances).
 - `security-auditor` — task_id keyed by `review_type` (security-design and security-code are distinct persistent instances).
 
-Cross-stage spawns are always fresh. One-shot roles (`researcher`, `plan`, `friction-reviewer`) never persist.
+Cross-stage spawns are always fresh. One-shot roles (`researcher`, `plan`) never persist. Friction audit is a deterministic skill, not a spawned gate role.
 
 ## Loop limits
 
@@ -87,14 +87,11 @@ When `skeptic-test-audit` Blocks a tester verdict, the orchestrator does NOT re-
 
 The mechanism filters at the filename level only. Hunk-level prod regressions inside files listed in `test-paths.txt` are not caught — accepted hole, documented in plan §Risks.
 
-## Friction verdict (end-of-run)
+## Friction audit (end-of-run)
 
-`friction-reviewer` writes `verdict-friction-r<N>.md` with:
+The orchestrator invokes `pipeline-friction-audit` after PR publish. It writes `friction-findings-r<N>.md` only. Findings are non-gating and feed pipeline-improvement backlog grooming.
 
-- `verdict: Approved` — no doctrine drift; merge succeeded. Batch successful.
-- `verdict: Blocked` — drift detected. Body cites specific drift findings. USER decides the rollback path (`git reset --hard <pre-batch-sha>` + reopen plan, or fix-forward via a new revision).
-
-The friction audit checklist is in `.claude/agents/friction-reviewer.md` under `## Doctrine audit`. It scans for:
+The archived historical subagent doc lives at `docs/archive/pipeline/friction-reviewer.md`. Current friction audit scans for:
 
 - Skill invocations fire (no inline duplication regression)
 - AGENT-BRIEF template followed in `brief.md`

@@ -13,7 +13,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
+- Persistent session within revision loop via task_id resume (Claude) / child session (OC). Threshold 80% context → rotate via `Skill(skill: "context-rotation-summary", args: "role=tester, run-dir=<path>, next-focus=<text>")`.
 - Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Stance
@@ -38,9 +38,10 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 
 ## Inputs
 - Required reads:
-  - run `pipeline.md`
+  - `context-digest.md`
+  - run `pipeline.md` manifest (pointers only; runtime state via SQLite Ledger)
   - latest verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=code")` + `type=security`
-  - Multi-shard runs: declared shards from pipeline.md `shards:` map; `base_sha`; all shard branches `pipeline/<artifact-id>/s<K>`.
+  - Multi-shard runs: declared shards from Ledger/manifest pointers; `base_sha`; all shard branches `pipeline/<artifact-id>/s<K>`.
 - Conditional reads (read ONLY when relevant):
   - `frontend-handoff.md` when UI changed
   - build evidence artifacts as needed
@@ -53,7 +54,7 @@ Run tests. Report pass/fail, coverage gaps, runtime verification outcome.
 - Test-path resolution: `Skill(skill: "pipeline-test-path-resolve", args: "run-dir=<path>")` returns canonical glob set. Reads `test-paths.txt` if build-emitted; else falls back to default.
 
 ## Outputs / Artifacts
-- Write `<repo>/.pipeline/runs/<artifact-id>/verdict-test-r<N>.md` with preconditions, summary X/Y, failures, coverage gaps, runtime block, and final verdict.
+- Emit via `record-verdict` to write `<repo>/.pipeline/runs/<artifact-id>/verdict-test-r<N>.md` + Ledger row atomically. Findings-first payload is canonical; prose sections are optional/compressed.
 - Runtime block must include `runnable`, `verification_performed`, `result`, `blockers`.
 - K≥2 verdict must include both per-shard and combined-state result sections. K=1 verdict reports the single `s1` shard directly (no combined-state section).
 - Verdict body MUST contain a `Smuggling scan:` section with verbatim grep output. Format:
@@ -136,6 +137,8 @@ review_type: test
 loops: <N>
 revision: r<N>
 blocker_class: [<enum>, ...]  # required when verdict=Blocked; allowed values: req-conflict, impl-defect, flaky-test, env-failure, doctrine-violation, scope-creep, security-policy
+findings:
+  - {severity: blocking|condition|suggestion|note, class: <enum>, refs: [<file-or-ledger-ref>], summary: <one-line>}
 ```
 
 **Conditional semantics**: Pass only when conditions hold. Verdict body MUST include `## Conditions` section listing testable conditions. Orchestrator verifies before proceeding. NOT routed to revision loop unless condition fails.

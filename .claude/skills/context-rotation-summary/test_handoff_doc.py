@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for handoff-doc.py CLI."""
+"""Tests for context-rotation summary CLI."""
 from __future__ import annotations
 
 import re
@@ -75,7 +75,7 @@ class TestOutput(unittest.TestCase):
             )
             self.assertEqual(r.returncode, 0)
             filename = Path(r.stdout.strip()).name
-        self.assertRegex(filename, r"\d{8}T\d{6}Z")
+        self.assertRegex(filename, r"context-rotation-skeptic-\d{8}T\d{6}Z\.md")
 
     def test_template_sections_present(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -86,9 +86,10 @@ class TestOutput(unittest.TestCase):
             )
             self.assertEqual(r.returncode, 0)
             body = Path(r.stdout.strip()).read_text()
-        self.assertIn("# Handoff:", body)
+        self.assertIn("# Context rotation:", body)
         self.assertIn("## Next session focus", body)
         self.assertIn("## Referenced artifacts", body)
+        self.assertIn("context-digest.md", body)
         self.assertIn("## State summary", body)
         self.assertIn("run regression", body)
 

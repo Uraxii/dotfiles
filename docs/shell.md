@@ -170,8 +170,8 @@ style strings).
 ### Plugin manager (optional)
 
 `tmux.conf` declares `@plugin` entries for tpm + tmux-sensible +
-tmux-yank + tmux-resurrect + tmux-continuum. They no-op until tpm is
-cloned:
+tmux-yank + tmux-resurrect + tmux-continuum + tmux-which-key + fzf helpers.
+They no-op until tpm is cloned:
 
 ```bash
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
@@ -180,6 +180,11 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 Resurrect saves layout to `~/.local/share/tmux/resurrect/`; continuum
 auto-saves every 15min.
+
+which-key opens on `<prefix> Space` (`C-a Space` in this config). It shows
+available tmux keybind menus on screen. YAML customization uses XDG paths under
+`~/.config/tmux/plugins/tmux-which-key/` and needs Python 3. `tmux-thumbs` is
+moved to `<prefix> T` to leave Space for which-key.
 
 ### External dependencies
 

@@ -6,19 +6,19 @@ Each stage is a subagent defined in `.claude/agents/<name>.md`. The orchestrator
 
 | Role | Model | What it does | Owns artifact |
 |------|-------|--------------|---------------|
-| `orchestrator` | opus | Root agent. Triages, intakes, spawns, routes verdicts, aggregates two-axis review, opens + merges PRs. | `pipeline.md`, `plan.ref`, `pr-report.md` |
+| `orchestrator` | opus | Root agent. Triages, intakes, spawns, routes verdicts, updates SQLite Ledger, opens + merges PRs. | `pipeline.md` manifest, `context-digest.md`, `plan.ref`, `pr-report.md` |
 | `researcher` | opus | Domain facts before plan/design. APIs, feasibility, external systems. | `research.md` |
 | `content-designer` | opus | Pre-plan ideation. Feature pitches, content drafts, decision options. | `ideation.md` |
 | `plan` | opus | Brief → numbered tasks + scope + optional shard partition. | Canonical plan at `~/.pipeline/plans/<slug>/<id>.md` + `plan.ref` |
-| `architect` | opus | System design + ADR emission on irreversible decisions. | `design.md` + ADRs at `docs/adr/<N>-<topic>.md` |
+| `architect` | opus | Decisions/rationale/ADRs + implementation contract. | `design.md`, `build-contract.md`, ADRs at `docs/adr/<N>-<topic>.md` |
 | `ui-ux-designer` | sonnet | UI structure, interaction, visual direction. Writes the handoff for UI scope. | `frontend-handoff.md` |
-| `build` | sonnet | Implementation in a worktree shard. TDD when test runner supports it; eco-fallback otherwise. | `build-evidence-r<N>-s<K>.md`, `prebuild-skeptic-code-r<N>-s<K>.md`, code + tests |
+| `build` | sonnet | Implementation in a worktree shard. TDD when test runner supports it; eco-fallback otherwise. | `build-evidence-r<N>-s<K>.md` (includes prebuild section), code + tests |
 | `skeptic` | opus | Gatekeeper for design/code/ops/review/test-audit. Adversarial. | `verdict-<type>-r<N>.md` |
 | `reviewer` | haiku | Two-axis review: Standards + Spec. Spawned twice in parallel by orchestrator. | `verdict-review-<axis>-r<N>.md` |
 | `security-auditor` | opus | Vulns, threat modeling, dep checks. Design + post-build phases. | `verdict-security-r<N>.md` |
 | `tester` | sonnet | Runs tests + adversarial probe + smuggling scan. Combined-state merge test on K≥2 shards. | `verdict-test-r<N>.md` |
 | `decision-elicitation` | n/a (orchestrator-owned) | Elicits human pick between N options (N ≤ 4). Sync via AskUserQuestion or async via GH issue + 10min poll. See [[Pipeline Decisions]]. | `decision-r<N>.md`, `awaiting-decision-r<N>.md` (transient) |
-| `friction-reviewer` | haiku | Runs last on code-changing runs. Audits doctrine. | `friction-report-r<N>.md`, `verdict-friction-r<N>.md` |
+| `friction-audit` | n/a (orchestrator-owned skill) | Runs last on code-changing runs. Non-gating doctrine/process findings. | `friction-findings-r<N>.md` |
 | `progenitor` | haiku | Meta-agent. Creates / modifies / retires agent roles + skills. Cannot self-edit. | `.claude/agents/*.md`, `.claude/skills/**/SKILL.md` |
 
 `monitor` was retired.
@@ -42,9 +42,9 @@ This is documented in `.claude/agents/progenitor.md` under `## Do` ("Root-agent 
 | `tester` | prod code changed + tests or regression needed |
 | `researcher` | unfamiliar lib or surface + no project index coverage |
 | `decision-elicitation` | brief or plan declares `decision_points:` block |
-| `friction-reviewer` | always last on code-changing runs |
+| `friction-audit` | always last on code-changing runs |
 
-Ops short path (no design, no test): `build → skeptic(ops) → friction-reviewer`. Add reviewer or tester if more than one rework cycle.
+Ops short path (no design, no test): `build → skeptic(ops) → friction-audit`. Add reviewer or tester if more than one rework cycle.
 
 ## Dependency graph
 
@@ -64,7 +64,7 @@ ui-ux-designer ──────────────────► build (
                                    pr_publish (orchestrator)
                                        │
                                        ▼
-                                friction-reviewer
+                                friction-audit
 ```
 
 Build runs in worktrees; gates read the union of per-shard diffs. See [[Pipeline Shards]].
@@ -81,8 +81,11 @@ Every subagent spawn uses the canonical template (in `.claude/agents/orchestrato
 Run: <artifact-id>
 Dir: <repo>/.pipeline/runs/<artifact-id>/
 
+## Context Digest
+context-digest.md (mandatory common handoff input; compact pointers only)
+
 ## Read
-[artifact files] + project CLAUDE.md + applicable .claude/rules/<lang>.md + docs/adr/
+[role-specific artifact files only] + project CLAUDE.md + applicable .claude/rules/<lang>.md + docs/adr/
 
 ## Write
 [artifact files]
@@ -112,9 +115,9 @@ All revising roles are persistent across revisions of a single loop via `task_id
 | `ui-ux-designer` | 80% | role |
 | `content-designer` | 80% | role |
 
-At threshold the role invokes the [[Pipeline Skills|handoff-doc]] skill to write a rotation summary; the orchestrator records old + new `task_id` in `pipeline.md`.
+At threshold the role invokes the [[Pipeline Skills|context-rotation-summary]] skill to write a rotation summary; the orchestrator records old + new `task_id` in the SQLite Ledger.
 
-Cross-stage spawns are always fresh — a `skeptic-design` task_id is not reused for `skeptic-code`. One-shot roles (`researcher`, `plan`, `friction-reviewer`) never persist.
+Cross-stage spawns are always fresh — a `skeptic-design` task_id is not reused for `skeptic-code`. One-shot roles (`researcher`, `plan`) never persist. Friction audit is a skill, not a spawned role.
 
 ## Related
 

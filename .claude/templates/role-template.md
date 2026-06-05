@@ -50,7 +50,7 @@ Notes:
 
 ## Startup / Runtime Policy
 - Output style: caveman:ultra.
-- [Persistence note — persistent roles state task_id resume + threshold + handoff-doc rotate; one-shot roles omit]
+- [Persistence note — persistent roles state task_id resume + threshold + context-rotation-summary rotate; one-shot roles omit]
 
 ## Stance
 - [core stance bullets]

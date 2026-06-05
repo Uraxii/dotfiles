@@ -79,14 +79,14 @@ on wake.
 ### Preconditions
 
 - **Active session binding required.** Run `slack-bind` before entering async mode.
-  No binding → degrade to sync + log `slack.warning` to `pipeline.md`. Do NOT
+  No binding → degrade to sync + log `slack.warning` to the SQLite Ledger. Do NOT
   silently hang or spawn a daemon.
 - `~/.claude/pipeline/slack.env.local` populated (`SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_CHANNEL`).
 - `command -v uv` resolves (notify uses PEP 723 inline deps via `uv run`).
 
 Optional: `<project>/.pipeline/pipeline.toml` `[slack].channel` overrides the env-level `SLACK_CHANNEL`.
 
-Any precondition fails → emit warning to `pipeline.md`, fall back to sync.
+Any precondition fails → emit warning to the SQLite Ledger, fall back to sync.
 
 ### pipeline.toml schema (optional, per-project override)
 
@@ -103,7 +103,7 @@ Channel resolution order:
 
 ### Flow
 
-1. Verify preconditions (active binding + tokens + channel). Degrade to sync on failure (log to pipeline.md).
+1. Verify preconditions (active binding + tokens + channel). Degrade to sync on failure (log to SQLite Ledger).
 2. Call `pipeline_notify.py --kind decision --run-dir <path> --run <run-id> --did d<N>`.
    - notify reads `options-r<N>.md` + `awaiting-decision-r<N>.md` from disk for prompt/options.
    - notify posts `chat_postMessage` with button blocks into bound thread.
@@ -111,7 +111,7 @@ Channel resolution order:
    - notify writes run-index entry to `~/.claude/slack-router/run-index/<run-id>.json`.
    - Orchestrator does NOT call Slack API directly.
 3. Write `<run-dir>/awaiting-decision-r<N>.md` (schema below).
-4. Update `pipeline.md` `paused_on_decision:` block. Set top-level `status: paused_on_decision`.
+4. Update SQLite Ledger decision state to `paused_on_decision`.
 5. `ScheduleWakeup(delaySeconds=600, prompt="<<resume-pipeline-<artifact-id>>>", reason="polling decision d<N> @10min")`.
 6. Halt. Control returns to user.
 
@@ -134,11 +134,11 @@ Triggers:
 
 Poll procedure (every wake):
 1. Check `<run-dir>/decision-r<N>.md` existence.
-   - Exists → parse `verdict` + `chosen_option` → remove `paused_on_decision` block from `pipeline.md` → resume pipeline.
+   - Exists → parse `verdict` + `chosen_option` → mark decision resolved in SQLite Ledger → resume pipeline.
 2. Else check `<run-dir>/awaiting-decision-r<N>.md` `timeout_at`.
    - `now >= timeout_at` → write `decision-r<N>.md` w/ `verdict: timeout` → halt + surface to user.
 3. Else check active session binding: `session_slack.is_bound()`.
-   - Not bound → warn in pipeline.md + offer sync fallback via `AskUserQuestion`.
+   - Not bound → warn in SQLite Ledger + offer sync fallback via `AskUserQuestion`.
 4. Else → update `awaiting-decision-r<N>.md` `last_polled_at` + `next_wake_at`; `ScheduleWakeup(delaySeconds=600, ...)`.
 
 ## awaiting-decision-r<N>.md schema
@@ -181,9 +181,9 @@ options_source: <role>
 - Path: options-r<N>.md
 ```
 
-## pipeline.md schema extension
+## SQLite Ledger schema extension
 
-Add to frontmatter when paused:
+Ledger fields while paused:
 
 ```yaml
 paused_on_decision:
@@ -194,17 +194,18 @@ paused_on_decision:
   opened_at: <iso8601>
   timeout_at: <iso8601|null>
   next_wake_at: <iso8601|null>
+status: paused_on_decision
 ```
 
-Remove block when resumed. Set top-level `status: paused_on_decision` while waiting.
+Clear `paused_on_decision` and mark decision row resolved when resumed.
 
 ## Guardrails
 
 - `N ≤ 4` (matches AskUserQuestion limit + Slack actions block 5-button soft cap).
 - One paused decision per run max. Multi-decision runs sequence them.
 - Timeout default 7d. Configurable per decision via `timeout_days`.
-- `delivery: async` requires active session binding at entry. No binding → degrade to sync with `slack.warning` logged to `pipeline.md`. Do NOT block silently.
-- friction-reviewer end-of-run audit: scan `<run-dir>/awaiting-decision-*.md`. Any remaining = anomaly → log + leave for next orchestrator startup scan.
+- `delivery: async` requires active session binding at entry. No binding → degrade to sync with `slack.warning` logged to SQLite Ledger. Do NOT block silently.
+- pipeline-friction-audit end-of-run audit: scan `<run-dir>/awaiting-decision-*.md`. Any remaining = anomaly → log + leave for next orchestrator startup scan.
 - Async pre-check failures degrade to sync (don't hard-fail).
 - Router is host-bound; no per-run daemon spawned. Concurrent runs share one router.
 - Confirmation message posted in thread BEFORE pipeline reads decision file.
@@ -214,7 +215,7 @@ Remove block when resumed. Set top-level `status: paused_on_decision` while wait
 | Case | Policy |
 |---|---|
 | `pipeline.toml` missing `[slack].channel` | Fall back to sync; log warning. |
-| No active session binding at async entry | Degrade to sync `AskUserQuestion`; log `slack.warning` to `pipeline.md`. |
+| No active session binding at async entry | Degrade to sync `AskUserQuestion`; log `slack.warning` to SQLite Ledger. |
 | `slack.env.local` tokens missing/invalid | Degrade to sync; log warning. |
 | Bot not in channel | Notify exits non-zero. Fall back to sync. |
 | User dismisses Slack msg without clicking | Awaits until `timeout_at`. Then `verdict: timeout`, halt + surface. |

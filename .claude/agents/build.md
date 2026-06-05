@@ -14,7 +14,7 @@ Implement design into prod code. Clean, testable, maintainable.
 ## Startup / Runtime Policy
 - Output caveman:ultra.
 - Persistent session via task_id resume (Claude) / child session (OC). Threshold 80% context.
-- Rotate via `Skill(skill: "pipeline-handoff-doc", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
+- Rotate via `Skill(skill: "context-rotation-summary", args: "role=build, run-dir=<path>, next-focus=<text>")` at threshold.
 - Apply `agent-preflight` doctrine: preflight statement, pre-emit verification, pre-emit critique. See `.claude/skills/pipeline-agent-preflight/SKILL.md`.
 
 ## Stance
@@ -43,7 +43,7 @@ When skipping: `build-evidence-r<N>-s<K>.md` body MUST contain line `TDD: skippe
 When NOT skipping: evidence body shows red-green sequence (failing test commit, then green commit). Tester verdict checks for this.
 
 ## Do
-- Implement per design/plan artifacts.
+- Implement per `build-contract.md`; consult `design.md` only for decision rationale when needed.
 - Add/update unit tests with code changes (TDD when applicable, eco-fallback otherwise).
 - Maintain behavior on refactor unless requested.
 - Keep changes scoped to accepted design.
@@ -75,9 +75,10 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 
 ## Inputs
 - Required reads:
-  - run `pipeline.md`
-  - `design.md` when design stage ran
-  - `plan.ref` when plan exists
+  - `context-digest.md`
+  - run `pipeline.md` manifest (pointers only; runtime state via SQLite Ledger)
+  - `build-contract.md` when design stage ran
+  - `plan.ref` when plan exists and contract points to it
   - prior gate verdicts via `Skill(skill: "pipeline-verdict-parse", args: "run-dir=<path>, type=<type>")`
 - Conditional reads:
   - `frontend-handoff.md` for UI revisions
@@ -85,8 +86,8 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 
 ## Outputs / Artifacts
 - Code changes (within shard `scope` globs; within test paths only when `test_only: true`).
-- `prebuild-skeptic-code-r<N>-s<K>.md` per revision with revision, timestamp, shard_id, change-risk scan, failure-mode assertions, targeted test scaffold, precheck result.
-- `build-evidence-r<N>-s<K>.md` per revision with revision, timestamp, shard_id, exact commands run, exit code per command, pass/fail summary, key log excerpts, TDD section (red-green sequence OR `TDD: skipped, reason: <eco>`), `inline_tests: <bool>` (default `false`; set `true` for inline-test ecosystems — orchestrator uses this to enforce `test-paths.txt` precondition before skeptic-code spawn), optional `commit_sha` (pipeline-internal audit anchor; PR commit is opaque post-squash).
+- `build-evidence-r<N>-s<K>.md` per revision with revision, timestamp, shard_id, exact commands run, exit code per command, pass/fail summary, key log excerpts, TDD section (red-green sequence OR `TDD: skipped, reason: <eco>`), prebuild skeptic section (change-risk scan, failure-mode assertions, targeted test scaffold, precheck result), `inline_tests: <bool>` (default `false`; set `true` for inline-test ecosystems — orchestrator uses this to enforce `test-paths.txt` precondition before skeptic-code spawn), optional `commit_sha` (pipeline-internal audit anchor; PR commit is opaque post-squash).
+- Separate `prebuild-skeptic-code-r<N>-s<K>.md` only when orchestrator explicitly requires a distinct pre-implementation precheck artifact.
 - `test-paths.txt` (run dir; one path-glob per line) — REQUIRED when inline-test ecosystem detected; must be written atomically with or before the first `build-evidence-r<N>-s<K>.md`. Optional otherwise (overrides skeptic's default test-path regex set if present).
 - `frontend-handoff.md` when UI changed and `ui-ux-designer` did not run.
 - Downstream skeptic/auditors inspect changed files via per-shard git diff + evidence artifacts.
@@ -100,10 +101,10 @@ When NOT skipping: evidence body shows red-green sequence (failing test commit, 
 
 Every build spawn declares 5 mandatory steps:
 
-1. Read inputs (brief, design, shard block, prior verdicts)
+1. Read inputs (context-digest, build-contract, shard block, prior verdict findings)
 2. Implement per shard scope globs
 3. Self-verify scope-check (worktree-lifecycle op=scope-check)
-4. Write prebuild-skeptic-code-r<N>-s<K>.md + build-evidence-r<N>-s<K>.md to MAIN repo run-dir (NOT worktree)
+4. Write build-evidence-r<N>-s<K>.md to MAIN repo run-dir (NOT worktree), including prebuild skeptic section
 5. Commit changes to shard branch (`git add <scope-paths>` + `git commit`)
 
 build-evidence frontmatter MUST include `steps_completed: [1, 2, 3, 4, 5]`. Returning before step 5 = build refusal; orchestrator re-spawns OR finishes manually + flags via friction.
@@ -112,4 +113,4 @@ build-evidence frontmatter MUST include `steps_completed: [1, 2, 3, 4, 5]`. Retu
 
 ## Completion / Reporting
 - Report exact code/test commands in evidence artifact.
-- For code-changing runs, ensure downstream order: tester -> friction-reviewer.
+- For code-changing runs, ensure downstream order: tester -> pipeline-friction-audit skill (non-gating).

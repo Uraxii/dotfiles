@@ -7,7 +7,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 **Scope**
 
 - `decision-elicitation` skill with artifact contracts (`options-r<N>.md`, `decision-r<N>.md`, `awaiting-decision-r<N>.md`).
-- Orchestrator integration: role inclusion rule, dependency-graph entry, artifact discipline updates, `pipeline.md` schema extension (`decision_points:`, `paused_on_decision:` blocks).
+- Orchestrator integration: role inclusion rule, dependency-graph entry, artifact discipline updates, SQLite Ledger decision-state extension (`decision_points`, `paused_on_decision`).
 - Sync delivery via `AskUserQuestion`.
 - Async delivery via Slack Socket Mode listener (`.claude/pipeline/slack_listener.py`) + `ScheduleWakeup` (`delaySeconds=600`).
 - Trigger: explicit `decision_points:` declaration in brief or plan only.
@@ -24,7 +24,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 - [ ] Resume on wake fires the poll procedure; button click → listener writes `decision-r<N>.md`; pipeline resumes.
 - [ ] Async pre-check failure (no `pipeline.toml`, missing listener script, missing tokens, listener spawn fails) degrades to sync.
 - [ ] Timeout (default 7d) writes `verdict: timeout` and halts.
-- [ ] `pipeline.md` shows `status: paused_on_decision` during wait.
+- [ ] SQLite Ledger shows `status=paused_on_decision` during wait.
 
 **Out of scope (deferred to later phases)**
 
@@ -110,7 +110,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 - `--assign <slack-user-id>` flag in `decision_points:` for delegating decisions (listener allowlists clicks to the assignee).
 - LLM free-form reply parse: if no button click, listener reads the most recent thread reply from the assignee, posts a confirmation message ("Interpreted as Option B. React 🛑 within 10min to cancel."), re-wakes once, proceeds unless cancelled.
 - Generated PR bodies auto-link Slack decision threads via permalink in the PR body.
-- [[Pipeline Stages|friction-reviewer]] audit step: scan `<run-dir>/awaiting-decision-r*.md` across active runs; report orphans + post resolution emoji in the corresponding Slack thread at run-complete.
+- [[Pipeline Gates|pipeline-friction-audit]] audit step: scan `<run-dir>/awaiting-decision-r*.md` across active runs; report orphans + post resolution emoji in the corresponding Slack thread at run-complete.
 
 **Acceptance criteria**
 
@@ -118,7 +118,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 - [ ] Free-form reply ("go with B, the streaming one") parsed and confirmed before action.
 - [ ] User can override LLM parse via 🛑 reaction within the override window.
 - [ ] PR bodies link the Slack threads that drove their scope.
-- [ ] friction-reviewer reports orphan awaiting files per run.
+- [ ] pipeline-friction-audit reports orphan awaiting files per run.
 
 **Dependencies**
 
@@ -174,7 +174,7 @@ Phased delivery plan for the [[Pipeline Decisions|decision-elicitation]] stage. 
 |---|---|
 | `ScheduleWakeup` only fires in `/loop` context | Document manual `resume <id>` fallback. Phase 0 ships both paths. |
 | Free-form parse misroutes user intent | Phase 4 confirmation message + 🛑 reaction override window. |
-| Slack message clutter in a chatty workspace | Thread-per-run isolates noise; one channel per project keeps cross-project chatter separate; friction-reviewer surfaces orphans. |
+| Slack message clutter in a chatty workspace | Thread-per-run isolates noise; one channel per project keeps cross-project chatter separate; pipeline-friction-audit surfaces orphans. |
 | HTML companion bloats run dirs | Phase 1 keeps HTML optional + scoped to `<run-dir>/decisions/`. Cleaned at run-complete (Phase 4). |
 | Cross-run archive drift | Phase 5 archive is immutable per artifact-id; user grooms via direct file edit. |
 
