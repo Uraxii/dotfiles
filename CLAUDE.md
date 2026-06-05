@@ -60,9 +60,11 @@ After that, zsh loads `.zshrc`, `.zprofile`, etc from `$ZDOTDIR` instead of `$HO
 `.stowrc` defines `--target=~/.config` + ignores `.stowrc` itself + `DS_Store`. Stow regex overrides defaults — must re-add defaults manually.
 ## Agent & Skill Files
 
-`.claude/agents/` and `.claude/skills/` are the editable source of truth.
-`opencode/agents/` and `opencode/skills/` are symlinks to these.
-Edit files directly — no generator.
+`.claude/agents/` and `.claude/skills/` are the Claude Code source of truth.
+`.hermes/profiles/` and `.hermes/skills/` are the parallel Hermes source of truth (omerxx-mirrored).
+`opencode/agent/`, `opencode/skills/`, `opencode/command/` hold the OpenCode-format copies.
+
+Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`/`tools`; OpenCode/Hermes: `mode`/`tools: {bash: false}`), so the trees are maintained in parallel rather than symlinked. Edit files directly — no generator.
 
 
 

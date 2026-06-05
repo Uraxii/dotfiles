@@ -54,11 +54,10 @@ rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.clau
 | ghostty | Terminal emulator | [docs/shell.md](docs/shell.md) |
 | nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`nvim/`](nvim/) |
 | opencode | AI agent stack (legacy) | [docs/tooling.md](docs/tooling.md) |
-| Claude Code | AI agent stack — `.claude/` pipeline + skills | [docs/tooling.md](docs/tooling.md) |
-| Hermes Agent | AI agent stack — `.hermes/` port of pipeline | [docs/tooling.md](docs/tooling.md) |
+| Claude Code | AI agent stack — `.claude/` agents + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
+| Hermes Agent | AI agent stack — `.hermes/` profiles + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
-| comms provider | Pipeline notification / Slack abstraction layer | [docs/comms.md](docs/comms.md) |
 
 For the theming architecture, agent rules, and the `docs/` contract itself, see [CLAUDE.md](CLAUDE.md).
 

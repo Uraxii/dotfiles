@@ -63,12 +63,46 @@ the old local pipeline plugin/skill port.
 - `.hermes/SOUL.md` — default Hermes prompt, mirrored from upstream `tech-lead.md`.
 - `.hermes/profiles/*/SOUL.md` — upstream `opencode/agent/*.md` prompts as Hermes profiles.
 - `.hermes/skills/caveman/SKILL.md` — output-style skill.
+- `.hermes/skills/productivity/session-transfer/SKILL.md` — handoff doc skill.
 - `.hermes/skills/software-development/graphify/SKILL.md` — graphify helper skill.
 - `.hermes/hooks/graphify_advice.sh` — graphify shell advice hook.
 
 ### External dependencies
 
 `hermes-agent` (`hermes` CLI).
+
+## Claude Code
+
+### Purpose
+
+Claude Code agent stack — Claude-Code-native ports of the same omerxx agent
+prompts that Hermes uses, with Claude Code frontmatter (`name`/`description`/
+`model`/`tools`).
+
+### Key files
+
+- `.claude/agents/tech-lead.md` — primary orchestrator (no `tools:`, inherits all).
+- `.claude/agents/architect-designer.md` — design-only subagent (read-only).
+- `.claude/agents/implementation-specialist.md` — disciplined code-writer.
+- `.claude/agents/requirements-clarifier.md` — vague-to-spec translator (read-only).
+- `.claude/agents/test-automation-engineer.md` — tests + verifies fixes.
+- `.claude/agents/big-pickle-simple-tasks.md` — task decomposition specialist.
+- `.claude/skills/*/SKILL.md` — reusable skills (`caveman`, `handoff`,
+  `graphify`, `tdd`, `diagnose`, `prototype`, `yeet`, etc.). See
+  `.claude/skills/README.md` for the full inventory.
+- `.claude/rules/*.md` — per-language rules (Python, TypeScript, C#, GDScript).
+- `.claude/hooks/cap_bash_timeout.py` — `PreToolUse` Bash-timeout cap.
+
+### Delegation flow
+
+`tech-lead` is the primary that triages user requests, decides between handling
+directly versus delegating, and routes complex work through the four specialist
+subagents (`requirements-clarifier` → `architect-designer` → `implementation-specialist`
+→ `test-automation-engineer`). Simple requests skip orchestration.
+
+### External dependencies
+
+`claude` CLI (Claude Code).
 
 ## systemd / user
 
