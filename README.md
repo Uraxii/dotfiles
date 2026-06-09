@@ -10,8 +10,7 @@ Prerequisites: `git`, `stow`.
 sudo pacman -S git stow         # Arch / Manjaro
 git clone <this-repo> ~/dotfiles
 cd ~/dotfiles
-./setup.sh                      # runs `stow .` (headless)
-./setup.py                      # Textual TUI (stow + KDE keybinds)
+./setup.sh                      # runs `stow .`
 stow -R .                       # restow after changes
 stow -n -v .                    # dry run
 ```
@@ -55,13 +54,10 @@ rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.clau
 | ghostty | Terminal emulator | [docs/shell.md](docs/shell.md) |
 | nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`nvim/`](nvim/) |
 | opencode | AI agent stack (legacy) | [docs/tooling.md](docs/tooling.md) |
-| Claude Code | AI agent stack — `.claude/` pipeline + skills | [docs/tooling.md](docs/tooling.md) |
-| Hermes Agent | AI agent stack — `.hermes/` port of pipeline | [docs/tooling.md](docs/tooling.md) |
-| KDE keybinds | Sway-style + Mac-style (Meta) shortcuts in Plasma 6 | [docs/desktop.md](docs/desktop.md) |
-| setup.py | Textual TUI installer (stow + keybinds) | `./setup.py` |
+| Claude Code | AI agent stack — `.claude/` agents + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
+| Hermes Agent | AI agent stack — `.hermes/` profiles + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
-| comms provider | Pipeline notification / Slack abstraction layer | [docs/comms.md](docs/comms.md) |
 
 For the theming architecture, agent rules, and the `docs/` contract itself, see [CLAUDE.md](CLAUDE.md).
 

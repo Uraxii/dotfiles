@@ -1,4 +1,0 @@
-name: pipeline-core
-version: "1.0"
-description: Deterministic logic tools for the multi-role gated pipeline (artifact-slug, verdict-parse, dep-graph, revision-route, worktree-lifecycle, test-paths, prod-diff-sha, friction-audit).
-requires_env: []

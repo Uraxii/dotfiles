@@ -1,19 +1,24 @@
-# Pipeline skills
+# Claude Code skills
 
-Reusable procedures invoked by pipeline agents via the `Skill` tool. Files are editable directly — no generator.
+User-level skills loaded by Claude Code from `~/.claude/skills/`. Each skill is a directory with a `SKILL.md` (frontmatter + body) plus optional bundled resources.
+
+Tree maintained as the Claude Code source of truth. Hermes-equivalent skills live under `.hermes/skills/` with omerxx-style frontmatter; opencode versions under `opencode/skills/`. Edit files directly — no generator.
+
+## Skills
 
 | Skill | Description |
 |-------|-------------|
-| [pipeline-verdict-parse](pipeline-verdict-parse/SKILL.md) | Glob `verdict-<type>-r<N>.md`, pick max N, parse YAML frontmatter. |
-| [pipeline-handoff-doc](pipeline-handoff-doc/SKILL.md) | Persistence-rotation summary template for persistent roles at context threshold. |
-| [pipeline-agent-brief-format](pipeline-agent-brief-format/SKILL.md) | `brief.md` template: durable-over-precise (no file paths/line numbers). |
-| [pipeline-artifact-slug](pipeline-artifact-slug/SKILL.md) | Resolve canonical artifact-id via runtime-aware artifact-slug tool. |
-| [pipeline-test-path-resolve](pipeline-test-path-resolve/SKILL.md) | Canonical test-path glob set; reads optional `test-paths.txt` manifest. |
-| [pipeline-prod-diff-sha](pipeline-prod-diff-sha/SKILL.md) | Compute SHA1 of production-code diff vs `base_sha`, excluding test paths. |
-| [pipeline-worktree-lifecycle](pipeline-worktree-lifecycle/SKILL.md) | Pipeline shard worktree primitives: create / probe / cleanup / scope-check. |
-| [pipeline-decision-elicitation](pipeline-decision-elicitation/SKILL.md) | Orchestrator-owned decision-point flow (sync/async, gh issue, resume). |
-| [pipeline-agent-preflight](pipeline-agent-preflight/SKILL.md) | Mandatory preflight + pre-emit critique + verification doctrine for gate-emitting agents. |
-| [pipeline-dep-graph-compose](pipeline-dep-graph-compose/SKILL.md) | Compose ordered role execution graph for a pipeline run. |
-| [pipeline-revision-route](pipeline-revision-route/SKILL.md) | Map a verdict file to next pipeline action (respawn/approved/halt). |
-| [pipeline-friction-audit](pipeline-friction-audit/SKILL.md) | Deterministic post-run audit of pipeline doctrine adherence (non-gating). |
-| [caveman](caveman/SKILL.md) | Output-style autoload — drops articles/filler, preserves technical substance. |
+| [caveman](caveman/SKILL.md) | Terse smart-caveman output style; pin via memory for persistent activation. |
+| [handoff](handoff/SKILL.md) | Compact the current conversation into a durable handoff doc in `$TMPDIR` for another session. |
+| [graphify](graphify/SKILL.md) | Project-level graphify knowledge-graph workflow; scoped subgraph queries over `graphify-out/`. |
+| [diagnose](diagnose/SKILL.md) | Disciplined diagnosis loop for hard bugs / perf regressions. |
+| [tdd](tdd/SKILL.md) | Red-green-refactor TDD loop. |
+| [prototype](prototype/SKILL.md) | Throwaway prototype to flesh out a design before committing to it. |
+| [triage](triage/SKILL.md) | State-machine-driven issue triage. |
+| [yeet](yeet/SKILL.md) | Stage + commit + push + open PR in one flow. |
+| [grill-with-docs](grill-with-docs/SKILL.md) | Stress-test a plan against project domain language + ADRs. |
+| [improve-codebase-architecture](improve-codebase-architecture/SKILL.md) | Find deepening / refactor opportunities. |
+| [write-a-skill](write-a-skill/SKILL.md) | Author new skills with proper structure. |
+| [artifact-serve](artifact-serve/SKILL.md) | Serve generated artifacts over HTTP / Tailscale + collect feedback. |
+| [zoom-out](zoom-out/SKILL.md) | Broader-context recap for unfamiliar code. |
+| [gdscript-graph](gdscript-graph/SKILL.md) | GDScript knowledge-graph workflow (Godot projects). |

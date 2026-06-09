@@ -1,1 +1,0 @@
-../../../.claude/skills/verdict-parse/verdict-parse.py

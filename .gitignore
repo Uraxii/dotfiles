@@ -85,3 +85,6 @@ tmux/plugins/
 .hermes/profiles/*/memory/
 .hermes/profiles/*/logs/
 .hermes/profiles/*/auth.json
+
+# graphify generated knowledge-graph output (not source)
+graphify-out/

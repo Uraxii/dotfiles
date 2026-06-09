@@ -1,1 +1,0 @@
-../../../.claude/skills/test-path-resolve/test-path-resolve.py

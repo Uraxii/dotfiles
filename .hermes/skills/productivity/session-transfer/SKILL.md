@@ -1,10 +1,17 @@
 ---
-name: handoff
-description: Compact the current conversation into a handoff document for another agent to pick up. Use when the user asks for a handoff, session compact, continuity note, or wants another session/agent to continue current work.
+name: session-transfer
+description: Use when compacting current work into a durable brief for another session, agent, or future continuation.
+version: 1.0.0
+author: Hermes Agent
+license: MIT
+metadata:
+  hermes:
+    tags: [handoff, session-continuity, summarization, temp-files]
+    related_skills: [session-search, writing-plans]
 argument-hint: "What will the next session be used for?"
 ---
 
-# Handoff
+# Session Transfer
 
 ## Overview
 

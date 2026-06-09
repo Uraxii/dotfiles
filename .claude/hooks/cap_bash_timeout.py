@@ -8,9 +8,9 @@ exceeds the default 10-minute cap (600000 ms) and the command does NOT match
 the long-timeout allowlist. Allows everything else.
 
 Rationale: `BASH_MAX_TIMEOUT_MS` raises the session ceiling so that hour-/day-
-long blocking calls are possible (e.g. `pipeline_ask.py`). Without this hook,
-the agent could request 24h on any command including hung loops. This hook
-enforces "only allowlisted commands may exceed the default cap."
+long blocking calls are possible. Without this hook, the agent could request
+24h on any command including hung loops. This hook enforces "only allowlisted
+commands may exceed the default cap."
 
 Hook protocol (Claude Code):
 - stdin: JSON envelope w/ tool_name, tool_input, etc.
@@ -34,9 +34,8 @@ DEFAULT_CAP_MS = 600_000
 # Commands permitted to request timeouts beyond DEFAULT_CAP_MS. Match against
 # the literal command string. Extend list as needed; regex tested w/ re.search
 # so substring presence is sufficient.
-LONG_TIMEOUT_ALLOWLIST = [
-    re.compile(r"pipeline_ask\.py"),
-    # Add future long-blocking tools here. Keep list tight.
+LONG_TIMEOUT_ALLOWLIST: list[re.Pattern[str]] = [
+    # Add long-blocking tools here. Keep list tight.
 ]
 
 
