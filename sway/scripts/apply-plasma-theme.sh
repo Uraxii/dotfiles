@@ -9,6 +9,15 @@
 
 set -euo pipefail
 
+# ── Per-machine opt-out ────────────────────────────────────────────────
+# On machines where you prefer KDE's own color scheme (e.g. WhiteSur-dark)
+# over the dotfiles palette, create this sentinel file. The script still
+# aligns GTK/XDG-portal dark mode below (so Electron/GTK apps stay dark) but
+# leaves KDE's Qt color scheme and Plasma desktop theme untouched. The file
+# lives outside the repo, so it is naturally machine-local / untracked.
+#   touch ~/.config/dotfiles-keep-kde-colorscheme
+KEEP_KDE_SCHEME="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles-keep-kde-colorscheme"
+
 # ── Resolve theme ──────────────────────────────────────────────────────
 ACTIVE_THEME="${ACTIVE_THEME:-gruvbox}"
 PALETTE_SRC="${XDG_CONFIG_HOME:-$HOME/.config}/sway/themes/$ACTIVE_THEME/data/qt-colors.colors"
@@ -27,6 +36,11 @@ mkdir -p "$COLOR_SCHEMES_DIR"
 # corrected even when the KDE palette did not change.
 if command -v gsettings >/dev/null 2>&1; then
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
+fi
+
+# Opt-out: dark mode aligned above; leave KDE's own color scheme/theme alone.
+if [ -f "$KEEP_KDE_SCHEME" ]; then
+    exit 0
 fi
 
 if [ ! -f "$PALETTE_SRC" ]; then
