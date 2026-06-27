@@ -1,6 +1,7 @@
 {
   "model": "opus[1m]",
   "tui": "fullscreen",
+  "agent": "zakia",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
