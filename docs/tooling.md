@@ -64,8 +64,6 @@ the old local pipeline plugin/skill port.
 - `.hermes/profiles/*/SOUL.md` — upstream `opencode/agent/*.md` prompts as Hermes profiles.
 - `.hermes/skills/caveman/SKILL.md` — output-style skill.
 - `.hermes/skills/productivity/session-transfer/SKILL.md` — handoff doc skill.
-- `.hermes/skills/software-development/graphify/SKILL.md` — graphify helper skill.
-- `.hermes/hooks/graphify_advice.sh` — graphify shell advice hook.
 
 ### External dependencies
 
@@ -88,7 +86,7 @@ prompts that Hermes uses, with Claude Code frontmatter (`name`/`description`/
 - `.claude/agents/test-automation-engineer.md` — tests + verifies fixes.
 - `.claude/agents/big-pickle-simple-tasks.md` — task decomposition specialist.
 - `.claude/skills/*/SKILL.md` — reusable skills (`caveman`, `handoff`,
-  `graphify`, `tdd`, `diagnose`, `prototype`, `yeet`, etc.). See
+  `tdd`, `diagnose`, `prototype`, `yeet`, etc.). See
   `.claude/skills/README.md` for the full inventory.
 - `.claude/rules/*.md` — per-language rules (Python, TypeScript, C#, GDScript).
 - `.claude/hooks/cap_bash_timeout.py` — `PreToolUse` Bash-timeout cap.

@@ -37,6 +37,8 @@ __pycache__
 # .claude/.hermes handled by separate `stow --no-folding -t $HOME` pass in setup.sh
 ^/\.claude
 ^/\.hermes
+# copilot agents reach ~/.copilot/agents via a manual symlink (Copilot CLI is non-XDG); never stow into ~/.config
+^/copilot
 ^/scripts/?$
 ^/tests/?$
 ^/home\.nix

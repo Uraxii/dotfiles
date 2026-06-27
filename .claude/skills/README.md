@@ -10,7 +10,6 @@ Tree maintained as the Claude Code source of truth. Hermes-equivalent skills liv
 |-------|-------------|
 | [caveman](caveman/SKILL.md) | Terse smart-caveman output style; pin via memory for persistent activation. |
 | [handoff](handoff/SKILL.md) | Compact the current conversation into a durable handoff doc in `$TMPDIR` for another session. |
-| [graphify](graphify/SKILL.md) | Project-level graphify knowledge-graph workflow; scoped subgraph queries over `graphify-out/`. |
 | [diagnose](diagnose/SKILL.md) | Disciplined diagnosis loop for hard bugs / perf regressions. |
 | [tdd](tdd/SKILL.md) | Red-green-refactor TDD loop. |
 | [prototype](prototype/SKILL.md) | Throwaway prototype to flesh out a design before committing to it. |
@@ -21,4 +20,3 @@ Tree maintained as the Claude Code source of truth. Hermes-equivalent skills liv
 | [write-a-skill](write-a-skill/SKILL.md) | Author new skills with proper structure. |
 | [artifact-serve](artifact-serve/SKILL.md) | Serve generated artifacts over HTTP / Tailscale + collect feedback. |
 | [zoom-out](zoom-out/SKILL.md) | Broader-context recap for unfamiliar code. |
-| [gdscript-graph](gdscript-graph/SKILL.md) | GDScript knowledge-graph workflow (Godot projects). |

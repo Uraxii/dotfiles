@@ -34,9 +34,6 @@ require('lazy').setup({
 
   -- [[ AI ASSISTANTS ]]
 
-  -- [[ NOTES ]]
-  require 'plugins.obsidian', -- Obsidian vault integration
-
   -- [[ GIT ]]
   require 'plugins/neogit', -- Perform Git actions within Neovim
   require 'plugins/diffview', -- View Git diffs within Neovim
