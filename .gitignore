@@ -87,3 +87,8 @@ tmux/plugins/
 
 # graphify generated knowledge-graph output (not source)
 graphify-out/
+
+# Scratch / build artifacts (never tracked)
+copilot.zip
+tmp/
+zsh/.zcompdump
