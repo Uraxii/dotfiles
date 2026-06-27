@@ -46,3 +46,8 @@ theme = "Kanagawa Dragon"
 background-opacity = 0.8
 font-family = 0xProto Nerd Font Mono
 font-size = 14
+
+# Tiling WM (KWin/Krohnkite): drop the GTK CSD titlebar so the terminal grid
+# owns the full tile. Without this Ghostty quantizes its height ~one titlebar
+# short and KWin leaves an empty band at the bottom. ~/.config/ghostty/config
+window-decoration = none
