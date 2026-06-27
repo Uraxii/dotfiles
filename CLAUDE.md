@@ -23,6 +23,8 @@ GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land i
 ├── nvim/                         # → ~/.config/nvim/   (Kickstart-based, has own CLAUDE.md)
 ├── omp/                          # → ~/.config/omp/    (inactive, kept for reference)
 ├── opencode/                     # → ~/.config/opencode/  (+ Claude Code skills)
+├── copilot/agents/               # GitHub Copilot CLI agents (*.agent.md); symlinked to ~/.copilot/agents
+├── copilot/skills/               # Curated Copilot CLI skill copies (may diverge from .claude/skills); → ~/.copilot/skills
 ├── qt6ct/                        # → ~/.config/qt6ct/
 ├── sway/                         # → ~/.config/sway/
 ├── swaylock/                     # → ~/.config/swaylock/   (XDG-native)
@@ -46,6 +48,12 @@ ln -s ~/.config/.claude ~/.claude
 ln -s ~/.config/.hermes ~/.hermes
 ```
 
+`copilot` (GitHub Copilot CLI) reads `~/.copilot/` (hardcoded, non-XDG). Its dir is full of runtime state (sessions, cache, logs), so only the config subdirs are symlinked into the repo, not the whole dir. Agents point at the parallel `copilot/agents/` tree:
+```bash
+ln -s ../dotfiles/copilot/agents ~/.copilot/agents   # relative target → ~/dotfiles/copilot/agents
+ln -s ../dotfiles/copilot/skills ~/.copilot/skills   # curated skill set (5 symlinks → .claude/skills)
+```
+
 **zsh + ZDOTDIR**: zsh hardcodes `~/.zshenv` as the one always-loaded file. Create a one-line stub on each machine:
 ```sh
 # ~/.zshenv
@@ -63,8 +71,14 @@ After that, zsh loads `.zshrc`, `.zprofile`, etc from `$ZDOTDIR` instead of `$HO
 `.claude/agents/` and `.claude/skills/` are the Claude Code source of truth.
 `.hermes/profiles/` and `.hermes/skills/` are the parallel Hermes source of truth (omerxx-mirrored).
 `opencode/agent/`, `opencode/skills/`, `opencode/command/` hold the OpenCode-format copies.
+`copilot/agents/*.agent.md` hold the GitHub Copilot CLI copies (symlinked live to `~/.copilot/agents`).
+`copilot/skills/` is a curated Copilot skill set — full **copies** of caveman, tdd, handoff, grill-with-docs, diagnose, improve-codebase-architecture (with their bundled resources). Skills share Claude's `SKILL.md` format (Copilot reads it natively), so no frontmatter rewrite is needed — but they are copied, not symlinked, because the Copilot versions are expected to diverge from the Claude originals over time. Maintain in parallel like the agent trees. Seed a new one from repo root with `cp -rL .claude/skills/<name> copilot/skills/<name>`, then edit the copy.
+
+`copilot/skills/poc/` is a Copilot-native skill with no Claude original — a thin **launcher** that hands the user's request to the `tech-lead` agent, which orchestrates the specialist fleet. Entry point for the whole multi-agent system: a user types `poc <task>` (or "use the team" / "spin up the tech-lead") and tech-lead triages → phases → delegates → runs the skeptic-gate check. Delegation nests one extra level here (skill → tech-lead → specialist), which Copilot supports.
 
 Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`/`tools`; OpenCode/Hermes: `mode`/`tools: {bash: false}`), so the trees are maintained in parallel rather than symlinked. Edit files directly — no generator.
+
+**Copilot specifics**: filenames are `<name>.agent.md`. Frontmatter drops `model:` — the available model catalog (`claude-haiku-4.5`, `gpt-5-mini`) can't honor the Claude tier intent (opus/sonnet/haiku), so agents inherit the session model; re-pin per-agent once a richer catalog appears. `tools:` uses Copilot's canonical names (`read`, `search`, `edit`, `execute`, `agent`, `web`, `todo` — `Skill` has no equivalent, dropped). Delegation uses the `agent`/`task` tool, not Claude's Agent tool. Tech-lead omits `tools:` so it retains `agent` to spawn specialists.
 
 
 
@@ -175,13 +189,3 @@ Tooling strips high-codepoint UTF-8 on write. Never paste raw glyphs. Use `~/dot
 - `nerd-glyph check U+F126 [FONT]` — verify codepoint exists in font.
 
 In configs, write tokens (`__GIT__`, `__CAP_L__`, …) then run `nerd-glyph sub`. In shell scripts emit via `printf %b '\xHH\xHH\xHH'`.
-
-## graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
