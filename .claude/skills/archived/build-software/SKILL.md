@@ -9,8 +9,8 @@ Drive pipeline in main thread. Understand req → break into phases → build ea
 increment user signs off before next. No finished-feature dump. Skeleton first, push each
 phase, add logic only after design confirmed.
 
-Self-contained. Own Designer/Builder/skeptic agents (bundled). Operates only on invoked
-project.
+Self-contained. Bundles Designer/Builder/skeptic agents; optional test-engineer from
+registry. Operates only on invoked project.
 
 ## Core Responsibilities
 
@@ -25,8 +25,9 @@ project.
 | Agent | File | Phases | Use for | Exec |
 |---|---|---|---|---|
 | **Designer** | `designer.md` | 0-3 | req, data structures, interface contracts, TODO siting (read-only) | **spawn a Designer subagent** (`designer.md`); orchestrator relays its reasoning + artifact at the gate. Inline ONLY for trivial single-line transcription. |
-| **Builder** | `builder.md` | 4-6 | impl, dual-layer tests, invariants, behavioral runs, deviation log | **spawn a Builder subagent** (`builder.md`) for impl/tests/invariants. Inline ONLY for trivial single-line edits. |
-| **skeptic** | `skeptic.md` | 4 & 6 | independent challenge check (Builder never certifies own work) | **fresh general-purpose subagent** - separate spawn + clean context = independence |
+| **Builder** | `builder.md` | 4-6 | impl, invariants, runs, deviation log; P6 tests on refactor slices | spawn Builder subagent. Inline ONLY for trivial 1-line edits. |
+| **Test engineer** *(opt, P6)* | registry `test-automation-engineer` | 6 | P6 tests, INDEPENDENT of impl | spawn for feature/new-behavior — implementer no grade own tests. Refactor/rename → Builder writes (regression suite IS spec). Pick at P0. |
+| **skeptic** | `skeptic.md` | design + risky impl | challenge check (no one certifies own work) | fresh subagent = clean-context independence. Challenge the DESIGN (plan, skeleton, interfaces, TODO map - will the feature build from it?) AND risky impl diffs (netcode, migration). Skip trivial/comment-only mechanics. |
 
 **Delegation is default.** Orchestrator spawns agent subagents for phase work +
 relays their reasoning/diff at the gate. "Small to type" ≠ "trivial decision" —
@@ -51,7 +52,9 @@ English-only.
 
 **Phase 0 - Assess & Plan.** Req clear? complete? what domain expertise? Designer clarifies
 objectives/scope/edge cases (via `grill-with-docs`), writes phase-1→6 plan. Discover project
-quality + test conventions. Present plan, get explicit ack before code. Then create
+quality + test conventions. Lock two knobs: review points (which phases stop for human
+review) + P6 test author (Builder, or dedicated test-engineer by slice type). Present plan,
+get explicit ack before code. Then create
 **dedicated worktree** (default - isolates the build; main checkout stays clean; phase-4 spike
 gets its own throwaway worktree off this one):
 ```
@@ -77,18 +80,20 @@ committed. Builder:
 - **deviation log** - every place forced to break from structs/interfaces/TODOs (each: what
   was missing + suggested design fix)
 
-Spawn skeptic on spike diff. Present log + verdict, apply gate rule: deviations → loop to 1-3,
-fix design; clean → proceed. Discard spike: `git worktree remove --force ../<repo>-spike-<slug>`
-(+ `git branch -D spike/<slug>`).
+skeptic on the spike diff only if substantive (else P6's skeptic covers the shipping impl).
+Present log + verdict, apply gate rule: deviations → loop to 1-3, fix design; clean → proceed.
+Discard spike: `git worktree remove --force ../<repo>-spike-<slug>` (+ `git branch -D spike/<slug>`).
 
 **Phase 5 - Invariants.** Builder: assertions, pre/postconditions, guard clauses from phase
-4. skeptic + quality gate verify these specifically.
+4. Quality gate always; skeptic only if substantive (netcode/security/teardown) - skip a
+trivial guard-clause add.
 
-**Phase 6 - Real impl + tests.** Builder: write the tests now (both layers below) AND impl
-against the confirmed skeleton + invariants via `tdd` skill (outside-in: behavioral
-acceptance test first, then inner loop - one test→one impl→refactor; NO horizontal slicing),
-driving all tests **green** (CI regression). Run headless/UAT iface (`verify` / `run`).
-Spawn skeptic = final challenge check.
+**Phase 6 - Real impl + tests.** Builder impls against confirmed skeleton + invariants via
+`tdd` (outside-in: acceptance test first, then one test→one impl→refactor; NO horizontal
+slicing). All tests **green** (CI regression). Run headless/UAT (`verify` / `run`). Test
+author set at P0: feature/new-behavior → dedicated `test-automation-engineer` writes tests
+blind to impl (acceptance test first, Builder drives green); refactor/rename → Builder writes
+(port-existing; regression suite IS spec). skeptic = final challenge.
 
 ## Per-phase ritual (phases 1,2,3,5,6)
 
@@ -98,15 +103,15 @@ Spawn skeptic = final challenge check.
    `CLAUDE.md`, `AGENTS.md`, rule files, `.editorconfig`, linter/formatter config in built
    project.
 3. **Commit + push** the phase via the `yeet` skill. Required every code phase; never gate-stop on a local-only commit.
-4. **STOP.** Give a clickable review link (commit URL + branch compare URL), state what to check, wait. Resume on go.
+4. **Advance or stop.** No human review needed → auto-advance. Review needed → STOP. Review needed = phase bears a design/contract call (default P1-P3), gate non-PASS, or final ship (P6). On stop: clickable review link (commit + compare URL) + what to check, wait. Review points set at P0.
 
 ## Testing - two layers (never either/or)
 
-1. **CI/CD regression (required):** all tests are written at phase 6 via outside-in TDD -
-   behavioral acceptance tests first, then the `tdd` skill inner loop (vertical unit tests).
-   All green @ phase 6, CI-runnable. Proves nothing broke. Follow project test conventions.
-2. **Headless/UAT (additive):** Builder builds driveable headless iface - behavioral runs,
-   data gathering, reporting, acceptance testing. Complements layer 1, never replaces.
+1. **CI/CD regression (required):** all tests written @ P6, outside-in - acceptance test
+   first, then `tdd` inner loop (unit). Green @ P6, CI-runnable. Proves nothing broke. Follow
+   project test conventions.
+2. **Headless/UAT (additive):** Builder builds driveable headless iface - runs, data,
+   reports, acceptance. Complements layer 1, never replaces.
 
 ## Quality Gates (pass before proceeding)
 
@@ -114,7 +119,7 @@ Spawn skeptic = final challenge check.
 - Skeleton (structs/interfaces/TODOs) confirmed at gate
 - Tests green @ phase 6
 - Quality gate passed each phase diff
-- skeptic PASS (or non-PASS findings resolved) phases 4 & 6
+- skeptic PASS (or non-PASS resolved): design (plan/skeleton) + risky impl phases
 
 ## Communication Style
 
