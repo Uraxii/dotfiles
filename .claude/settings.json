@@ -7,6 +7,7 @@
   },
   "agent": "zakia",
   "tui": "fullscreen",
+  "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "inputNeededNotifEnabled": true
+  "skipWorkflowUsageWarning": true
 }

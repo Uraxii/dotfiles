@@ -8,3 +8,4 @@
 - Prefer visuals and diagram for complex information.
 - READMEs = human doc + instructions. No clutter with inforation for agents.
 - No emmdashes, ever.
+- Use Codebase Memory MCP when possible to traverse codebases.
