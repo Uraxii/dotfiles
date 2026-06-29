@@ -1,6 +1,6 @@
 ---
 name: skeptic
-description: Independent challenge check before risky work ships. Tests assumptions, scope drift, evidence adequacy, and risk on a plan or diff. Read-only, no implementation. Use as a gate after implementation for architecture, security/trust-boundary, netcode/state/replication, migrations, public-API/schema, or large cross-cutting changes, or when verification is weak/missing or tests passed but the result looks suspicious.
+description: Independent challenge check before risky work ships. Tests assumptions, scope drift, evidence adequacy, risk on a plan or diff. Read-only, no impl. Gate after impl for architecture, security/trust-boundary, netcode/state/replication, migrations, public-API/schema, or large cross-cutting changes; or when verification is weak/missing or tests passed but the result looks suspicious.
 model: opus
 tools: Read, Grep, Glob, Bash, Skill
 ---
