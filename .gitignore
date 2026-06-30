@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+# zsh completion cache — regenerated on shell startup, machine-specific
+zsh/.zcompdump*
 .claude/*local*
 .claude/**/*local*
 # .stow-local-ignore is stow's package-level ignore file — DO track it.
