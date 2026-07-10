@@ -110,6 +110,20 @@ Work because pronoun vary along genuine comparable dimension (form, reading, reg
 
 Glossary that should be paragraph series. Table add nothing when each row independent + no shared dimension.
 
+## Citations and sourcing
+
+Don't trust parametric knowledge for factual claim. Ground guide in trusted source: user's own notes (Notion), primary docs, high-reputation reference. Nontrivial factual claim → cite it (inline link or short source line). Citation raise trust + give student a primary source to go deeper.
+
+Each guide should name **one primary source** — the single highest-quality resource on the topic — near the top, so student know where to read/watch beyond the guide.
+
+Don't over-cite: common knowledge for the audience need no footnote. Cite what a skeptical student would question.
+
+## Glossary
+
+Topic with own nomenclature → glossary is essential reference material. Short guide (or appendix section): term, one-line definition, minimal example. Prose paragraph per term, not table (see Tables — bad use).
+
+Once glossary exist, **adhere to it everywhere**: every card, guide, quiz use the glossary's term + spelling. Drift between material = student learn two names for one thing.
+
 ## Cross-references
 
 Guide section pair with flashcard deck or exercise → say so:
@@ -153,6 +167,8 @@ Before deliver:
 - [ ] Prose default; list/table only where add value
 - [ ] No section exist just to pad
 - [ ] Cross-reference to flashcard/exercise present where relevant
+- [ ] Nontrivial claim cited; one primary source named
+- [ ] Terminology match the subject glossary (if one exist)
 - [ ] No section is bullet list that should be paragraph
 - [ ] No truly drillable content buried in prose
 - [ ] Student can use without need additional context not supplied

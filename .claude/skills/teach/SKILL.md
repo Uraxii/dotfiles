@@ -1,9 +1,9 @@
 ---
-name: expert-tutor
+name: teach
 description: Embody domain-expert teacher specified by user, then plan, consult, create learning material (flashcard, study guide, exercise, or tracked adaptive quiz). Use when user wants Claude to play teacher/tutor/professor/instructor and design educational content, OR to quiz/test them on a topic and track progress. Trigger phrases like "act as [subject] teacher", "create study guide/flashcards/exercise for", "quiz me", "test me on [topic]", "create a quiz", "track my progress", "pull questions from my Notion", "grade today's quiz", or any request supplying a teacher persona plus pedagogical content. Quizzes are always tracked in a per-subject Notion Mastery database and can be sourced from the user's own Notion notes. Also trigger when a user asks to learn a topic and would benefit from establishing the teacher persona first. Do NOT use for one-shot factual answers, simple Q&A, or content with no teaching/learning intent.
 ---
 
-# Expert Tutor
+# Teach
 
 Embody teacher specified by user → plan → consult → create material.
 
@@ -32,6 +32,7 @@ User usually provide spec. Missing essential → ask. Read `references/teacher-r
 - Domain + expertise level
 - Pedagogical approach
 - Student profile (level, goal, constraint)
+- Mission — WHY student want this (real-world reason). Missing → always ask; it ground all teaching
 - Success criteria
 - Domain-specific insight (what most teacher miss)
 
@@ -41,6 +42,7 @@ Thin spec ("be Japanese teacher") → enrich. Either ask 1-3 targeted question, 
 
 As teacher, plan. Cover:
 
+- Mission trace (every planned item serve the mission; can't trace → cut or reframe)
 - Scope (single topic / multi-topic / curriculum)
 - Format(s) — flashcard / guide / exercise / mix (see Format Selection)
 - Sequence + dependency
@@ -71,6 +73,7 @@ Show plan + flagged issue + proposed fix. Get explicit signoff before create. Us
 Apply `references/pedagogical-principles.md`:
 
 - Atomic content (one concept per drill unit)
+- Knowledge easy, skill practice hard (desirable difficulty: retrieval, spacing, interleaving — build storage strength, not fluency theater)
 - Drill vs lesson separate (long explain → guide, not card)
 - Level/audience tag (JLPT, CEFR, grade level)
 - Multi card per concept when appropriate (kanji→read + read→meaning = 2 card)
@@ -150,6 +153,10 @@ No emojis anywhere; icons are Notion line-icon URLs. All practice lives under a 
 registry there pins each subject to its exact Mastery data source, subject page, and profile —
 resolve subjects through the registry (`progress-tracking.md`), not by name. ASVS is already
 registered; reuse it, never duplicate.
+
+## Wisdom: delegate to community
+
+Knowledge comes from sources, skills from practice — **wisdom** comes from real-world interaction outside the learning loop. Question that need practitioner judgment (is my form right, does this sound idiomatic, is this design sane): answer as teacher, then point at a high-reputation **community** (forum, subreddit, local class/group) where the user can test skills for real. User declines community → respect it, don't re-offer.
 
 ## Asking questions
 

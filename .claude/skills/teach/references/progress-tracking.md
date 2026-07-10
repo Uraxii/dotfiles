@@ -27,7 +27,7 @@ page names.
 
 Find the registry once (`notion-search` "Subjects", under "Practice Quizzes"), then query its
 data source:
-`SELECT "Subject","Mastery","Subject page","Source","Persona","Item scheme","Question types" FROM "collection://<registry-ds>"`.
+`SELECT "Subject","Mastery","Subject page","Source","Persona","Mission","Item scheme","Question types" FROM "collection://<registry-ds>"`.
 
 Each row gives everything needed. Note: `Mastery` and `Subject page` are stored as Notion
 **mentions** (live links), not bare ids — parse the id out of the tag before using it.
@@ -37,6 +37,10 @@ Each row gives everything needed. Note: `Mastery` and `Subject page` are stored 
   sub-page. Extract the page id from the tag; create new quiz pages under it.
 - `Source` — where content comes from (the user's Notes DB, a page, a project doc, web).
 - `Persona` — teacher persona/level/framing for Step 1.
+- `Mission` — WHY the user is learning this subject (the real-world reason, not the topic).
+  Ground every plan, quiz framing, and next-topic pick in it. Empty or stale → ask the user
+  before generating; missions change as skills grow — confirm, then update the row. A legacy
+  row without the property → backfill it on first use.
 - `Item scheme` — the stable item-id format (e.g. `ASVS 5.3.2`).
 - `Question types` — which styles apply (remaps non-code subjects). JSON array.
 
@@ -72,7 +76,9 @@ then record its id in the registry. Generic schema:
 
 Read the DB:
 `SELECT "Item","State","Seen","Correct","Review soon" FROM "collection://<ds>"`.
-Pick 6-8 items, honoring any focus the user named. Weight:
+Pick 6-8 items, honoring any focus the user named. Selection targets the **zone of proximal
+development** (see `pedagogical-principles.md` #13): the hardest items the user can handle with
+support, biased toward what the subject's `Mission` needs next. Weight:
 - `weak` / `unseen` / `Review soon` checked → often.
 - `learning` → sometimes.
 - `solid` → rarely, and at a harder (higher-level) framing so staying solid means handling it.
