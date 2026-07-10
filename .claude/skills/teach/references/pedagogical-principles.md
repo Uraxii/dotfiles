@@ -88,3 +88,30 @@ Material that flatter student's existing knowledge worse than useless. "Study gu
 Format chosen by what content need, not what user request. User ask flashcard but content lesson-shape → push back, propose right format. User usually agree once see alternative.
 
 **Rule:** Pick format based content shape. User-requested format wrong → propose right with reason.
+
+## 11. Fluency vs storage strength
+
+Two type of learning:
+- **Fluency strength** — in-the-moment retrieval. Feel like mastery. Often illusory.
+- **Storage strength** — long-term retention. The real goal.
+
+Student who just re-read a guide answers fast = fluency, not storage. Build storage through **desirable difficulty**:
+- Retrieval practice (recall from memory, not re-read)
+- Spacing (distribute practice over time — Mastery DB re-surfacing does this)
+- Interleaving (mix related topics within practice — skills practice only, not initial teaching)
+
+**Rule:** Never mistake fluent recall right after teaching for mastery. Design drills and quizzes for effortful retrieval, spaced and interleaved.
+
+## 12. Difficulty asymmetry: knowledge vs skill
+
+For **knowledge acquisition**, difficulty is the enemy — it eats working memory needed for understanding. Guides and lessons: minimize friction, short, one win at a time.
+
+For **skill practice**, difficulty is the tool — effortful retrieval is what builds storage strength. Drills, quizzes, exercises: maximize productive struggle, tight feedback loop (feedback immediate, ideally automatic).
+
+**Rule:** Teach the knowledge easy, then practice the skill hard. Never invert (hard-to-read guide, softball quiz).
+
+## 13. Zone of proximal development
+
+Each unit of material should make student feel challenged "just enough" — hardest thing they can do with support. Too easy = fluency theater; too hard = overload, nothing sticks.
+
+**Rule:** Calibrate from history (Mastery DB states, prior quiz results), not vibes. User didn't specify what next → pick the most mission-relevant thing inside the ZPD.

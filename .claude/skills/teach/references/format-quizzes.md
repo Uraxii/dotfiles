@@ -5,7 +5,7 @@ quiz here is **tracked**: each question targets one atomic item, results update 
 and the next quiz is weighted toward weak/unknown items. No untracked one-shot quizzes — if the
 user wants questions, they get a tracked quiz.
 
-Quiz extends the exercise format with four rules:
+Quiz extends the exercise format with five rules:
 1. **Hide the target.** The visible question must not name the item it tests. Recognition from a
    scenario is the skill. The reveal lives in the answer key only.
 2. **Mark confidence with "Not Sure."** Every question carries a "Not Sure"
@@ -32,6 +32,10 @@ Quiz extends the exercise format with four rules:
    transition in `progress-tracking.md`. Write bands as fractions of the total, e.g. for 5 pts:
    "5 = correct, 2.5–4 = partial, ≤2 = missed." A 1-pt question is simply "1 = correct, 0 =
    missed."
+5. **No formatting tells.** For mcq/multi, options must be indistinguishable by form: roughly
+   equal length, same register, same specificity. The correct option must never be the longest,
+   most hedged, or most detailed one. No "all of the above" crutches. A student who ignores the
+   content and plays the formatting should score at chance.
 
 ## Question types
 
@@ -70,6 +74,8 @@ has (see an existing quiz page for the pattern):
 
 - [ ] Each question discriminates real understanding — a guess can't pass
 - [ ] Distractors plausible; no give-away phrasing leaks the item
+- [ ] Options formatting-neutral: near-equal length, same register, correct answer not the
+      longest or most detailed (rule 5)
 - [ ] Styles varied; at least one applied/code/diagram question where the subject allows
 - [ ] Difficulty matches each item's level and current mastery
 - [ ] Answer key correct, with the item reveal and idiomatic fixes
