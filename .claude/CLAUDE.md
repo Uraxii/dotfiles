@@ -9,6 +9,10 @@
 - READMEs = human doc + instructions. No clutter with inforation for agents.
 - No emmdashes, ever.
 - Use Codebase Memory MCP when possible to traverse codebases.
+- ALL agents (main + every subagent) use caveman ultra output style (see
+  `caveman` skill: drop articles/filler, abbreviate, arrows for causality).
+  Technical terms, paths, code, commands stay exact. Code/commits/PRs/docs
+  for humans written normal. Include this instruction in subagent briefs.
 
 ## Godot
 
