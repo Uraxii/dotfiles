@@ -63,11 +63,17 @@ Use this flow when the user references an existing handoff file and appears to w
    - Check git status/log after commit/push when working in a repository.
    - Search for stale/conflicting language when the task was to update decisions or requirements.
 
+6. Propagate the chain forward (when handing off to the next link).
+   - If the workstream continues (more tickets/tasks remain), the handoff you write for the next session must carry the prior `Carry-Forward Context` forward: keep the overarching goal, cross-cutting decisions, standing conventions, and chain-wide directives; update the task-sequence status and swap the task-specific sections for the new task.
+   - The carry-forward context is living, not frozen. If work on this task changed a prior decision, revise that entry (and note what it superseded and why); if it produced a new fact, constraint, convention, or directive that later tasks need, ADD it. The next handoff should reflect the chain's current truth, not the state at chain start.
+   - Losing or staling carry-forward context is the main failure of chained handoffs. Treat that section as cumulative and maintained, never as "already handled."
+
 ## Procedure: Creating a Handoff
 
-1. Identify the active workstream.
+1. Identify the active workstream and the wider chain.
    - Summarize the current objective in 1-3 sentences.
    - Include the intended next-session focus from the user arguments, if present.
+   - If this handoff is one link in a sequence (e.g. a set of tickets or milestones done in order), capture the WHOLE workstream, not just the next task: the overarching goal, the full task list with done / current / remaining status, and every decision, convention, or constraint agreed up front that binds all the tasks. This is carry-forward context and it must survive the entire chain. Do not prune it just because early tasks are finished — a decision made before task 1 is exactly what a task-3 successor most often loses. When this handoff continues a prior one, carry its Carry-Forward Context forward and keep it current: revise entries that later work changed (noting what was superseded and why), add new facts/constraints/conventions/directives that downstream tasks will need, and never silently drop an entry that still binds remaining tasks.
 
 2. Gather transient context, recall first.
    - Include decisions with their rationale, constraints, unresolved questions, and immediate next steps.
@@ -109,6 +115,19 @@ Next-session focus: <user argument or inferred focus>
 
 ## Active Workstream
 <1-3 sentence summary.>
+
+## Carry-Forward Context (propagate through the whole chain — do NOT prune)
+<Only when this is one link in a sequence of tasks/tickets/milestones. Carry this
+section forward into every subsequent handoff and keep it current: it is
+cumulative and living, not task-specific and not frozen. Revise entries that
+later work changed (note what was superseded), and add new chain-wide facts as
+they emerge.>
+- Overarching goal: <the end state the whole chain is working toward>
+- Task/ticket sequence + status: <e.g. T1 done, T2 in progress, T3-T5 pending>
+- Cross-cutting decisions (bind all tasks): <decision — because rationale>
+- Standing conventions / patterns: <naming, structure, style agreed once, applies throughout>
+- Directives that apply chain-wide: "<verbatim user instruction that governs every task>"
+- Global do-NOT (whole chain): <approach rejected for all tasks, and why>
 
 ## Current State
 - Repo/workspace: <path or URL if relevant>
@@ -167,6 +186,9 @@ Next-session focus: <user argument or inferred focus>
 8. Referencing a document that does not contain the claim.
    - "See docs/plan.md" is only valid if the decision is actually written there. Verify before referencing; otherwise inline the detail.
 
+9. Pruning or staling carry-forward context in a chain.
+   - In a sequence of handoffs, each link must carry the whole chain's durable context, not just the next task. Never drop an up-front decision because it feels "already done"; never leave a superseded decision unrevised. Carry it forward, update it, add to it.
+
 ## Verification Checklist
 
 - [ ] Handoff was written to the OS temp directory, not the current workspace.
@@ -175,6 +197,7 @@ Next-session focus: <user argument or inferred focus>
 - [ ] User directives quoted verbatim, not paraphrased.
 - [ ] Failed approaches / do-NOT list included (or explicitly "none").
 - [ ] Decisions carry their rationale.
+- [ ] For a chained workstream: `Carry-Forward Context` present, carried from the prior handoff, with task-sequence status updated, changed decisions revised, and new chain-wide facts added.
 - [ ] Referenced documents verified to actually contain the claims attributed to them.
 - [ ] Durable artifacts are referenced by path/URL instead of duplicated.
 - [ ] Sensitive information is redacted.
