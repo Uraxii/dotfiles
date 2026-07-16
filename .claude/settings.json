@@ -5,6 +5,9 @@
     "command": "~/.claude/statusline.sh",
     "padding": 2
   },
+  "enabledPlugins": {
+    "ponytail@ponytail": true
+  },
   "extraKnownMarketplaces": {
     "ponytail": {
       "source": {
@@ -20,7 +23,5 @@
   "theme": "custom:synthwave-84",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "enabledPlugins": {
-    "ponytail@ponytail": true
-  }
+  "remoteControlAtStartup": true
 }
