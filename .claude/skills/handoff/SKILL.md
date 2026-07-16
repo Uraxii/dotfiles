@@ -102,8 +102,9 @@ Use this flow when the user references an existing handoff file and appears to w
    - Do not write it into the repo or current workspace unless the user explicitly asks.
 
 7. Report the created file path to the user.
-   - Keep the final response short.
-   - Mention any assumptions or redactions.
+   - State the full absolute path to the handoff document (e.g. `/tmp/handoff-20260716-143000.md`), not a relative path, a `~`-path, or just the filename, so the user can copy it straight into a new session.
+   - Put that path on its own line so it is easy to select.
+   - Keep the rest of the final response short. Mention any assumptions or redactions.
 
 ## Recommended Document Structure
 
@@ -202,4 +203,4 @@ they emerge.>
 - [ ] Durable artifacts are referenced by path/URL instead of duplicated.
 - [ ] Sensitive information is redacted.
 - [ ] Document includes `Suggested Skills`.
-- [ ] Final response reports the handoff path.
+- [ ] Final response reports the full absolute handoff path on its own line.
