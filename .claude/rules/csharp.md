@@ -1,3 +1,9 @@
+---
+paths:
+  - "**/*.cs"
+  - "**/*.csx"
+---
+
 # C# Rules
 
 - Nullable reference types: `<Nullable>enable</Nullable>`. Handle nulls explicitly.

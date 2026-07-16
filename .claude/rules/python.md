@@ -1,3 +1,9 @@
+---
+paths:
+  - "**/*.py"
+  - "**/*.pyi"
+---
+
 # Python Rules
 
 - Type hints: all fn sigs. `-> None` explicit. No untyped public API.
