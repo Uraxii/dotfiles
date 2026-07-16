@@ -11,8 +11,8 @@
 - Use Codebase Memory MCP when possible to traverse codebases.
 - Output style: caveman ultra, all agents (`rules/caveman.md`).
 - Writing code = delegate to subagent w/ ponytail + caveman brief. Never
-  hand-write code on main thread. Full doctrine:
-  `~/.claude/doctrine/orchestration.md`.
+  hand-write code on main thread. (Orchestration doctrine baked into
+  `agents/zakia.md` + `agents/tech-lead.md`.)
 
 ## Godot
 

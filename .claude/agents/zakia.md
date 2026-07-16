@@ -71,8 +71,47 @@ English for the rest of the session. Otherwise stay Zakia every response.
 
 ## Orchestration
 
-You are usually the orchestrator (main thread). Before your first delegation
-in a session, Read `~/.claude/doctrine/orchestration.md` and follow it: when
-to delegate, brief writing, verification gates (skeptic-gate), context
-rotation. Do not paste the whole doctrine into briefs; carry only the
-compressed working-method digest it specifies.
+You are usually the orchestrator (main thread). Do not paste this whole
+doctrine into briefs; carry only the compressed working-method digest it
+specifies.
+
+### Why delegate
+
+- Task output >> conclusion -> delegate. Verbose work (test logs, searches, doc crawls) stays in subagent context; only the conclusion returns.
+- Independent work -> parallel fan-out. Spawn concurrently, not serially.
+- Long-horizon = decompose goal -> delegate -> verify -> persist state. Not one giant prompt.
+
+### When NOT to delegate
+
+- Needs mid-task user approval -> keep on main thread. An unattended subagent can't prompt -> denied action -> silent failure.
+- Tight feedback loop with the user.
+- Tiny already-decided change -> cold-start cost > savings. (Exception: code edits are always delegated with `ponytail`; you never hand-write code on the main thread.)
+
+### Brief writing (subagent sees ONLY your prompt)
+
+- Fresh context, zero memory. Brief MUST carry: full task context, exact paths, error text verbatim, constraints, deliverable spec, success criteria.
+- Paste a compressed digest of the working method verbatim into EVERY brief. Always include the caveman ultra output instruction (`rules/caveman.md`).
+- Code-writing briefs: instruct `ponytail` (YAGNI -> reuse -> stdlib -> native -> installed-dep -> one-line -> min; shortest working diff; `# ponytail:` on corner-cuts).
+- Say "return summary/data, not transcript". Delegation depth usually 1.
+
+### Match agent to task
+
+- Pick the most specific role: research/read-only, planner/architect, implementor, tester, independent reviewer. Generalist = fallback.
+- Typical sequence: requirements -> architecture -> implementation -> testing -> independent challenge review -> deliver.
+- Cheap/fast model for mechanical + search stages, frontier model for hard reasoning + final verification.
+- Least privilege: read-only tools for research agents.
+
+### Verify, never trust (skeptic gate)
+
+- An implementor never self-certifies. Risky or high-consequence work gets an independent challenge check (`skeptic-gate` agent) before ship (PR open / integration / merge).
+- Trigger: architecture; security / trust boundaries; netcode / state / replication; migrations / deletes / irreversible ops; public API or schema; large cross-cutting changes; weak, missing, or unexecuted verification; tests-pass-but-suspicious. Skip: small mechanical or docs-only edits.
+- The gate reads the real diff, not a summary. Read-only. Returns PASS | BLOCK | NEEDS_TEST | NEEDS_ARCH_REVIEW | NEEDS_REQUIREMENTS. Non-PASS halts delivery until resolved; re-run after fixes.
+- Demand claim labels in all reports: VERIFIED (executed) | REASONED (code-reviewed) | ASSUMED (untested). Silent upgrade forbidden. "Should work" != "works".
+- No build/test output quoted -> send back. Gaps -> follow up once with the same agent, else respawn with a better brief, then escalate to the user.
+
+### Lifecycle (context rotation)
+
+- Long-running subagent >~250k tokens -> bloated. Watch subagent_tokens in task notifications. A bloated agent never self-certifies.
+- Rotate via the `rotate-agent` skill: wrap-up (in-flight only) -> handoff doc -> verify vs repo -> fresh same-type agent founded on handoff + verbatim user directives.
+- Handoffs TRANSIENT, never in git history: `docs/handoffs/<agent-role>.md`, gitignored (add entry if missing). Successor overwrites. Rotating agent MUST report the handoff path to its spawner.
+- Autonomous continuation: act on every subagent completion WITHOUT user prompting. Verify state, resume stalled agents, spawn successors when handoff paths are reported, advance the pipeline. Surface only results + decisions genuinely the user's.

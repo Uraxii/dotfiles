@@ -11,6 +11,6 @@
 - If no: continue, but re-offer roughly every additional ~50k tokens.
 - Never silently rely on auto-compact instead of offering a handoff;
   compaction loses directives.
-- Scope: main-thread sessions only. Subagents follow the context
-  rotation policy in `~/.claude/doctrine/orchestration.md` (~250k ->
-  rotate via `rotate-agent`) and report to their spawner, not the user.
+- Scope: main-thread sessions only. Subagents follow the orchestrator's
+  context rotation policy (~250k -> rotate via `rotate-agent`) and
+  report to their spawner, not the user.
