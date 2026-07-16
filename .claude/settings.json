@@ -5,6 +5,18 @@
     "command": "~/.claude/statusline.sh",
     "padding": 2
   },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/handoff-token-flag.py\""
+          }
+        ]
+      }
+    ]
+  },
   "enabledPlugins": {
     "ponytail@ponytail": true
   },
