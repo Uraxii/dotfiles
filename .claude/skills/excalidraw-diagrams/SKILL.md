@@ -1,22 +1,26 @@
 ---
-paths:
-  - "**/*.excalidraw"
-  - "**/*.excalidraw.md"
+name: excalidraw-diagrams
+description: House standard for drawing diagrams through the claude.ai Excalidraw MCP connector — 4:3 camera sizes, font and element sizing, spacing, color palette, contrast, drawing order, dark mode. Use when creating or editing an Excalidraw diagram, or when asked for a flowchart, architecture diagram, sequence diagram, state chart, or any visual drawn via create_view. Load before drawing so the output follows the sizing/spacing/color conventions.
 ---
 
-# Excalidraw Diagram Rules
+# Excalidraw Diagrams
 
-House standard for diagrams drawn via the claude.ai Excalidraw MCP connector.
-Source of truth = the connector's `read_me` (call `mcp__claude_ai_Excalidraw__read_me`
-once before `create_view` for the full element-format reference). This file
-captures the durable styling / sizing / spacing / color rules so they hold even
-while planning, and so they are versioned.
+Rules for diagrams drawn via the Excalidraw MCP connector. The diagram renders
+inline at ~700px wide — design for that constraint.
 
-Diagram renders inline at ~700px wide. Design for that constraint.
+## First steps
+
+1. Call `mcp__claude_ai_Excalidraw__read_me` once per conversation for the full
+   element-format reference (JSON shape of rectangles, arrows, labels, camera,
+   delete, checkpoints, animation). It is the source of truth for the format.
+2. Then draw with `mcp__claude_ai_Excalidraw__create_view`, following the house
+   standards below. These pin the sizing/spacing/color conventions; when they and
+   the read_me agree, either is fine; where a specific project documents its own
+   diagram standard, that project wins.
 
 ## Camera (4:3 aspect ONLY)
 
-Always start with a `cameraUpdate` as the FIRST element. Use ONLY these sizes:
+Emit a `cameraUpdate` as the FIRST element. Use ONLY these sizes:
 
 | Cam | width x height | Use | Min readable font |
 |-----|----------------|-----|-------------------|
@@ -28,14 +32,13 @@ Always start with a `cameraUpdate` as the FIRST element. Use ONLY these sizes:
 
 - Non-4:3 viewports distort. Never use another ratio.
 - Leave padding: don't match camera size to content size (500px content -> 800x600 cam).
-- Emit the `cameraUpdate` BEFORE the content it frames; use several to pan/zoom and guide attention.
+- Emit the `cameraUpdate` BEFORE the content it frames; use several to pan/zoom and guide attention (users love it).
 
 ## Fonts
 
 - Body / labels / descriptions: min fontSize **16**.
 - Titles / headings: min fontSize **20**.
-- Secondary annotations only: min **14** (sparingly).
-- Never below 14. Honor the per-camera minimums above (XL >= 18, XXL >= 21).
+- Secondary annotations only: min **14** (sparingly). Never below 14. Honor per-camera minimums (XL >= 18, XXL >= 21).
 
 ## Element sizing & spacing
 
