@@ -1,13 +1,26 @@
 {
-  "model": "opus[1m]",
+  "model": "claude-fable-5[1m]",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
     "padding": 2
   },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    }
+  },
+  "effortLevel": "high",
   "agent": "zakia",
   "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "custom:synthwave-84",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipWorkflowUsageWarning": true
+  "enabledPlugins": {
+    "ponytail@ponytail": true
+  }
 }
