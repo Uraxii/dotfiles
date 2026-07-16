@@ -8,7 +8,9 @@ argument-hint: "What will the next session be used for?"
 
 ## Overview
 
-Create a concise handoff document that lets a fresh agent continue the current work without replaying the full conversation. The handoff should preserve only context that is not already captured in durable artifacts such as PRDs, plans, ADRs, issues, commits, diffs, or project docs.
+Create a handoff document that lets a fresh agent continue the current work without replaying the full conversation. Prioritize recall over brevity: capture everything a fresh agent needs, then trim. Reference durable artifacts (PRDs, plans, ADRs, issues, commits, diffs, project docs) by path instead of duplicating them, but only after verifying the referenced document actually contains the claim. When in doubt, include the detail inline.
+
+In long sessions, do not wait until the end: append decisions, constraints, and verbatim user directives to the handoff file (or a working notes file) at the moment they are established. A handoff reconstructed from an already-degraded context is the main cause of lost details.
 
 Save the handoff document to the temporary directory of the user's operating system, not the current workspace. On Linux/macOS, prefer `/tmp`. On Windows, use the path from `%TEMP%`/`$env:TEMP`.
 
@@ -67,10 +69,12 @@ Use this flow when the user references an existing handoff file and appears to w
    - Summarize the current objective in 1-3 sentences.
    - Include the intended next-session focus from the user arguments, if present.
 
-2. Gather only necessary transient context.
-   - Include decisions, constraints, unresolved questions, and immediate next steps that are not already recorded elsewhere.
-   - Do not duplicate full PRDs, plans, ADRs, issue bodies, diffs, commits, or generated artifacts.
-   - Reference durable artifacts by path, URL, branch, or commit instead.
+2. Gather transient context, recall first.
+   - Include decisions with their rationale, constraints, unresolved questions, and immediate next steps.
+   - Capture user directives verbatim: corrections, vetoes, terminology preferences, scope limits, and every "don't do X" instruction. Quote them exactly; do not paraphrase. Paraphrase loses the nuance the user will otherwise have to re-teach.
+   - Record failed approaches and dead ends, with why they failed, so the next agent does not retry them.
+   - Anchor state claims to ground truth (git status/log, test output, files on disk), not to memory of the conversation.
+   - Do not duplicate full PRDs, plans, ADRs, issue bodies, diffs, commits, or generated artifacts. Reference them by path, URL, branch, or commit — but verify the referenced document actually contains the claim before relying on the reference. When in doubt, include the detail inline.
 
 3. Redact sensitive data.
    - Remove API keys, tokens, passwords, cookies, private credentials, SSH keys, and raw auth headers.
@@ -82,11 +86,16 @@ Use this flow when the user references an existing handoff file and appears to w
    - Include why each skill is relevant.
    - Prefer exact skill names.
 
-5. Write the handoff to the OS temp directory.
+5. Completeness pass (mandatory, before writing the final version).
+   - Re-scan the entire conversation specifically for: user corrections and steering, explicit vetoes and prohibitions, terminology and naming preferences, scope limits, and approaches that were tried and abandoned.
+   - Negative constraints ("don't", "never", "stop doing X") are the details most often lost in summaries. Hunt for them explicitly.
+   - Anything found that is missing from the draft goes into `Verbatim User Directives` or `Failed Approaches / Do NOT`.
+
+6. Write the handoff to the OS temp directory.
    - Use a timestamped filename such as `/tmp/handoff-YYYYMMDD-HHMMSS.md`.
    - Do not write it into the repo or current workspace unless the user explicitly asks.
 
-6. Report the created file path to the user.
+7. Report the created file path to the user.
    - Keep the final response short.
    - Mention any assumptions or redactions.
 
@@ -107,8 +116,15 @@ Next-session focus: <user argument or inferred focus>
 - Durable artifacts to read first:
   - <path or URL>
 
-## Key Decisions / Constraints Not Elsewhere Captured
-- <decision or constraint>
+## Verbatim User Directives
+- "<exact quote of user instruction, correction, veto, or preference>"
+
+## Key Decisions + Rationale
+- <decision> — because <why it was decided this way>
+
+## Failed Approaches / Do NOT
+- <approach tried and abandoned, and why it failed>
+- <explicit prohibition from the user>
 
 ## Immediate Next Steps
 1. <next action>
@@ -142,10 +158,24 @@ Next-session focus: <user argument or inferred focus>
 5. Over-summarizing away active blockers.
    - Keep unresolved questions, risks, and immediate next steps explicit.
 
+6. Paraphrasing user directives.
+   - A paraphrase drops scope and nuance. Quote the user's words exactly in `Verbatim User Directives`.
+
+7. Dropping negative constraints.
+   - Summaries preserve goals and lose prohibitions. Every "don't/never/stop" instruction from the session must appear in the handoff.
+
+8. Referencing a document that does not contain the claim.
+   - "See docs/plan.md" is only valid if the decision is actually written there. Verify before referencing; otherwise inline the detail.
+
 ## Verification Checklist
 
 - [ ] Handoff was written to the OS temp directory, not the current workspace.
 - [ ] User arguments, if any, are reflected as next-session focus.
+- [ ] Completeness pass done: conversation re-scanned for corrections, vetoes, terminology, scope limits, and negative constraints.
+- [ ] User directives quoted verbatim, not paraphrased.
+- [ ] Failed approaches / do-NOT list included (or explicitly "none").
+- [ ] Decisions carry their rationale.
+- [ ] Referenced documents verified to actually contain the claims attributed to them.
 - [ ] Durable artifacts are referenced by path/URL instead of duplicated.
 - [ ] Sensitive information is redacted.
 - [ ] Document includes `Suggested Skills`.
