@@ -32,8 +32,12 @@ __pycache__
 ^/docs
 ^/deps\.toml
 ^/install\.py
+^/setup\.py
 ^/setup\.sh
 ^/pytest\.ini
+^/pyproject\.toml$
+^/uv\.lock$
+^/\.venv
 # .claude/.hermes handled by separate `stow --no-folding -t $HOME` pass in setup.sh
 ^/\.claude
 ^/\.hermes

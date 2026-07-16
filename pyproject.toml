@@ -1,0 +1,27 @@
+# uv-managed environment for the dotfiles helper scripts.
+#
+#   uv sync                 # create .venv + install deps from uv.lock
+#   uv run setup.py         # launch the stow / KDE-keybind TUI (needs textual)
+#   uv run install.py       # cross-distro package installer (stdlib only)
+#   uv run pytest           # run the test suite
+#
+# This is NOT an installable package — just a dependency set + scripts. Stow is
+# told to skip pyproject.toml / uv.lock (see .stow-local-ignore) so they are
+# never symlinked into ~/.config.
+
+[project]
+name = "nicole-dotfiles"
+version = "0.0.0"
+description = "Dotfiles helper scripts: stow/keybind setup TUI + cross-distro package installer."
+requires-python = ">=3.11"  # install.py uses tomllib (stdlib since 3.11)
+dependencies = [
+    "textual>=0.60",  # setup.py terminal UI
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",  # tests/ suite
+]
+
+[tool.uv]
+package = false  # manage the environment only; do not build/install the root

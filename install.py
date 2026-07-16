@@ -3,8 +3,9 @@
 
 Reads ./deps.toml, detects the host distro from /etc/os-release, resolves
 per-distro overrides, and installs missing packages via the right native
-package manager (pacman, apt, dnf, nix profile) or fallback source
-(cargo, uv-tool, pip, npm, AUR helper, manual instructions).
+package manager (pacman, apt, dnf, nix profile, or Homebrew on Bazzite/atomic)
+or fallback source (cargo, uv-tool, pip, npm, brew, flatpak, AUR helper,
+manual instructions).
 
 Usage:
     install.py                      # install everything (idempotent)
@@ -51,6 +52,11 @@ DISTRO_ALIASES: dict[str, str] = {
     "nixos": "nixos",
     "ubuntu": "ubuntu", "debian": "ubuntu", "linuxmint": "ubuntu", "pop": "ubuntu",
     "fedora": "fedora", "rhel": "fedora", "centos": "fedora", "rocky": "fedora",
+    # Bazzite (Universal Blue atomic) reports ID=bazzite, ID_LIKE="fedora".
+    # Keep it distinct from fedora: dnf/rpm-ostree layering is discouraged on
+    # atomic images, so its native package manager is Homebrew (see
+    # NATIVE_BY_DISTRO). Other ublue images (bluefin/aurora) can be added here.
+    "bazzite": "bazzite",
     "termux": "termux",
 }
 
@@ -124,14 +130,15 @@ def _default_sudo(source: str, distro: str) -> bool:
     Override via `sudo = true|false` on entry or per-distro table.
       - native pacman/apt/dnf wrap the install cmd in sudo → true.
       - termux `pkg` is single-user Android — never sudo.
+      - bazzite native = Homebrew (user prefix, refuses root) → never sudo.
       - AUR helpers escalate internally → true.
       - nix/nix-unstable use the user profile → false.
-      - cargo/npm/uv-tool/pip install to user dirs → false.
+      - brew/flatpak/cargo/npm/uv-tool/pip install to user dirs → false.
       - script: author wraps sudo explicitly inside install_cmd → default false.
       - manual/skip/unsupported never install → false.
     """
     if source == "native":
-        return distro != "termux"
+        return distro not in ("termux", "bazzite")
     if source == "aur":
         return True
     return False
@@ -288,7 +295,7 @@ class Adapter:
         env_extra: dict[str, str] | None = None,
     ) -> tuple[int, str]:
         log.debug("exec: %s", shlex.join(argv))
-        if self.dry_run and argv[0] not in ("pacman", "dpkg", "rpm", "nix-env", "nix", "cargo", "tldr", "fc-cache", "sh", "bash"):
+        if self.dry_run and argv[0] not in ("pacman", "dpkg", "rpm", "nix-env", "nix", "cargo", "brew", "flatpak", "tldr", "fc-cache", "sh", "bash"):
             # always allow read-only queries to run in dry-run too — those use `capture=True`
             return 0, ""
         if self.dry_run and not capture:
@@ -392,6 +399,77 @@ class DnfAdapter(Adapter):
         target = f"{name}-{version}" if version and version.replace(".", "").isdigit() else name
         rc, _ = self._run(["sudo", "dnf", "install", "-y", target])
         return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"dnf exit {rc}")
+
+
+# --- homebrew (bazzite / linuxbrew) -------------------------------------------
+
+class HomebrewAdapter(Adapter):
+    """Homebrew (`brew`) — the blessed CLI package path on atomic distros
+    (Bazzite / Universal Blue), where layering RPMs via dnf/rpm-ostree is
+    discouraged. Handles formulae only (CLI/TUI); GUI apps route to flatpak.
+
+    Homebrew formulae track latest — version pins are advisory only, matching
+    the pacman behaviour (install latest, let satisfies() warn afterwards).
+    Runs as the invoking user (no sudo); Homebrew refuses to run as root.
+    """
+
+    name = "brew"
+
+    def installed_version(self, name: str) -> str | None:
+        # `brew list --versions <name>` prints e.g. "ripgrep 14.1.1" when
+        # installed, and exits non-zero (no output) when absent.
+        rc, out = self._run(["brew", "list", "--versions", name], capture=True)
+        if rc != 0:
+            return None
+        parts = out.split()
+        return parts[1] if len(parts) >= 2 else None
+
+    def install(self, name: str, version: str | None) -> RunResult:
+        if not shutil.which("brew"):
+            return RunResult(
+                installed=False, already_present=False,
+                error="brew not in PATH; Homebrew ships with Bazzite — run "
+                      '`eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"` '
+                      "or open a fresh shell, then re-run.",
+            )
+        rc, _ = self._run(["brew", "install", name])
+        return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"brew exit {rc}")
+
+
+# --- flatpak (GUI apps on atomic distros) -------------------------------------
+
+class FlatpakAdapter(Adapter):
+    """Flatpak — GUI application delivery on Bazzite / Universal Blue, where
+    Homebrew (CLI-only) can't help. `install_name` (deps.toml `pkg`) is the
+    Flatpak application id, e.g. `md.obsidian.Obsidian`.
+
+    Installs from flathub into the user installation (`--user`, no sudo).
+    Version pins are ignored — flatpak tracks the app's latest branch.
+    """
+
+    name = "flatpak"
+
+    def installed_version(self, name: str) -> str | None:
+        # `flatpak info <app-id>` exits 0 with a "Version:" line when installed
+        # (user or system), non-zero when absent. Presence beats unknown
+        # version → fall back to the "external" sentinel if no Version line.
+        rc, out = self._run(["flatpak", "info", name], capture=True)
+        if rc != 0:
+            return None
+        for line in out.splitlines():
+            s = line.strip()
+            if s.lower().startswith("version:"):
+                return s.split(":", 1)[1].strip() or "external"
+        return "external"
+
+    def install(self, name: str, version: str | None) -> RunResult:
+        if not shutil.which("flatpak"):
+            return RunResult(
+                installed=False, already_present=False,
+                error="flatpak not in PATH (ships with Bazzite)",
+            )
+        rc, _ = self._run(["flatpak", "install", "--user", "-y", "flathub", name])
+        return RunResult(installed=rc == 0, already_present=False, error=None if rc == 0 else f"flatpak exit {rc}")
 
 
 # --- nix profile --------------------------------------------------------------
@@ -726,6 +804,7 @@ NATIVE_BY_DISTRO: dict[str, type[Adapter]] = {
     "ubuntu": AptAdapter,
     "fedora": DnfAdapter,
     "nixos": NixAdapter,
+    "bazzite": HomebrewAdapter,  # atomic: dnf/rpm-ostree layering discouraged
     "termux": TermuxAdapter,
 }
 
@@ -739,6 +818,7 @@ def get_adapter(source: str, distro: str, dry_run: bool) -> Adapter:
     table: dict[str, type[Adapter]] = {
         "aur": AurAdapter, "nix": NixAdapter, "nix-unstable": NixUnstableAdapter,
         "cargo": CargoAdapter, "pip": PipAdapter, "uv-tool": UvToolAdapter, "npm": NpmAdapter,
+        "brew": HomebrewAdapter, "flatpak": FlatpakAdapter,
         "script": ScriptAdapter,
         "manual": ManualAdapter, "skip": SkipAdapter, "unsupported": UnsupportedAdapter,
     }
