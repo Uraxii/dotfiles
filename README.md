@@ -15,6 +15,18 @@ stow -R .                       # restow after changes
 stow -n -v .                    # dry run
 ```
 
+### Helper scripts (uv)
+
+`setup.py` (stow + KDE-keybind TUI) and `install.py` (cross-distro package installer) run in a `uv`-managed virtualenv. `uv.lock` is committed; `.venv/` is generated.
+
+```bash
+uv sync                         # one-time: build .venv from uv.lock
+uv run setup.py                 # stow / KDE-keybind TUI (needs textual)
+uv run install.py               # install packages declared in deps.toml
+uv run install.py -n            # dry run
+uv run pytest                   # test suite
+```
+
 ## First-time setup (per machine)
 
 Three one-time manual steps for tools that don't honor XDG:

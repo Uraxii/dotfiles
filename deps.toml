@@ -8,7 +8,16 @@
 #   - version          = optional pin (operator syntax). Omitted = latest;
 #                        installed-if-absent; no upgrade chase.
 #   - source           = native (default) | aur | nix-unstable | cargo | uv-tool
-#                        | pip | npm | script | manual | skip | unsupported
+#                        | pip | npm | brew | flatpak | script | manual | skip
+#                        | unsupported
+#                        `brew` = Homebrew formula (CLI/TUI). On bazzite this is
+#                        the `native` manager (dnf/rpm-ostree layering is
+#                        discouraged on atomic images). Runs as the user, no
+#                        sudo; formulae track latest so version pins are
+#                        advisory. `pkg` = the formula name (e.g. `node`).
+#                        `flatpak` = GUI app from flathub, installed
+#                        `--user`. `pkg` = the flatpak application id (e.g.
+#                        `md.obsidian.Obsidian`), NOT a formula/rpm name.
 #                        `script` = run install_cmd via bash -c (upstream
 #                        curl|bash installers). Requires install_cmd field;
 #                        presence detected via `bin` PATH probe only.
@@ -28,7 +37,9 @@
 #                        require root? Defaults derived from source+distro:
 #                          native arch/ubuntu/fedora → true
 #                          native termux             → false (single-user)
+#                          native bazzite            → false (brew, user prefix)
 #                          aur                       → true
+#                          brew/flatpak              → false (user install)
 #                          nix/cargo/npm/uv-tool/pip → false (user dirs)
 #                          script                    → false (author wraps
 #                                                     sudo inside install_cmd)
@@ -57,7 +68,18 @@
 #   `install.py --list-profiles` to enumerate.
 
 version = 1
-supported_distros = ["arch", "nixos", "ubuntu", "fedora", "termux"]
+supported_distros = ["arch", "nixos", "ubuntu", "fedora", "bazzite", "termux"]
+# Bazzite notes (Universal Blue atomic; also covers other ublue images):
+#   - Detected from /etc/os-release ID=bazzite (ID_LIKE="fedora"). Kept
+#     distinct from fedora because dnf/rpm-ostree layering is discouraged.
+#   - Native pkg mgr = Homebrew (`brew`). Ships preinstalled; CLI/TUI formulae
+#     only, runs as the user (no sudo). Formula name goes in `pkg` (e.g.
+#     bazzite.pkg = "node").
+#   - GUI apps → flatpak (source = "flatpak"); `pkg` is the flathub app id.
+#   - Bazzite runs atomic KDE Plasma, so the Sway desktop stack (sway/waybar/
+#     wofi/swaylock/etc.) is `unsupported` here, like on termux.
+#   - Some tools (docker, ghostty) ship in the image or via `ujust`; those stay
+#     manual / bin-probed rather than layered.
 # Termux notes:
 #   - Native pkg mgr = `pkg` (apt wrapper). No sudo (single-user Android).
 #   - Wayland/GUI desktop ecosystem unavailable → all sway/waybar/wofi/swaylock
@@ -86,6 +108,8 @@ default = "xonsh"
 pkg = "sway"
 bin = "sway"
 description = "Wayland tiling window manager."
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma, not the sway desktop"
 termux.source = "unsupported"
 termux.reason = "no wayland on android"
 
@@ -93,6 +117,8 @@ termux.reason = "no wayland on android"
 pkg = "swayidle"
 bin = "swayidle"
 description = "Sway idle inhibitor and screen-lock trigger."
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma, not the sway desktop"
 termux.source = "unsupported"
 termux.reason = "no wayland on android"
 
@@ -100,6 +126,8 @@ termux.reason = "no wayland on android"
 pkg = "swaybg"
 bin = "swaybg"
 description = "Sway wallpaper daemon."
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma, not the sway desktop"
 termux.source = "unsupported"
 termux.reason = "no wayland on android"
 
@@ -116,6 +144,8 @@ ubuntu.source = "manual"
 ubuntu.url = "https://github.com/jirutka/swaylock-effects"
 fedora.source = "manual"
 fedora.url = "https://github.com/jirutka/swaylock-effects"
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma, not the sway desktop"
 termux.source = "unsupported"
 termux.reason = "no wayland on android"
 
@@ -127,6 +157,8 @@ termux.reason = "no wayland on android"
 pkg = "waybar"
 bin = "waybar"
 description = "Status bar for Wayland compositors."
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma (uses the Plasma panel, not waybar)"
 termux.source = "unsupported"
 termux.reason = "no wayland on android"
 
@@ -134,6 +166,8 @@ termux.reason = "no wayland on android"
 pkg = "wofi"
 bin = "wofi"
 description = "Application launcher for Wayland (rofi-style)."
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma (uses KRunner, not wofi)"
 termux.source = "unsupported"
 termux.reason = "no wayland on android"
 
@@ -151,6 +185,8 @@ ubuntu.sudo = true
 fedora.source = "script"
 fedora.install_cmd = "tmp=$(mktemp -d) && git clone --depth 1 https://github.com/firecat53/networkmanager-dmenu \"$tmp\" && sudo install -m 755 \"$tmp/networkmanager_dmenu\" /usr/local/bin/networkmanager_dmenu && rm -rf \"$tmp\""
 fedora.sudo = true
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma (uses the Plasma network applet)"
 termux.source = "unsupported"
 termux.reason = "no NetworkManager on android (use Android settings)"
 
@@ -158,6 +194,8 @@ termux.reason = "no NetworkManager on android (use Android settings)"
 pkg = "pavucontrol"
 bin = "pavucontrol"
 description = "PulseAudio volume control GUI."
+bazzite.source = "unsupported"
+bazzite.reason = "bazzite runs atomic KDE Plasma (uses plasma-pa, not pavucontrol)"
 termux.source = "unsupported"
 termux.reason = "no pulseaudio GUI on android (termux uses termux-api audio)"
 
@@ -178,6 +216,10 @@ ubuntu.source = "manual"
 ubuntu.url = "https://ghostty.org/download"
 fedora.source = "manual"
 fedora.url = "https://ghostty.org/download"
+# Bazzite: no linux Homebrew formula. Ships in some ublue images / installable
+# via `ujust`; otherwise flatpak or the download page.
+bazzite.source = "manual"
+bazzite.url = "https://ghostty.org/download (or `ujust install-ghostty` on ublue images)"
 termux.source = "unsupported"
 termux.reason = "GPU terminal needs X/Wayland (use Termux app itself as terminal)"
 
@@ -208,6 +250,11 @@ pkg = "make"
 bin = "make"
 description = "Build tool. Required by plugin builds (telescope-fzf-native, etc)."
 nixos.pkg = "gnumake"
+# Bazzite: `make` ships in the base image, so the bin probe skips the install.
+# If it ever does run, Homebrew's `make` formula installs the binary as `gmake`
+# (real `make` only on PATH via the formula's gnubin dir) — accept either so
+# external-install detection doesn't false-negative.
+bazzite.bin = ["make", "gmake"]
 
 [unzip]
 pkg = "unzip"
@@ -262,6 +309,8 @@ bin = "npm"
 description = "JavaScript runtime. Required by Mason-installed JS/TS LSPs (tsserver, vtsls)."
 version = ">=22"
 nixos.pkg = "nodejs_22"
+# Bazzite: Homebrew formula is `node` (bundles npm), not `nodejs`.
+bazzite.pkg = "node"
 # Ubuntu apt nodejs is stale (v18 on 24.04) AND does not bundle npm — opencode/pi
 # downstream then fail with "npm not in PATH". NodeSource setup script adds the
 # nodesource apt repo + installs current major; package bundles npm.
@@ -289,6 +338,10 @@ ubuntu.source = "manual"
 ubuntu.url = "https://obsidian.md/download (flatpak: flatpak install flathub md.obsidian.Obsidian)"
 fedora.source = "manual"
 fedora.url = "https://obsidian.md/download (flatpak: flatpak install flathub md.obsidian.Obsidian)"
+# Bazzite: flathub flatpak (GUI app; Homebrew is CLI-only). No `bin` override —
+# the flatpak isn't on PATH, so presence is resolved by `flatpak info`.
+bazzite.source = "flatpak"
+bazzite.pkg = "md.obsidian.Obsidian"
 termux.source = "unsupported"
 termux.reason = "no GUI on android"
 
@@ -303,6 +356,9 @@ ubuntu.source = "script"
 ubuntu.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
 fedora.source = "script"
 fedora.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
+# Bazzite (x86_64): same prebuilt Go binary → ~/.local/bin (not on Homebrew).
+bazzite.source = "script"
+bazzite.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
 nixos.source = "script"
 nixos.install_cmd = "if [ -x \"$HOME/.local/bin/notesmd-cli\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/bin\" && curl -fLo /tmp/notesmd-cli.tar.gz https://github.com/Yakitrak/notesmd-cli/releases/latest/download/notesmd-cli_0.3.6_linux_amd64.tar.gz && tar xzf /tmp/notesmd-cli.tar.gz -C \"$HOME/.local/bin\" notesmd-cli && chmod +x \"$HOME/.local/bin/notesmd-cli\" && rm /tmp/notesmd-cli.tar.gz; fi"
 # Termux (arm64): same approach with arm64 binary
@@ -326,6 +382,10 @@ ubuntu.source = "script"
 ubuntu.install_cmd = "if ls ~/.local/share/fonts/0xProto/*.ttf >/dev/null 2>&1; then echo 'already installed'; else mkdir -p ~/.local/share/fonts/0xProto && curl -fLo /tmp/0xProto.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip && unzip -o /tmp/0xProto.zip -d ~/.local/share/fonts/0xProto && rm /tmp/0xProto.zip; fi"
 fedora.source = "script"
 fedora.install_cmd = "if ls ~/.local/share/fonts/0xProto/*.ttf >/dev/null 2>&1; then echo 'already installed'; else mkdir -p ~/.local/share/fonts/0xProto && curl -fLo /tmp/0xProto.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip && unzip -o /tmp/0xProto.zip -d ~/.local/share/fonts/0xProto && rm /tmp/0xProto.zip; fi"
+# Bazzite: fonts aren't Homebrew formulae on linux → same upstream-zip script.
+# post_install fc-cache (above) refreshes fontconfig, which Bazzite uses.
+bazzite.source = "script"
+bazzite.install_cmd = "if ls ~/.local/share/fonts/0xProto/*.ttf >/dev/null 2>&1; then echo 'already installed'; else mkdir -p ~/.local/share/fonts/0xProto && curl -fLo /tmp/0xProto.zip https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip && unzip -o /tmp/0xProto.zip -d ~/.local/share/fonts/0xProto && rm /tmp/0xProto.zip; fi"
 # Termux: drop the ttf at ~/.termux/font.ttf then `termux-reload-settings`.
 # fontconfig isn't the loader on Android — fc-cache is a no-op for the
 # Termux app's terminal renderer.
@@ -405,6 +465,10 @@ ubuntu.source = "npm"
 ubuntu.pkg = "@anthropic-ai/claude-code"
 fedora.source = "npm"
 fedora.pkg = "@anthropic-ai/claude-code"
+# Bazzite: no Homebrew formula; official npm package (needs brew `node` first,
+# guaranteed by declaration order).
+bazzite.source = "npm"
+bazzite.pkg = "@anthropic-ai/claude-code"
 # Termux: no AUR, no nix-unstable, no rpm. npm is the only sane upstream.
 termux.source = "npm"
 termux.pkg = "@anthropic-ai/claude-code"
@@ -499,6 +563,8 @@ description = "Python interpreter. Required by pipeline_ask, hooks, and inline-s
 version = ">=3.11"
 arch.pkg = "python"
 nixos.pkg = "python313"
+# Bazzite: Homebrew versioned formula. Provides `python3.13` on PATH.
+bazzite.pkg = "python@3.13"
 # Termux ships a single `python` package (rolling 3.x, currently 3.12).
 # No per-minor variants. bin probe via `python` covers both python/python3.
 termux.pkg = "python"
@@ -519,6 +585,8 @@ pkg = "gdk-pixbuf2"
 description = "Image loading library. weasyprint runtime dep for HTML→PDF rendering."
 ubuntu.pkg = "libgdk-pixbuf-2.0-0"
 nixos.pkg = "gdk-pixbuf"
+# Bazzite: Homebrew formula is `gdk-pixbuf` (no "2" suffix).
+bazzite.pkg = "gdk-pixbuf"
 
 [libffi]
 pkg = "libffi"
@@ -550,6 +618,11 @@ fedora.sudo = true
 # expectations. Enable via configuration.nix and rebuild.
 nixos.source = "manual"
 nixos.url = "https://nixos.wiki/wiki/Docker (set virtualisation.docker.enable = true; nixos-rebuild switch)"
+# Bazzite: the get.docker.com script + systemctl enable fight atomic/rpm-ostree,
+# and podman ships in-image. If a `docker` binary is already present the bin
+# probe skips this entirely; otherwise enable via `ujust`/rpm-ostree manually.
+bazzite.source = "manual"
+bazzite.url = "https://docs.bazzite.gg (use podman, or `ujust`/rpm-ostree to layer docker; get.docker.com is unsupported on atomic)"
 # No kernel namespace/cgroup support on stock Android.
 termux.source = "unsupported"
 termux.reason = "no kernel container support on android"
@@ -575,6 +648,11 @@ fedora.source = "script"
 fedora.install_cmd = "if [ -x \"$HOME/.local/bin/godots\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/share/godots\" \"$HOME/.local/bin\" && curl -fLo /tmp/godots.zip https://github.com/MakovWait/godots/releases/latest/download/LinuxX11.zip && unzip -o /tmp/godots.zip -d \"$HOME/.local/share/godots\" && chmod +x \"$HOME/.local/share/godots/Godots.x86_64\" && ln -sf \"$HOME/.local/share/godots/Godots.x86_64\" \"$HOME/.local/bin/godots\" && rm /tmp/godots.zip; fi"
 nixos.source = "manual"
 nixos.url = "https://github.com/MakovWait/godots/releases (linux binary needs nix-ld or FHS env on nixos)"
+# Bazzite: flathub flatpak (matches the CLAUDE.md Godots flatpak layout). The
+# flatpak isn't the PATH `godots` symlink, so presence is resolved by
+# `flatpak info` (the inherited `bin` just never matches — harmless).
+bazzite.source = "flatpak"
+bazzite.pkg = "io.github.MakovWait.Godots"
 termux.source = "unsupported"
 termux.reason = "no GUI on android"
 
