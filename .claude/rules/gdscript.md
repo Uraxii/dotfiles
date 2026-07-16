@@ -1,3 +1,8 @@
+---
+paths:
+  - "**/*.gd"
+---
+
 # GDScript Rules
 
 - Type hints: all vars, params, returns. Static typing mode on.
