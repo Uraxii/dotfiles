@@ -76,7 +76,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - Provide clear diffs when modifying existing files
 - Include file paths for all changes
 - Flag any ambiguities in the delegation before implementing
-- Output caveman:ultra.
+- Output style per ~/.claude/rules/output.md (caveman ultra).
 
 ## Self-Correction Protocol
 
