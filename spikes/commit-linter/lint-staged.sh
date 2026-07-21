@@ -212,4 +212,11 @@ if [ -n "$findings" ]; then
   exit 1
 fi
 
+# ---- pass 6: StepSecurity Dev Machine Guard (supply-chain scan) ----
+# Optional: machines without DMG installed skip silently, never blocked.
+DMG_SCAN="$HOME/.local/share/stepsecurity-dmg/dmg-scan.sh"
+if [ -x "$DMG_SCAN" ]; then
+  "$DMG_SCAN"
+fi
+
 exit 0
