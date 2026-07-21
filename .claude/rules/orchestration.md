@@ -50,6 +50,9 @@
 - Code-writing briefs: instruct `ponytail` (YAGNI -> reuse -> stdlib ->
   native -> installed-dep -> one-line -> min; shortest working diff;
   `# ponytail:` comment on corner-cuts).
+- Code-writing briefs name the matching language rule file
+  (~/.claude/rules/<language>.md, e.g. python.md, gdscript.md) and instruct
+  the agent to Read it before writing code in that language.
 - Say "return summary/data, not transcript". Return channel = final message
   only. Fat reports -> orchestrator context bloat.
 
