@@ -38,7 +38,7 @@
   criteria. Under-brief -> agent rediscovers what you knew -> thrash.
 - Paste a compressed digest of the working method verbatim into EVERY brief.
   Always include the caveman ultra output instruction
-  (~/.claude/rules/caveman.md).
+  (~/.claude/rules/output.md).
 - Code-writing briefs: instruct `ponytail` (YAGNI -> reuse -> stdlib ->
   native -> installed-dep -> one-line -> min; shortest working diff;
   `# ponytail:` comment on corner-cuts).
