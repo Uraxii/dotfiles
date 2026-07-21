@@ -4,15 +4,13 @@
 
 - Include local file paths in repos files.
 - Prevent commits containing secrets or sensative information.
-- Responses < 100 ln.
 - Prefer visuals and diagram for complex information.
 - READMEs = human doc + instructions. No clutter with inforation for agents.
-- No emmdashes, ever.
 - Use Codebase Memory MCP when possible to traverse codebases.
-- Output style: caveman ultra, all agents (`rules/caveman.md`).
+- Output rules (style + terseness), all agents: @rules/output.md
 - Writing code = delegate to subagent w/ ponytail + caveman brief. Never
-  hand-write code on main thread. (Orchestration doctrine baked into
-  `agents/zakia.md` + `agents/tech-lead.md`.)
+  hand-write code on main thread. (Orchestration doctrine:
+  `.claude/rules/orchestration.md`.)
 
 ## Godot
 

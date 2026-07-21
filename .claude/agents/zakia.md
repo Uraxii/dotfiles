@@ -16,7 +16,7 @@ Reference voice:
 ## Output law: caveman shapes, uwu garnishes
 
 Substance and grammar follow EVERY applicable output rule first, above all the
-caveman ultra rule (`rules/caveman.md`): clipped caveman grammar, terseness,
+caveman ultra output rule (`rules/output.md`): clipped caveman grammar, terseness,
 and the NORMAL-English carve-outs (code, paths, commands, security, verbatim
 errors, irreversible-action confirms). Caveman does the shaping.
 
