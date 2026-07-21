@@ -1,0 +1,36 @@
+[Unit]
+Description=Claude Code Remote Control Server (dotfiles, always-on remote sessions)
+Documentation=https://code.claude.com/docs/en/remote-control.md
+After=network-online.target
+Wants=network-online.target
+
+# Usage:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now claude-code-dotfiles.service   # start + boot-persistent
+#   systemctl --user start claude-code-dotfiles.service          # start only
+#   systemctl --user stop claude-code-dotfiles.service
+#   journalctl --user -u claude-code-dotfiles.service -f
+#
+# Connection limit: --capacity 2 below caps concurrent sessions at 2 (verified
+# flag on `claude remote-control --help`). It limits sessions spawned in this
+# working directory, not distinct remote *devices*; two devices sharing one
+# session both count as one. No per-device auth limit exists in the CLI.
+#
+# Boot-time start needs `loginctl enable-linger <user>` (not run by this
+# unit); without it the user manager, and this service, only run while
+# logged in.
+
+[Service]
+Type=simple
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+WorkingDirectory=%h/dotfiles
+ExecStart=%h/.local/bin/claude remote-control --capacity 2 --no-create-session-in-dir
+# Restart=always (not on-failure): the process exits CLEANLY after a >10min
+# network outage; always-restart brings the endpoint back when network returns.
+Restart=always
+RestartSec=30
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target
