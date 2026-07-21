@@ -19,7 +19,7 @@ Save the handoff document to the temporary directory of the user's operating sys
 Use this skill when:
 - The user asks for a handoff, session compact, continuity note, or next-agent brief.
 - The user wants another agent/session to pick up current work.
-- The user provides or references an existing handoff file to continue from, e.g. `@/tmp/handoff-*.md`.
+- The user provides or references an existing handoff file to continue from, e.g. `@/tmp/dotfiles-agent-orchestration-3-1784659200.md`.
 - The user asks how handoff docs / briefs work for agents, especially after attaching a handoff file.
 - Context is too large or fragile to rely on chat history alone.
 
@@ -43,7 +43,7 @@ If no arguments are supplied, infer the likely next-step focus from the current 
 Use this flow when the user references an existing handoff file and appears to want continuation rather than a new handoff.
 
 1. Read the handoff file first.
-   - Treat `@/tmp/handoff-*.md` or a pasted handoff path as the current session brief.
+   - Treat a referenced handoff file in the OS temp directory, or a pasted handoff path, as the current session brief.
    - Do not ask what to do next if the handoff contains explicit `Immediate Next Steps`.
 
 2. Load suggested skills before acting.
@@ -98,11 +98,13 @@ Use this flow when the user references an existing handoff file and appears to w
    - Anything found that is missing from the draft goes into `Verbatim User Directives` or `Failed Approaches / Do NOT`.
 
 6. Write the handoff to the OS temp directory.
-   - Use a timestamped filename such as `/tmp/handoff-YYYYMMDD-HHMMSS.md`.
+   - Filename: `<project>-<topic>-<chain number>-<unix time>.md` (example: `dotfiles-agent-orchestration-3-1784659200.md`). Unix time is seconds at write time. The destination directory convention is unchanged.
+   - Chain number is the position in the chain, starting at 1. A successor handoff continuing the same effort increments it: find the predecessor (the highest chain number for the same project and topic in the temp directory) and add 1.
+   - RECOMMEND starting a new chain (reset to 1 with a fresh topic slug) when: the effort or destination changes rather than continues; the topic has drifted so far the old slug misleads; the prior chain concluded (its work shipped or merged) and the new work is a fresh effort; or the chain has grown long enough that carrying its full lineage adds noise rather than context. You recommend; the human decides.
    - Do not write it into the repo or current workspace unless the user explicitly asks.
 
 7. Report the created file path to the user.
-   - State the full absolute path to the handoff document (e.g. `/tmp/handoff-20260716-143000.md`), not a relative path, a `~`-path, or just the filename, so the user can copy it straight into a new session.
+   - State the full absolute path to the handoff document (e.g. `/tmp/dotfiles-agent-orchestration-3-1784659200.md`), not a relative path, a `~`-path, or just the filename, so the user can copy it straight into a new session.
    - Put that path on its own line so it is easy to select.
    - Keep the rest of the final response short. Mention any assumptions or redactions.
 
@@ -193,6 +195,7 @@ they emerge.>
 ## Verification Checklist
 
 - [ ] Handoff was written to the OS temp directory, not the current workspace.
+- [ ] Filename follows `<project>-<topic>-<chain number>-<unix time>.md`, chain number checked against the predecessor (or a new chain was recommended and the user decided).
 - [ ] User arguments, if any, are reflected as next-session focus.
 - [ ] Completeness pass done: conversation re-scanned for corrections, vetoes, terminology, scope limits, and negative constraints.
 - [ ] User directives quoted verbatim, not paraphrased.
