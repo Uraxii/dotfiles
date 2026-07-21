@@ -78,3 +78,6 @@ tmux/plugins
 # Tracked in repo as reference snapshot, but stow must not symlink it.
 ^/starship\.toml$
 ^/starship\.toml\.tmpl$
+
+# private global instructions live unstowed at ~/.claude/CLAUDE.md; repo copy is a reference baseline
+\.claude/CLAUDE\.md
