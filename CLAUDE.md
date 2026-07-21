@@ -80,7 +80,30 @@ Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`
 
 **Copilot specifics**: filenames are `<name>.agent.md`. Frontmatter drops `model:` — the available model catalog (`claude-haiku-4.5`, `gpt-5-mini`) can't honor the Claude tier intent (opus/sonnet/haiku), so agents inherit the session model; re-pin per-agent once a richer catalog appears. `tools:` uses Copilot's canonical names (`read`, `search`, `edit`, `execute`, `agent`, `web`, `todo` — `Skill` has no equivalent, dropped). Delegation uses the `agent`/`task` tool, not Claude's Agent tool. Tech-lead omits `tools:` so it retains `agent` to spawn specialists.
 
+## Agent Architecture
 
+- Hub and spoke. `zakia` (main thread) is the sole human-facing orchestrator; it spawns background sub-orchestrators: `tech-lead` (one per software workstream) and `art-director` (one per art workstream). `comfyui-runner` is art-director's mechanical ComfyUI driver, no vision.
+- Agent definitions live in `.claude/agents/`; each file carries only its role-specific delta.
+- Shared orchestration doctrine lives at `.claude/rules/orchestration.md`. Agent bodies load it via a tilde-path MANDATORY FIRST ACTION Read directive (`~/.claude/rules/orchestration.md`); `@`-imports do NOT expand inside agent definition bodies, so never rely on them there.
+- Deployment: stow creates per-file symlinks. A NEW file under `.claude/` needs a restow (`stow .` from repo root) or a matching manual symlink before `~/.claude` sees it.
+
+## Path Standard (enforced by pre-commit hook)
+
+- Never commit expanded home paths or usernames. Use `$HOME` in shell scripts, `~` in markdown/JSON.
+- Machine-specific or identity-bearing config (tailnet hosts, emails) goes in `.claude/settings.local.json` (gitignored), never in tracked files.
+
+## Commit Gate
+
+- Local pre-commit hook: thin wrapper in `.git/hooks`, logic at `spikes/commit-linter/lint-staged.sh`.
+- Runs an identity-leak lint (with auto-fix) plus a fail-closed TruffleHog scan of staged content. `trufflehog` binary required at `~/.local/bin`.
+- Hooks not firing: check `git config core.hooksPath` (bd init once hijacked it).
+- Emergency bypass: `git commit --no-verify`. Never for secret findings.
+
+## Spikes
+
+- `spikes/<name>/` are durable, committed prototype workspaces with their own READMEs. Current: `comfyui-driver`, `advisor-vision`, `beads-board`, `commit-linter`.
+- Runtime junk (node_modules, testbeds) is gitignored.
+- Agents use spikes as scratch/spike workspaces, never `/tmp`.
 
 # Theming System
 
