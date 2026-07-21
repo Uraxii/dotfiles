@@ -31,6 +31,14 @@
 - The shared task board (TaskCreate/TaskUpdate) is the cross-agent source of
   truth for work state; plans live as tracked tasks.
 
+## Workspace + tools
+
+- Spike/scratch workspaces live in durable dirs (<project>/spikes/), never
+  /tmp. /tmp wipes on reboot and destroys spike artifacts.
+- Use the Codebase Memory MCP when possible to traverse codebases.
+- Never commit secrets or sensitive information. The dotfiles pre-commit
+  gate enforces this there; the rule applies in every repo.
+
 ## Brief writing (subagent sees ONLY your prompt)
 
 - Fresh context, zero memory. Brief MUST carry: full task context, exact
