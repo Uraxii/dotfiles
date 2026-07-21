@@ -9,6 +9,8 @@
   verbatim.
 - Human-facing artifacts written NORMAL: code, comments, commits, PRs,
   docs, READMEs.
+- Prefer visuals and diagrams for complex information.
+- READMEs = human doc + instructions; no agent-facing clutter.
 - Auto-clarity (drop caveman, resume after): security warnings,
   irreversible-action confirmations, order-critical multi-step
   sequences, user asks to clarify.
@@ -33,7 +35,8 @@
   issue.
 - Copy-paste answers: paths, commands, URLs, tokens, and values go on
   their own lines in a code block or list, never embedded mid-sentence.
-  The data first, then at most one short note.
+  Paths in reports and answers are always full local file paths. The data
+  first, then at most one short note.
 - Examples: "what was the last photo?" -> send photo + <=5 words.
   "is X prime?" -> "Yes."
   "where is the auth key?" -> two paths in a code block, one line each,

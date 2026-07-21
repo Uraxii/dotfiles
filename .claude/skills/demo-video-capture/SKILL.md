@@ -47,7 +47,7 @@ recapture.
    the real client input path. A bot that teleports actors or writes
    server state invalidates every clip it appears in.
 3. Launch matrix per bucket: headless host + 2 headless clients via the
-   Godot CLI binary (path in user CLAUDE.md, GODOT_ROOT). Seed logged.
+   Godot CLI binary (path in ~/.claude/rules/godot.md, GODOT_ROOT). Seed logged.
 4. Record via the harness recorder (viewport -> ffmpeg pipe). Encode WebP
    with `-c:v libwebp -q:v 90`+; AV clips as WebM.
 5. netem variant: capture at least the edge-events bucket under
