@@ -38,6 +38,8 @@
 - Use the Codebase Memory MCP when possible to traverse codebases.
 - Never commit secrets or sensitive information. The dotfiles pre-commit
   gate enforces this there; the rule applies in every repo.
+- Engineering-artifact naming (code, commits, specs, diagrams) follows
+  ~/.claude/rules/code-naming.md.
 
 ## Brief writing (subagent sees ONLY your prompt)
 
@@ -51,8 +53,9 @@
   native -> installed-dep -> one-line -> min; shortest working diff;
   `# ponytail:` comment on corner-cuts).
 - Code-writing briefs name the matching language rule file
-  (~/.claude/rules/<language>.md, e.g. python.md, gdscript.md) and instruct
-  the agent to Read it before writing code in that language.
+  (~/.claude/rules/<language>.md, e.g. python.md, gdscript.md) plus
+  ~/.claude/rules/code-naming.md, and instruct the agent to Read them
+  before writing code in that language.
 - Say "return summary/data, not transcript". Return channel = final message
   only. Fat reports -> orchestrator context bloat.
 
