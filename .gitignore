@@ -96,3 +96,7 @@ graphify-out/
 copilot.zip
 tmp/
 zsh/.zcompdump
+
+# spike runtime junk
+spikes/beads-board/node_modules/
+spikes/commit-linter/testbed/
