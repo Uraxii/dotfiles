@@ -1,4 +1,7 @@
-# Naming Rule (all projects, all languages)
+# Code Naming Rule (engineering artifacts, all languages)
+
+Applies to engineering artifacts: code, tests, commits, diagrams, specs,
+tickets. Load it when doing such work.
 
 The cold-reader test governs every name: a reader with ZERO context (never saw
 the chat, the docs, the tickets, or the codebase) must understand the thing's
