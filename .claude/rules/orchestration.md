@@ -29,11 +29,34 @@ A question for the user is a board ticket, not a message payload.
   AskUserQuestion, writes the answers back onto the tickets, and closes
   them. Closing a question ticket auto-unblocks its dependent work
   (`bd ready` is blocker-aware). The user may also answer tickets directly
-  via the `bd` CLI. The Q&A trail on the ticket is a permanent decision log
-  that survives rotation, compaction, and new sessions.
+  via the local beads-ui web front end or the `bd` CLI. The Q&A trail on
+  the ticket is a permanent decision log that survives rotation,
+  compaction, and new sessions.
 - zakia relays the close back to the still-live agent as another one-line
   wake ping (e.g. "answered, see df-12"). Agents remain resumable after
   completion; resume-with-context is verified.
+
+### Question front end
+
+`needs-user` tickets are the async question queue; the user has three ways
+to answer one, picked by how live the moment is:
+
+- beads-ui (local web front end for `bd`), for browsing and answering
+  tickets at their own pace.
+- the `bd` CLI, same purpose, terminal-native.
+- AskUserQuestion, only for a live/urgent decision inside an active
+  session prompt loop.
+
+zakia brings beads-ui up on demand (pointed at the repo's `.beads` board)
+when open `needs-user` tickets exist and the user is not already in a live
+prompt loop; it is not a global always-on service, same lazy-init spirit
+as the board itself. The wake ping still carries only the ticket id; the
+full answer and audit trail live on the ticket, not the message.
+
+Note: beads-ui's write path (answer + close from the browser) is
+confirmed working via its websocket API (`spikes/beads-board`); a manual
+browser click-test is still pending before it's the assumed primary
+channel end to end.
 
 ### Escalation threshold (what earns a needs-user ticket)
 
