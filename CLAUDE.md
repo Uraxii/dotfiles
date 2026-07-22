@@ -82,10 +82,26 @@ Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`
 
 ## Agent Architecture
 
-- Hub and spoke. `zakia` (main thread) is the sole human-facing orchestrator; it spawns background sub-orchestrators: `tech-lead` (one per software workstream) and `art-director` (one per art workstream). `comfyui-runner` is art-director's mechanical ComfyUI driver, no vision.
+- Hub and spoke. `zakia` (main thread) is the sole human-facing orchestrator; it spawns background sub-orchestrators: `tech-lead` (one per software workstream) and `art-director` (one per art workstream). `comfyui-runner` is art-director's mechanical ComfyUI driver, no vision. `knowledge-scout` (haiku, read-only) is the dedicated cross-source retrieval sweeper: fans out over the per-project KB, the `bd` board, and the code for "find everything about X" and returns conclusions only.
 - Agent definitions live in `.claude/agents/`; each file carries only its role-specific delta.
 - Shared orchestration doctrine lives at `.claude/rules/orchestration.md`. Agent bodies load it via a tilde-path MANDATORY FIRST ACTION Read directive (`~/.claude/rules/orchestration.md`); `@`-imports do NOT expand inside agent definition bodies, so never rely on them there.
 - Deployment: stow creates per-file symlinks. A NEW file under `.claude/` needs a restow (`stow .` from repo root) or a matching manual symlink before `~/.claude` sees it.
+
+## Per-project agent workspace (board + knowledge base)
+
+Every project an agent works in gets the same scaffold, so a fresh or compacted orchestrator can rebuild its state from disk instead of from conversation history. Doctrine lives in `.claude/rules/orchestration.md` ("Per-project standard shape", "Board substrate", "KB distillation rule"); this section is the pointer + the tooling that implements it.
+
+```
+.beads/         bd board: machine coordination (statuses, blocked-by deps, atomic claims). Local only (git-excluded via bd's stealth mode), never committed.
+docs/kb/        distilled markdown KB entries: tracked, durable, human-readable.
+workstreams/    per-workstream status.md + artifacts.
+kb.db           SQLite FTS5 index over docs/kb/. Local/regenerable, gitignored.
+```
+
+- `scripts/init-agent-workspace.sh [TARGET_DIR]` scaffolds the shape idempotently: `bd init --stealth --skip-agents --skip-hooks` (board only, no auto-commit, no CLAUDE.md/AGENTS.md/hooksPath side effects), `docs/kb/`, `workstreams/`, a first `kb.db` build, and a git `post-commit` hook.
+- `scripts/build-kb-index.py [--root DIR] [--db PATH]` is the no-LLM FTS5 indexer (stdlib `sqlite3` only). Full rebuild from `docs/kb/*.md` on every run; safe to call standalone or from the post-commit hook.
+- The post-commit hook (installed into the target repo's `.git/hooks/post-commit`, untracked) reindexes `kb.db` only when the commit touched `docs/kb/`; a no-op otherwise. If a post-commit hook already exists there, the installer warns instead of overwriting it.
+- Distillation is in-context: the agent that owns a ticket or workstream writes its own KB entry to `docs/kb/` right before it terminates or rotates. No dedicated distiller agent; retrieval sweeps use `knowledge-scout` instead.
 
 ## Path Standard (enforced by pre-commit hook)
 
