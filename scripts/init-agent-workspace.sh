@@ -23,7 +23,9 @@ target_dir="."
 prefix=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --prefix) prefix="$2"; shift 2 ;;
+    --prefix)
+      [ $# -ge 2 ] || { echo "init-agent-workspace: --prefix requires a value" >&2; exit 1; }
+      prefix="$2"; shift 2 ;;
     *)        target_dir="$1"; shift ;;
   esac
 done
@@ -68,7 +70,7 @@ hook="$target_dir/.git/hooks/post-commit"
 if [ -f "$hook" ]; then
   echo "init-agent-workspace: WARNING $hook already exists, not overwriting."
   echo "  Add this line to it manually to keep the KB index current:"
-  echo "  git diff-tree --no-commit-id --name-only -r HEAD | grep -q '^docs/kb/' && \"$INDEXER\" --root \"\$(git rev-parse --show-toplevel)\""
+  echo "  git diff-tree --no-commit-id --name-only -r --root HEAD | grep -q '^docs/kb/' && \"$INDEXER\" --root \"\$(git rev-parse --show-toplevel)\""
 else
   cat > "$hook" <<HOOK_EOF
 #!/usr/bin/env bash
@@ -77,7 +79,7 @@ else
 # this commit touched docs/kb/; no-op otherwise.
 set -euo pipefail
 repo_root="\$(git rev-parse --show-toplevel)"
-if git diff-tree --no-commit-id --name-only -r HEAD | grep -q '^docs/kb/'; then
+if git diff-tree --no-commit-id --name-only -r --root HEAD | grep -q '^docs/kb/'; then
   "$INDEXER" --root "\$repo_root"
 fi
 HOOK_EOF

@@ -9,9 +9,9 @@ contract, and what are docs/kb/, kb.db, and workstreams/ for?)
 
 ## Summary
 
-Doctrine v2 replaces the v1 NEEDS_INPUT message-payload bubble-up contract
-with board tickets, and adds a lightweight per-project knowledge base built
-on the `bd` (beads) board.
+Doctrine v2 introduces the v3 bubble-up model, replacing the v1 NEEDS_INPUT
+message-payload contract with board tickets, and adds a lightweight
+per-project knowledge base built on the `bd` (beads) board.
 
 A question for the user is now a board ticket labeled `needs-user`. The
 asking agent's work ticket is marked blocked-by that question ticket.
