@@ -58,6 +58,13 @@ confirmed working via its websocket API (`spikes/beads-board`); a manual
 browser click-test is still pending before it's the assumed primary
 channel end to end.
 
+zakia manages the UI's lifecycle via `scripts/board-ui.sh` (repo root):
+`up [REPO_DIR]` on workstream start when open `needs-user` tickets exist,
+reporting the returned URL to the user; it reuses an existing instance for
+that repo instead of duplicating one, and picks a free port automatically
+so concurrent projects don't collide. `down [REPO_DIR]` when the
+workstream ends. `status` lists running instances.
+
 ### Escalation threshold (what earns a needs-user ticket)
 
 A `needs-user` ticket is only for a genuine user decision: an
