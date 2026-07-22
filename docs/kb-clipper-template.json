@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "Knowledgebase Source",
+  "behavior": "create",
+  "noteNameFormat": "{{title}}",
+  "path": "inbox/sources",
+  "noteContentFormat": "{{content}}",
+  "properties": [
+    { "name": "type", "value": "source", "type": "text" },
+    { "name": "title", "value": "{{title}}", "type": "text" },
+    { "name": "source", "value": "{{url}}", "type": "text" },
+    { "name": "author", "value": "{{author}}", "type": "text" },
+    { "name": "site", "value": "{{site}}", "type": "text" },
+    { "name": "published", "value": "{{published}}", "type": "text" },
+    { "name": "fetched", "value": "{{date|date:\"YYYY-MM-DD\"}}", "type": "date" },
+    { "name": "description", "value": "{{description}}", "type": "text" },
+    { "name": "tags", "value": "{{meta:name:keywords}}", "type": "multitext" },
+    { "name": "project", "value": "inbox", "type": "text" },
+    { "name": "status", "value": "active", "type": "text" },
+    { "name": "question", "value": "", "type": "text" },
+    { "name": "summary", "value": "", "type": "text" }
+  ],
+  "triggers": []
+}

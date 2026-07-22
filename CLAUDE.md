@@ -92,16 +92,26 @@ Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`
 Every project an agent works in gets the same scaffold, so a fresh or compacted orchestrator can rebuild its state from disk instead of from conversation history. Doctrine lives in `.claude/rules/orchestration.md` ("Per-project standard shape", "Board substrate", "KB distillation rule"); this section is the pointer + the tooling that implements it.
 
 ```
-.beads/         bd board: machine coordination (statuses, blocked-by deps, atomic claims). Local only (git-excluded via bd's stealth mode), never committed.
 docs/kb/        distilled markdown KB entries: tracked, durable, human-readable.
 workstreams/    per-workstream status.md + artifacts.
 kb.db           SQLite FTS5 index over docs/kb/. Local/regenerable, gitignored.
 ```
 
-- `scripts/init-agent-workspace.sh [TARGET_DIR]` scaffolds the shape idempotently: `bd init --stealth --skip-agents --skip-hooks` (board only, no auto-commit, no CLAUDE.md/AGENTS.md/hooksPath side effects), `docs/kb/`, `workstreams/`, a first `kb.db` build, and a git `post-commit` hook.
+Boards live centrally under `~/.beads-hub`, never in the repo (root is `~/.beads-hub`, not `~/.beads`: bd 1.1.0 refuses `bd init` under any `.beads`-named ancestor). Layout: `~/.beads-hub/hub/.beads` is the bd multi-repo aggregator; `~/.beads-hub/<name>/.beads` is one board per project (prefix `<name>`). `scripts/beads-hub.sh {init,add,sync,list,path,status}` (root override `BEADS_HUB_DIR`) manages them: `add <name>` creates + registers a project board, `sync` (`bd repo sync`) hydrates all into the aggregator, `list` shows them, `path <name>` prints a board's `BEADS_DIR`. Agents write to a project board via `BEADS_DIR=$(beads-hub.sh path <name>) bd ...`; the aggregator is the cross-project READ view. Doctrine: `.claude/rules/orchestration.md` ("Board substrate").
+
+- `scripts/init-agent-workspace.sh [TARGET_DIR]` scaffolds the shape idempotently: creates + registers the project's board under `~/.beads-hub` (via `beads-hub.sh add`, using `bd init --stealth --skip-agents --skip-hooks` under the hood, no CLAUDE.md/AGENTS.md/hooksPath side effects), plus `docs/kb/`, `workstreams/`, a first `kb.db` build, and a git `post-commit` hook.
 - `scripts/build-kb-index.py [--root DIR] [--db PATH]` is the no-LLM FTS5 indexer (stdlib `sqlite3` only). Full rebuild from `docs/kb/*.md` on every run; safe to call standalone or from the post-commit hook.
 - The post-commit hook (installed into the target repo's `.git/hooks/post-commit`, untracked) reindexes `kb.db` only when the commit touched `docs/kb/`; a no-op otherwise. If a post-commit hook already exists there, the installer warns instead of overwriting it.
-- Distillation is in-context: the agent that owns a ticket or workstream writes its own KB entry to `docs/kb/` right before it terminates or rotates. No dedicated distiller agent; retrieval sweeps use `knowledge-scout` instead.
+- Distillation is in-context: the agent that owns a ticket or workstream writes its own KB entry right before it terminates or rotates. No dedicated distiller agent; retrieval sweeps use `knowledge-scout` instead.
+
+## Knowledgebase (`~/.knowledgebase`)
+
+Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any repo, NOT git-tracked), superseding per-repo `docs/kb/` as the home for lasting knowledge. Mirrors the `~/.beads-hub` split: source under `~/.knowledgebase/<project>/{decisions,notes,research,sources}/`, one global index at `~/.knowledgebase/index/kb.db`. Note types: `decision | resolution | research | domain | architecture | gotcha | source`; all share one frontmatter schema (`type,title,source,author,site,published,fetched,description,tags,project,status,question,summary` + body + `## Refs`). Web sources are STORED (content + metadata), captured DETERMINISTICALLY with zero model spend; classifiers/embeddings run afterward. Full doctrine: `.claude/rules/orchestration.md` ("Knowledgebase").
+
+- `scripts/kb.sh {init,add,path,index,clip,status}` (root override `KB_HOME`): `init` makes the vault + `index/`; `add <project>` makes the 4 subdirs; `clip <url> [--project P]` deterministically fetches + extracts a `type: source` note; `index` rebuilds the global FTS5 index.
+- `scripts/kb-index.py` is the no-LLM global FTS5 indexer (stdlib `sqlite3`) over `~/.knowledgebase/<project>/**`, uniform row schema, `query "<terms>" [--project P] [--type T] [--all]`.
+- `scripts/kb-clip.py` is the deterministic web capture: `urllib` fetch -> Open Graph / Schema.org JSON-LD / meta / `readability-lxml` -> `type: source` note (`question`/`summary` left empty for a later classifier). Dep: `readability-lxml` (user-site); stdlib densest-block fallback on any readability error.
+- `docs/kb-clipper-template.json` is the importable Obsidian Web Clipper template (same schema; `tags` fed by `{{meta:name:keywords}}`), for the human browse-and-clip path into `<project>/sources/`.
 
 ## Path Standard (enforced by pre-commit hook)
 

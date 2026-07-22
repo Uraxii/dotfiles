@@ -19,6 +19,7 @@ Tree maintained as the Claude Code source of truth. Hermes-equivalent skills liv
 | [write-a-skill](write-a-skill/SKILL.md) | Author new skills with proper structure. |
 | [artifact-serve](artifact-serve/SKILL.md) | Serve generated artifacts over HTTP / Tailscale + collect feedback. |
 | [zoom-out](zoom-out/SKILL.md) | Broader-context recap for unfamiliar code. |
+| [record-decision](record-decision/SKILL.md) | Record an architectural/scope decision the same turn into a dated, auditable vault note; recency-weighted FTS5 retrieval. |
 
 ### Matt Pocock engineering set (v1.1.0)
 

@@ -2,7 +2,9 @@
 # init-agent-workspace.sh — scaffold the standard per-project agent
 # workspace shape into a target repo:
 #
-#   .beads/       bd board (machine coordination: statuses, deps, claims)
+#   (bd board)    machine coordination (statuses, deps, claims); lives
+#                 centrally under the global hub, not in this repo — see
+#                 beads-hub.sh
 #   docs/kb/      distilled markdown knowledge-base entries (tracked)
 #   workstreams/  per-workstream status.md + artifacts
 #   kb.db         FTS5 index over docs/kb/, kept current by build-kb-index.py
@@ -18,6 +20,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INDEXER="$SCRIPT_DIR/build-kb-index.py"
+BEADS_HUB="$SCRIPT_DIR/beads-hub.sh"
 
 target_dir="."
 prefix=""
@@ -34,20 +37,13 @@ target_dir="$(cd "$target_dir" && pwd)"
 cd "$target_dir"
 
 # ---- bd board ----
-if [ -d .beads ]; then
-  echo "init-agent-workspace: .beads already initialized, skipping"
-else
-  prefix="${prefix:-$(basename "$target_dir")}"
-  # --skip-agents/--skip-hooks: we only want the board, not bd's own
-  # CLAUDE.md/AGENTS.md scaffolding or its git hooksPath takeover.
-  # --stealth: keeps .beads/ out of git (via .git/info/exclude) instead of
-  # bd's default of auto-committing .beads/ files itself; this repo's own
-  # .gitignore (added below/by hand) is what actually tracks the ignore
-  # rule across clones.
-  bd init --non-interactive --prefix "$prefix" \
-    --skip-agents --skip-hooks --stealth
-  echo "init-agent-workspace: bd board initialized (prefix: $prefix)"
-fi
+# Boards no longer live in the project repo; beads-hub.sh creates (or
+# reuses) $HUB_ROOT/<name>/.beads and registers it into the global
+# aggregator. This is the project's ONLY board, so a failure here is fatal
+# to the scaffold, not a soft warning.
+prefix="${prefix:-$(basename "$target_dir")}"
+"$BEADS_HUB" add "$prefix"
+echo "init-agent-workspace: bd board ready via hub (prefix: $prefix)"
 
 # ---- docs/kb/ and workstreams/ ----
 for dir in docs/kb workstreams; do
