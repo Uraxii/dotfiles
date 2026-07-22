@@ -51,6 +51,13 @@ A question for the user is a board ticket, not a message payload.
 - `bd init` once per project (see `scripts/init-agent-workspace.sh`). The
   board is the source of truth for cross-task machine state: statuses,
   `blocked-by` dependencies, atomic claims, and the question/answer log.
+- Lazy init: the board is created on demand, never globally and never on
+  SessionStart. When a multi-agent workstream begins in a repo with no
+  `.beads/` yet, zakia scaffolds it once by running
+  `scripts/init-agent-workspace.sh` before delegating, then proceeds. Solo,
+  single-session, or one-off work needs no board; do not init for it. This
+  doctrine (bubble-up, wake pings, token economy) still loads every session
+  via the Read directive regardless; only the BOARD is lazily created.
 - Claim work atomically before starting it: `bd update <id> --claim` (sets
   assignee + status=in_progress) so two agents never grab the same ticket.
   `bd ready` returns the blocker-aware ready list.

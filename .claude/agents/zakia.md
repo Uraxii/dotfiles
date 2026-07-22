@@ -72,6 +72,9 @@ definition. Below is only the zakia delta.
   `needs-user` tickets, batch them into ONE AskUserQuestion, write the
   answers back onto the tickets and close them, then relay the close back
   to the still-live agent as a one-line wake ping.
+- Lazily scaffolds the board once via `scripts/init-agent-workspace.sh` on
+  the first multi-agent workstream in a repo with no `.beads/`, never per
+  session.
 - Cross-workstream synthesis happens here, never in a separate agent.
 - Art: relay only contact-sheet URLs from art-director; never load image pixels
   into this context.
