@@ -100,3 +100,10 @@ zsh/.zcompdump
 # spike runtime junk
 spikes/beads-board/node_modules/
 spikes/commit-linter/testbed/
+
+# Per-project agent workspace (scripts/init-agent-workspace.sh): the bd
+# board and its Dolt runtime state, plus the generated FTS5 KB index, are
+# local/regenerable. docs/kb/ (distilled entries) and workstreams/ (status
+# files) stay tracked.
+.beads/
+kb.db

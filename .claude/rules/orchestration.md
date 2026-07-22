@@ -15,21 +15,89 @@
 
 ## Bubble-up contract (sub-orchestrators never block on user decisions)
 
-- Mid-flight: SendMessage to "main" with a NEEDS_INPUT payload (question +
-  options + context), then keep working on independent parts meanwhile.
-- Terminal: shape the final return as
-  { status: DONE | NEEDS_INPUT | BLOCKED, questions: [...], result: ... }.
-- zakia batches pending questions into one AskUserQuestion and delivers the
-  answers back via SendMessage to the still-live agent. Agents remain
-  resumable after completion; resume-with-context is verified.
+A question for the user is a board ticket, not a message payload.
+
+- Mid-flight: file a `bd create` ticket labeled `needs-user` describing the
+  question, `bd dep` the work ticket as blocked-by it, then SendMessage to
+  "main" a ONE-LINE wake ping carrying only the ticket id (e.g. "question
+  ticket df-12 filed"). No question payload goes in the message. Keep
+  working on independent parts meanwhile.
+- Terminal: shape the final return as { status: DONE | NEEDS_INPUT | BLOCKED,
+  result: ... } plus any open ticket ids. NEEDS_INPUT here is only a status
+  value naming the state, never a payload to carry the question itself.
+- zakia queries `needs-user` tickets on the board, batches them into one
+  AskUserQuestion, writes the answers back onto the tickets, and closes
+  them. Closing a question ticket auto-unblocks its dependent work
+  (`bd ready` is blocker-aware). The user may also answer tickets directly
+  via the `bd` CLI. The Q&A trail on the ticket is a permanent decision log
+  that survives rotation, compaction, and new sessions.
+- zakia relays the close back to the still-live agent as another one-line
+  wake ping (e.g. "answered, see df-12"). Agents remain resumable after
+  completion; resume-with-context is verified.
 
 ## Planning layers
 
 - zakia does triage and sequencing: what fans out, what serializes.
 - Each sub-orchestrator owns its workstream phase plan (may consult Plan /
   big-pickle-simple-tasks / requirements-clarifier).
-- The shared task board (TaskCreate/TaskUpdate) is the cross-agent source of
-  truth for work state; plans live as tracked tasks.
+- Machine coordination (statuses, blocked-by dependencies, atomic claims,
+  the decision log) lives on the `bd` board, per project; see "Board
+  substrate" below. The harness task board (TaskCreate/TaskUpdate) stays
+  only for human-visible top-level progress that zakia surfaces to the
+  user; it is not the cross-agent coordination store.
+
+## Board substrate (beads)
+
+- `bd init` once per project (see `scripts/init-agent-workspace.sh`). The
+  board is the source of truth for cross-task machine state: statuses,
+  `blocked-by` dependencies, atomic claims, and the question/answer log.
+- Claim work atomically before starting it: `bd update <id> --claim` (sets
+  assignee + status=in_progress) so two agents never grab the same ticket.
+  `bd ready` returns the blocker-aware ready list.
+- Every agent runs `bd` inline itself; board ops never justify spawning a
+  dedicated agent (see Token economy below).
+- Messages carry pointers (ticket ids, file paths), never payloads;
+  artifacts hand off as files in durable dirs, per the hub-and-spoke rule
+  above.
+
+## Token economy
+
+Escalate only when the current rung fails:
+
+1. No-LLM: script or CLI (`bd` commands, `scripts/build-kb-index.py` on a
+   git hook). Zero model cost.
+2. In-context reuse: the owning agent distills its own KB entry before it
+   terminates or rotates, while it still holds the workstream context.
+3. Cheap model, isolated context: a haiku retrieval sweep
+   (`knowledge-scout`) for read-heavy "find everything about X" fan-out
+   across KB, board, and code, returning conclusions only.
+4. Frontier model: only once 1-3 fail to answer the question.
+
+## Per-project standard shape
+
+```
+.beads/         bd board: machine coordination (statuses, deps, claims)
+docs/kb/        distilled markdown KB entries (durable, tracked)
+workstreams/    per-workstream status.md + artifacts (rebuild point for a
+                fresh/compacted zakia)
+kb.db           FTS5 index over docs/kb/ now; a vector column may be added
+                later only once FTS5 demonstrably misses
+```
+
+Scaffolded idempotently by `scripts/init-agent-workspace.sh`.
+
+## KB distillation rule
+
+- The KB is an index over existing sources, never a new silo of raw
+  transcripts.
+- When a ticket closes or a workstream ends, the OWNING agent (not a
+  dedicated distiller) writes one markdown entry to `docs/kb/`: the
+  question someone would search for, a short summary, the resolution,
+  file/ticket refs, and the date.
+- Retrieval is SQLite FTS5 (`scripts/build-kb-index.py` builds `kb.db`) for
+  exact-token search, plus grep over `docs/kb/` directly. Add embeddings
+  only when FTS5 demonstrably misses; entries + FTS5 + grep is enough for
+  now.
 
 ## Workspace + tools
 

@@ -26,9 +26,12 @@ only the art-director delta.
 ## Workstream ownership
 
 - One workstream, spawned by zakia as a background agent. Own the art phase
-  plan; track it on the shared task board.
-- Never block on user taste or decisions: bubble up via NEEDS_INPUT per the
-  shared contract, keep independent renders and critiques running meanwhile.
+  plan; track machine state on the `bd` board, human-visible top-level
+  progress on the shared harness task board.
+- Never block on user taste or decisions: file a `needs-user` board ticket
+  per the shared contract (link the artifact URL for taste questions),
+  SendMessage a one-line wake ping with the ticket id, keep independent
+  renders and critiques running meanwhile.
 
 ## Generation (delegate to comfyui-runner)
 
@@ -55,6 +58,7 @@ only the art-director delta.
 ## Human taste gate
 
 - Publish full-resolution candidate contact sheets via the `artifact-serve`
-  skill and read reviewer feedback back with its feedback command. Send
-  zakia only the URL to relay; the human's verdict comes back through the
-  bubble-up contract.
+  skill and read reviewer feedback back with its feedback command. File the
+  taste question as a `needs-user` board ticket linking the contact-sheet
+  URL, then wake-ping zakia with the ticket id; the human's verdict comes
+  back through the bubble-up contract as an answer on that ticket.
