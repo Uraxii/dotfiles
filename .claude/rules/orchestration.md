@@ -96,16 +96,28 @@ when a standard or default already answers it is wrong.
 
 ## Board substrate (beads)
 
-- `bd init` once per project (see `scripts/init-agent-workspace.sh`). The
-  board is the source of truth for cross-task machine state: statuses,
-  `blocked-by` dependencies, atomic claims, and the question/answer log.
-- Lazy init: the board is created on demand, never globally and never on
-  SessionStart. When a multi-agent workstream begins in a repo with no
-  `.beads/` yet, zakia scaffolds it once by running
-  `scripts/init-agent-workspace.sh` before delegating, then proceeds. Solo,
-  single-session, or one-off work needs no board; do not init for it. This
-  doctrine (bubble-up, wake pings, token economy) still loads every session
-  via the Read directive regardless; only the BOARD is lazily created.
+- All boards live centrally under `~/.beads-hub`, NEVER inside the project
+  repo (no `<repo>/.beads`). The root is `~/.beads-hub`, not `~/.beads`,
+  because bd 1.1.0 hard-refuses `bd init` under any `.beads`-named ancestor.
+  Layout (`scripts/beads-hub.sh`, root override `BEADS_HUB_DIR`):
+  - `~/.beads-hub/hub/.beads`     the bd multi-repo aggregator (prefix `hub`)
+  - `~/.beads-hub/<name>/.beads`  one board per project (prefix `<name>`)
+- Each project board is the source of truth for that project's cross-task
+  machine state: statuses, `blocked-by` deps, atomic claims, the Q&A log.
+  Per-project prefixes keep ticket ids self-describing (`gvn-12`,
+  `dotfiles-3`). Agents WRITE to the owning project's board:
+  `BEADS_DIR=$(scripts/beads-hub.sh path <name>) bd ...`.
+- The hub is the READ surface, not a second write target. `beads-hub.sh add
+  <name>` creates+registers a project board (`bd repo add`); `beads-hub.sh
+  sync` (`bd repo sync`) hydrates every project into one unified cross-project
+  view; `beads-hub.sh list` shows them.
+- Lazy init: project boards are created on demand, never on SessionStart. When
+  a multi-agent workstream begins for a project with no board yet, zakia runs
+  `scripts/init-agent-workspace.sh` once before delegating; that creates and
+  registers the project's board under `~/.beads-hub` (the hub auto-inits on first
+  `beads-hub.sh add`). Solo, single-session, or one-off work needs no board.
+  This doctrine (bubble-up, wake pings, token economy) still loads every
+  session via the Read directive regardless; only the BOARDS are lazy.
 - Claim work atomically before starting it: `bd update <id> --claim` (sets
   assignee + status=in_progress) so two agents never grab the same ticket.
   `bd ready` returns the blocker-aware ready list.
@@ -141,7 +153,6 @@ never made:
 ## Per-project standard shape
 
 ```
-.beads/         bd board: machine coordination (statuses, deps, claims)
 docs/kb/        distilled markdown KB entries (durable, tracked)
 workstreams/    per-workstream status.md + artifacts (rebuild point for a
                 fresh/compacted zakia)
@@ -149,7 +160,10 @@ kb.db           FTS5 index over docs/kb/ now; a vector column may be added
                 later only once FTS5 demonstrably misses
 ```
 
-Scaffolded idempotently by `scripts/init-agent-workspace.sh`.
+The bd board is NOT in the repo; it lives at `~/.beads-hub/<name>/.beads` (see
+Board substrate). Scaffolded idempotently by
+`scripts/init-agent-workspace.sh`, which creates + registers the project's
+board under `~/.beads` (`scripts/beads-hub.sh`).
 
 ## KB distillation rule
 
@@ -163,6 +177,60 @@ Scaffolded idempotently by `scripts/init-agent-workspace.sh`.
   exact-token search, plus grep over `docs/kb/` directly. Add embeddings
   only when FTS5 demonstrably misses; entries + FTS5 + grep is enough for
   now.
+
+## Decision recording rule
+
+- ANY architectural or scope decision (a design choice, a technology pick, a
+  scope cut, a settled trade-off) MUST be recorded the SAME turn it is made,
+  via the `record-decision` skill. Chat and handoffs are transient; the
+  recorded decision note is the source of truth, not the conversation and not
+  a handoff doc. This binds every agent, not just zakia.
+- The skill (`~/.claude/skills/record-decision/`) writes one dated, auditable
+  note per decision under `vault/20 Permanent/decisions/` (git-root default;
+  override with `--decisions-dir` / `KB_DECISIONS_DIR`), grouped by a stable
+  `--topic`. Recording a new note on an existing topic auto-supersedes the
+  prior one and links it, keeping exactly one active note per topic plus a
+  permanent audit chain (`record_decision.py audit <topic>`).
+- Retrieval is recency-weighted FTS5
+  (`build-kb-index.py query "<terms>"`, active-only by default). This is the
+  decision equivalent of the KB distillation rule above: distilled decisions
+  only, never raw transcripts.
+
+## Knowledgebase (`~/.knowledgebase`)
+
+Durable distilled memory, distinct from the ephemeral board and transient
+handoffs. Personal + machine-local: it is an Obsidian vault at
+`~/.knowledgebase` (override `KB_HOME`), NOT in any project repo and NOT
+git-tracked. Mirrors the `~/.beads-hub` split: per-project source under
+`~/.knowledgebase/<project>/`, one global derived index under
+`~/.knowledgebase/index/kb.db`. This supersedes the older per-repo `docs/kb/`
+as the home for durable knowledge.
+
+- Layout: `~/.knowledgebase/<project>/{decisions,notes,research,sources}/*.md`,
+  one atomic distilled note per file. Note types:
+  `decision | resolution | research | domain | architecture | gotcha | source`.
+- Belongs: distilled knowledge worth searching later (the types above). Does
+  NOT: raw transcripts, ephemeral state (-> board), transient handoffs,
+  code/build artifacts (-> repo), secrets, regenerable indexes, speculative
+  TODOs (-> tickets).
+- Uniform frontmatter schema (single-store, every type shares it, `type`
+  differs): `type, title, source, author, site, published, fetched,
+  description, tags[], project, status, question, summary` + body + `## Refs`.
+- Sources are STORED (content + metadata), never just linked. Capture is
+  DETERMINISTIC, zero model spend: the Obsidian Web Clipper (human, metadata
+  from og:/Schema.org/meta) or `scripts/kb-clip.py` (agent: `urllib` fetch ->
+  og:/ld+json/meta/readability-lxml extraction) both write a `type: source`
+  note to `<project>/sources/`. Internal refs stay cited in `## Refs`. On
+  capture `question`/`summary` are left EMPTY; a later classifier fills them.
+- Enrichment (classify, fill question/summary, embeddings) runs AFTER capture
+  as a separate cheap/deterministic pass, never blocking the fetch. Retrieval
+  is deterministic FTS5 (`scripts/kb-index.py query`, recency-weighted,
+  `--project`/`--type` filters). Add vectors (`scripts/kb_embeddings.py` seam)
+  only when FTS5 demonstrably misses.
+- Tooling: `scripts/kb.sh {init,add,path,index,clip,status}`. Written by the
+  OWNING agent in-context before it rotates/terminates. `record-decision`
+  targets the vault by pointing `KB_DECISIONS_DIR` at
+  `~/.knowledgebase/<project>/decisions`.
 
 ## Workspace + tools
 
