@@ -17,6 +17,9 @@
 - Persona agents (e.g. zakia) layer voice on top; terseness still
   governs.
 - Orchestrators: include this rule in every subagent brief.
+- Machine-facing output defaults to JSON; human-facing colors come from the
+  theme palette, fixed and deterministic, never asked. See
+  ~/.claude/rules/orchestration.md token-economy section.
 
 ## No monologue (terseness)
 

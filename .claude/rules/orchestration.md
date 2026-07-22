@@ -29,11 +29,52 @@ A question for the user is a board ticket, not a message payload.
   AskUserQuestion, writes the answers back onto the tickets, and closes
   them. Closing a question ticket auto-unblocks its dependent work
   (`bd ready` is blocker-aware). The user may also answer tickets directly
-  via the `bd` CLI. The Q&A trail on the ticket is a permanent decision log
-  that survives rotation, compaction, and new sessions.
+  via the local beads-ui web front end or the `bd` CLI. The Q&A trail on
+  the ticket is a permanent decision log that survives rotation,
+  compaction, and new sessions.
 - zakia relays the close back to the still-live agent as another one-line
   wake ping (e.g. "answered, see df-12"). Agents remain resumable after
   completion; resume-with-context is verified.
+
+### Question front end
+
+`needs-user` tickets are the async question queue; the user has three ways
+to answer one, picked by how live the moment is:
+
+- beads-ui (local web front end for `bd`), for browsing and answering
+  tickets at their own pace.
+- the `bd` CLI, same purpose, terminal-native.
+- AskUserQuestion, only for a live/urgent decision inside an active
+  session prompt loop.
+
+zakia brings beads-ui up on demand (pointed at the repo's `.beads` board)
+when open `needs-user` tickets exist and the user is not already in a live
+prompt loop; it is not a global always-on service, same lazy-init spirit
+as the board itself. The wake ping still carries only the ticket id; the
+full answer and audit trail live on the ticket, not the message.
+
+Note: beads-ui's write path (answer + close from the browser) is
+confirmed working via its websocket API (`spikes/beads-board`); a manual
+browser click-test is still pending before it's the assumed primary
+channel end to end.
+
+### Escalation threshold (what earns a needs-user ticket)
+
+A `needs-user` ticket is only for a genuine user decision: an
+irreversible/destructive action, a real preference or requirements choice
+with material consequence, or an ambiguity no convention or reasonable
+default can resolve. Everything derivable is resolved by the agent without
+asking:
+
+- output format / terseness -> ~/.claude/rules/output.md
+- names -> ~/.claude/rules/code-naming.md
+- colors / styling / status highlights -> the theming system palette, never
+  ask the user to pick colors
+- any remaining choice with a reasonable default -> ponytail: pick the lazy
+  sensible default and note it
+
+Over-escalation is a defect: asking about format, style, color, or naming
+when a standard or default already answers it is wrong.
 
 ## Planning layers
 
@@ -79,6 +120,16 @@ Escalate only when the current rung fails:
    (`knowledge-scout`) for read-heavy "find everything about X" fan-out
    across KB, board, and code, returning conclusions only.
 4. Frontier model: only once 1-3 fail to answer the question.
+
+The cheapest token is one never generated, and the cheapest decision is one
+never made:
+
+- Machine- or agent-facing script output defaults to JSON (structured,
+  parseable, zero styling decisions).
+- Any human-facing coloring uses a fixed, deterministic status -> theme
+  palette mapping, baked in, never decided per run and never asked. The
+  saving is the deleted decision loop (no needs-user round-trip, no
+  re-reasoning), not the bytes.
 
 ## Per-project standard shape
 
