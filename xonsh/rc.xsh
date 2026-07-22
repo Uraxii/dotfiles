@@ -10,13 +10,18 @@ $CHROME_EXECUTABLE = 'google-chrome-stable'
 $_ZO_DOCTOR = '0'
 
 # PATH prepends — order matters (first wins). Mirror of .zshrc layout.
+#   linuxbrew bin/sbin      Homebrew tools (starship, zoxide, xonsh itself)
 #   ~/.local/bin            user-installed scripts + uv-tool shims
 #   ~/.npm-global/bin       npm global redirect (nix node has RO store prefix)
 #   ~/.opencode/bin         opencode CLI
 #   ~/dev/flutter/bin       flutter SDK
 #   Android SDK tools       platform-tools, emulator, cmdline-tools
+# linuxbrew is listed first so it lands at the back of PATH (lowest priority);
+# nothing else sources `brew shellenv`, so without this its bins are invisible.
 import os as _os
 for _p in (
+    '/home/linuxbrew/.linuxbrew/sbin',
+    '/home/linuxbrew/.linuxbrew/bin',
     _os.path.expanduser('~/Android/Sdk/cmdline-tools/latest/bin'),
     _os.path.expanduser('~/Android/Sdk/emulator'),
     _os.path.expanduser('~/Android/Sdk/platform-tools'),
@@ -25,6 +30,8 @@ for _p in (
     _os.path.expanduser('~/.npm-global/bin'),
     _os.path.expanduser('~/.local/bin'),
 ):
+    if not _os.path.isdir(_p):
+        continue
     if _p not in $PATH:
         $PATH.insert(0, _p)
 del _p, _os

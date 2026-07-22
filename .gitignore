@@ -9,6 +9,7 @@ __pycache__/
 zsh/.zcompdump*
 .claude/*local*
 .claude/**/*local*
+.claude/settings.json
 # .stow-local-ignore is stow's package-level ignore file — DO track it.
 !.claude/.stow-local-ignore
 !.hermes/.stow-local-ignore
