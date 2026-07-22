@@ -24,6 +24,9 @@ knowledge-scout delta.
   `python3 -c "import sqlite3; c = sqlite3.connect('kb.db'); print(c.execute(\"SELECT path FROM kb WHERE kb MATCH ?\", ['TOKEN']).fetchall())"`
   Read the returned `docs/kb/*.md` paths for the actual entry text.
 - KB freshness / rebuild if `kb.db` looks stale: `scripts/build-kb-index.py`.
+- Semantic/hybrid query (paraphrase recall beyond exact tokens):
+  `scripts/kb-search.py "QUERY" --mode semantic|hybrid` (needs
+  `OPENROUTER_API_KEY`; falls back to keyword automatically if unset).
 - Board: `bd search <query>`, `bd list`, `bd ready`, `bd show <id>` for
   status, dependencies, and the question/answer decision log on tickets.
 - Code: Grep and Glob over the repo; never guess a path, always search.
