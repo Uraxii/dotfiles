@@ -35,6 +35,24 @@ A question for the user is a board ticket, not a message payload.
   wake ping (e.g. "answered, see df-12"). Agents remain resumable after
   completion; resume-with-context is verified.
 
+### Escalation threshold (what earns a needs-user ticket)
+
+A `needs-user` ticket is only for a genuine user decision: an
+irreversible/destructive action, a real preference or requirements choice
+with material consequence, or an ambiguity no convention or reasonable
+default can resolve. Everything derivable is resolved by the agent without
+asking:
+
+- output format / terseness -> ~/.claude/rules/output.md
+- names -> ~/.claude/rules/code-naming.md
+- colors / styling / status highlights -> the theming system palette, never
+  ask the user to pick colors
+- any remaining choice with a reasonable default -> ponytail: pick the lazy
+  sensible default and note it
+
+Over-escalation is a defect: asking about format, style, color, or naming
+when a standard or default already answers it is wrong.
+
 ## Planning layers
 
 - zakia does triage and sequencing: what fans out, what serializes.
@@ -79,6 +97,16 @@ Escalate only when the current rung fails:
    (`knowledge-scout`) for read-heavy "find everything about X" fan-out
    across KB, board, and code, returning conclusions only.
 4. Frontier model: only once 1-3 fail to answer the question.
+
+The cheapest token is one never generated, and the cheapest decision is one
+never made:
+
+- Machine- or agent-facing script output defaults to JSON (structured,
+  parseable, zero styling decisions).
+- Any human-facing coloring uses a fixed, deterministic status -> theme
+  palette mapping, baked in, never decided per run and never asked. The
+  saving is the deleted decision loop (no needs-user round-trip, no
+  re-reasoning), not the bytes.
 
 ## Per-project standard shape
 
