@@ -21,8 +21,8 @@
 #
 # Values with no portable replacement (email, tailnet id, hostname) are
 # BLOCKED, not rewritten: rewriting them would break the thing that uses
-# them (e.g. a tailnet permission rule stops matching). Move those to an
-# untracked local file instead (e.g. .claude/settings.local.json).
+# them (e.g. a tailnet permission rule stops matching). Move those to
+# the untracked spikes/commit-linter/identity.local instead.
 #
 # Secret-shaped strings are always a hard block, never auto-fixed.
 
@@ -119,22 +119,35 @@ done
 [ "$FAIL" -eq 0 ] || exit 1
 
 # ---- pass 3: identity values with no portable form (hard block) ----
-# Same self-exemption as pass 2, same reason: these two files name the
-# email/tailnet id as documented examples, not as leaked identity data.
-EMAIL='accounts@nicolepaul.net'
-TAILNET='taild402ad'
+# EMAIL/TAILNET load from a gitignored local file (already covered by
+# the repo's blanket "*.local" gitignore rule) instead of living as
+# literals in this tracked script. No literal values live here anymore,
+# so no self-exemption is needed for this pass. A missing file is
+# normal on other machines and CI -- those two needles are just
+# skipped (hostname check still runs). See README.md "Identity config".
+IDENTITY_LOCAL="$(dirname "${BASH_SOURCE[0]}")/identity.local"
+EMAIL=""
+TAILNET=""
+if [ -f "$IDENTITY_LOCAL" ]; then
+  # ponytail: `source` over a parser -- it's a two-assignment shell
+  # file we own the format of, not third-party input.
+  source "$IDENTITY_LOCAL"
+else
+  echo "NOTE: no $IDENTITY_LOCAL; skipping email/tailnet checks" \
+       "(hostname check still runs)." >&2
+fi
 HOST="$(hostname)"
 
 for f in "${STAGED_FILES[@]}"; do
   is_binary "$f" && continue
-  is_self_file "$f" && continue
   content="$(git show ":$f")"
   for needle in "$EMAIL" "$TAILNET" "$HOST"; do
+    [ -z "$needle" ] && continue
     hits="$(printf '%s\n' "$content" | grep -nF -- "$needle" || true)"
     if [ -n "$hits" ]; then
       echo "BLOCKED: identifying value \"$needle\" in $f (no portable" \
-           "replacement exists). Move this to an untracked local file" \
-           "(e.g. .claude/settings.local.json) instead:" >&2
+           "replacement exists). Move this to" \
+           "spikes/commit-linter/identity.local instead:" >&2
       printf '%s\n' "$hits" | while IFS= read -r line; do
         echo "  $f:$line" >&2
       done
