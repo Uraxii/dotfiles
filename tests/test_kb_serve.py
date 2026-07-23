@@ -19,8 +19,9 @@ import sys
 import threading
 import urllib.error
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -253,3 +254,120 @@ def test_resolve_api_key_never_logs_secret_on_command_failure(
     assert result is None
     assert secret not in caplog.text
     assert "KB_LLM_API_KEY_CMD failed" in caplog.text  # sanity: the warning path was actually hit
+
+
+# ── /clip ───────────────────────────────────────────────────────────────
+
+_CANNED_HTML = b"""<html>
+<head>
+<title>Fallback Title</title>
+<meta property="og:title" content="Canned OG Title">
+<meta property="og:description" content="A canned description of the article.">
+<meta property="og:site_name" content="Example Site">
+</head>
+<body>
+<article>
+<h1>Canned OG Title</h1>
+<p>This is the first canned paragraph with enough text for readability to
+consider it the main content block, repeated so it is clearly the densest
+node on the page for extraction purposes and passes the minimum content
+length heuristics used by the readability library during scoring.</p>
+<p>A second paragraph adds more length so the extractor confidently
+selects this article body over any boilerplate navigation text that might
+otherwise be present on a real page in the wild.</p>
+</article>
+</body>
+</html>"""
+
+
+class _FakeResponse:
+    """Stand-in for what urllib.request.urlopen()'s context manager
+    yields -- just enough surface (.read(), .headers.get_content_charset())
+    for kb_clip.fetch_html()."""
+
+    def __init__(self, html: bytes) -> None:
+        self._html = html
+        self.headers = SimpleNamespace(get_content_charset=lambda: "utf-8")
+
+    def __enter__(self) -> "_FakeResponse":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return self._html
+
+
+def _urlopen_local_passthrough_else(
+    real_urlopen: Callable[..., object], *, html: bytes = b"", exc: Exception | None = None,
+) -> Callable[..., object]:
+    """Build a urllib.request.urlopen side_effect: calls to the
+    live_server's own 127.0.0.1 port pass through to the real urlopen (so
+    _post() keeps talking to the test server); any other URL -- the
+    "external" one /clip fetches -- is intercepted and never hits the
+    network: returns canned `html`, or raises `exc` if given."""
+
+    def _side_effect(request: urllib.request.Request, *args: object, **kwargs: object) -> object:
+        if "127.0.0.1" in request.full_url:
+            return real_urlopen(request, *args, **kwargs)
+        if exc is not None:
+            raise exc
+        return _FakeResponse(html)
+
+    return _side_effect
+
+
+def test_clip_happy_path_writes_source_note_with_extracted_content(
+    live_server: tuple[str, KbServeConfig],
+) -> None:
+    base_url, config = live_server
+    real_urlopen = urllib.request.urlopen
+    with patch(
+        "urllib.request.urlopen", side_effect=_urlopen_local_passthrough_else(real_urlopen, html=_CANNED_HTML),
+    ) as mock_urlopen:
+        status, body = _post(base_url, "/clip", {"url": "https://example.invalid/article", "project": "proj1"})
+
+    assert status == 201
+    external_calls = [c for c in mock_urlopen.call_args_list if "example.invalid" in c.args[0].full_url]
+    assert len(external_calls) == 1  # the outbound fetch went through the mock, never the real network
+
+    note_path = Path(str(body["path"]))
+    assert note_path.is_relative_to(config.kb_home)
+    text = note_path.read_text(encoding="utf-8")
+    assert 'type: "source"' in text
+    assert 'title: "Canned OG Title"' in text
+    assert 'source: "https://example.invalid/article"' in text
+    assert "canned paragraph" in text
+    assert set(body.keys()) == {"path", "children"}  # no unexpected/leaked fields in the response
+
+
+def test_clip_fetch_failure_returns_clean_error_and_writes_no_note(tmp_path: Path) -> None:
+    """A URLError from the outbound fetch must come back as a clean 502,
+    never a 500 stack leak, and must leave the vault untouched. The
+    config here carries a fake secret /clip never touches, to prove a
+    failure path can't echo it back to the client."""
+    secret = "sk-should-never-leak-6f6f6f"  # noqa: S105 test fixture value, not a real secret
+    config = _config(tmp_path, llm_api_key=secret)
+    server = kb_serve.KbHTTPServer(("127.0.0.1", 0), kb_serve.KbRequestHandler, config)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base_url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        real_urlopen = urllib.request.urlopen
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=_urlopen_local_passthrough_else(
+                real_urlopen, exc=urllib.error.URLError("name resolution failed"),
+            ),
+        ):
+            status, body = _post(base_url, "/clip", {"url": "https://example.invalid/broken", "project": "proj1"})
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert status == 502
+    assert "error" in body
+    assert secret not in json.dumps(body)
+    assert list(tmp_path.rglob("*.md")) == []  # no partial note written

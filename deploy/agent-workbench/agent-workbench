@@ -12,8 +12,9 @@
 #
 # review-serve may already be running as a hand-installed user unit before
 # this bundle ever runs. `up` never restarts or replaces an active
-# review-serve; `down` DOES stop it (documented below) -- running `down` at
-# all is the operator's opt-in to that.
+# review-serve; `down` mirrors that -- it only stops/disables/removes a unit
+# whose installed quadlet is this bundle's own symlink. A hand-installed
+# review-serve is left running and enabled, exactly as `up` left it.
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -73,14 +74,21 @@ install_quadlet() {
     log "linked $target -> $src"
 }
 
+# True if the installed quadlet for $unit_name is this bundle's own
+# symlink to $src (vs. a real hand-installed file, or nothing installed).
+quadlet_owned() {
+    unit_name="$1" src="$2"
+    target="$QUADLET_DIR/$unit_name.container"
+    [ -L "$target" ] && [ "$(readlink -f "$target")" = "$(readlink -f "$src")" ]
+}
+
 # Remove a quadlet symlink this bundle installed. Never touches a real
 # (non-symlink) file -- e.g. review-serve's hand-installed copy stays put.
 uninstall_quadlet() {
     unit_name="$1" src="$2"
-    target="$QUADLET_DIR/$unit_name.container"
-    if [ -L "$target" ] && [ "$(readlink -f "$target")" = "$(readlink -f "$src")" ]; then
-        rm -f "$target"
-        log "removed $target"
+    if quadlet_owned "$unit_name" "$src"; then
+        rm -f "$QUADLET_DIR/$unit_name.container"
+        log "removed $QUADLET_DIR/$unit_name.container"
     fi
 }
 
@@ -140,14 +148,22 @@ cmd_up() {
 }
 
 cmd_down() {
-    log "stopping review-serve -- this interrupts the shared review app; re-run 'up' or 'systemctl --user start review-serve' to bring it back"
-    systemctl --user stop review-serve 2>/dev/null || true
-    systemctl --user disable review-serve 2>/dev/null || true
-    uninstall_quadlet review-serve "$REVIEW_QUADLET_SRC"
+    if quadlet_owned review-serve "$REVIEW_QUADLET_SRC"; then
+        log "stopping review-serve -- this interrupts the shared review app; re-run 'up' or 'systemctl --user start review-serve' to bring it back"
+        systemctl --user stop review-serve 2>/dev/null || true
+        systemctl --user disable review-serve 2>/dev/null || true
+        uninstall_quadlet review-serve "$REVIEW_QUADLET_SRC"
+    else
+        log "review-serve not installed by this bundle, leaving it untouched"
+    fi
 
-    systemctl --user stop kb-serve 2>/dev/null || true
-    systemctl --user disable kb-serve 2>/dev/null || true
-    uninstall_quadlet kb-serve "$KB_QUADLET_SRC"
+    if quadlet_owned kb-serve "$KB_QUADLET_SRC"; then
+        systemctl --user stop kb-serve 2>/dev/null || true
+        systemctl --user disable kb-serve 2>/dev/null || true
+        uninstall_quadlet kb-serve "$KB_QUADLET_SRC"
+    else
+        log "kb-serve not installed by this bundle, leaving it untouched"
+    fi
 
     systemctl --user daemon-reload
 }
