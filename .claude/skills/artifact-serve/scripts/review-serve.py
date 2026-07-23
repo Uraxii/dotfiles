@@ -117,6 +117,19 @@ IMAGE_EXT = frozenset(
     {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff"}
 )
 
+# Extensions the per-line code view (render_code_page) can meaningfully
+# render as text. Used by the directory-browse gallery to decide whether a
+# non-image file links into the code view or falls back to a raw link (e.g.
+# a .pdf or a binary blob would render as garbage in the code view).
+CODE_EXT = frozenset(
+    {
+        ".py", ".js", ".ts", ".jsx", ".tsx", ".json", ".md", ".txt", ".log",
+        ".csv", ".yaml", ".yml", ".toml", ".sh", ".bash", ".zsh", ".css",
+        ".html", ".htm", ".xml", ".c", ".cpp", ".h", ".hpp", ".go", ".rs",
+        ".java", ".rb", ".gd", ".cfg", ".ini", ".sql",
+    }
+)
+
 # Upload guardrails (unchanged from legacy — do not regress).
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 MAX_REQUEST_BYTES = 500 * 1024 * 1024
@@ -1708,6 +1721,85 @@ def render_gallery_page(artifact_id: str, sub_path: str) -> bytes:
     return body.encode("utf-8")
 
 
+def _browse_tile(name: str, href: str, thumb_src: str | None) -> str:
+    """One directory-browse gallery tile.
+
+    thumb_src renders an <img> thumbnail (an image file); None renders a
+    caption-only tile (a subdirectory or a non-image file).
+    """
+    thumb = (
+        f'<img src="{thumb_src}" loading="lazy" alt="{html.escape(name)}">'
+        if thumb_src else ""
+    )
+    return (
+        f'<a class="gallery-tile" href="{href}">{thumb}'
+        f'<div class="gallery-caption">{html.escape(name)}</div></a>'
+    )
+
+
+def render_directory_gallery(url_path: str, fs_dir: Path) -> bytes:
+    """Render a themed gallery for a browsed directory.
+
+    Used by do_GET in place of the raw SimpleHTTPRequestHandler autoindex, so
+    browsing a pushed directory never dead-ends on bare file links. Reuses
+    GALLERY_PAGE_TEMPLATE (same theme, same tile CSS) as render_gallery_page.
+    Lists fs_dir's direct children only (one level, matching how a directory
+    listing normally behaves); each becomes one tile:
+      - a subdirectory links to its own URL, so nested browsing recurses
+        through this same renderer instead of ever falling back to raw
+        autoindex;
+      - an image file links into the OSD deep-zoom + Annotorious viewer
+        (`view=image`) when it resolves to a real pushed artifact via
+        resolve_artifact_id, else falls back to its raw URL;
+      - a CODE_EXT file links into the per-line code view (`view=code`)
+        under the same condition, else falls back to raw.
+    A dotted or otherwise NAME_RE-invalid child name (e.g. a legacy file
+    dropped in outside `push`) cannot carry a trusted artifact_id, so it
+    degrades to a plain raw link rather than being denied a link entirely.
+    """
+    base = url_path if url_path.endswith("/") else url_path + "/"
+    tiles: list[str] = []
+    for entry in sorted(fs_dir.iterdir(), key=lambda p: p.name):
+        if entry.name.startswith("."):
+            continue
+        quoted_name = urllib.parse.quote(entry.name)
+        child_path = f"{base}{entry.name}"
+        raw_href = f"{base}{quoted_name}" + ("/" if entry.is_dir() else "")
+
+        if entry.is_dir():
+            tiles.append(_browse_tile(entry.name, raw_href, None))
+            continue
+
+        ext = entry.suffix.lower()
+        artifact_id, sub_path = resolve_artifact_id(child_path)
+        if ext in IMAGE_EXT:
+            href = raw_href
+            if artifact_id is not None:
+                href = (
+                    f"/_/review?artifact={urllib.parse.quote(artifact_id)}"
+                    f"&src={urllib.parse.quote(sub_path)}&view=image"
+                )
+            tiles.append(_browse_tile(entry.name, href, raw_href))
+        else:
+            href = raw_href
+            if artifact_id is not None and ext in CODE_EXT:
+                href = (
+                    f"/_/review?artifact={urllib.parse.quote(artifact_id)}"
+                    f"&src={urllib.parse.quote(sub_path)}&view=code"
+                )
+            tiles.append(_browse_tile(entry.name, href, None))
+
+    grid = "".join(tiles) if tiles else '<p class="empty">(empty directory)</p>'
+    title = html.escape(url_path or "/")
+    body = (
+        GALLERY_PAGE_TEMPLATE
+        .replace("__TITLE__", title)
+        .replace("__ARTIFACT__", title)
+        .replace("__GRID__", grid)
+    )
+    return body.encode("utf-8")
+
+
 # Viewer page: OpenSeadragon simple-image deep zoom + Annotorious OSD plugin
 # pins. Pin creation posts an image_region thread; existing region threads
 # round-trip through anno.setAnnotations() on load (DESIGN.md section 4.2/4.4).
@@ -2347,6 +2439,10 @@ def _make_handler() -> type[http.server.SimpleHTTPRequestHandler]:
       GET  /_/api/settings                 -> _api_settings_get (preserved)
       GET  /_/api/comments                 -> legacy read shim (page threads)
       GET  /_/review                       -> gallery|image|code by query params
+      GET  <any directory without its own index.html>
+                                            -> themed directory-browse gallery
+                                               (render_directory_gallery),
+                                               never the raw autoindex
       *                                    -> static file + page widget inject
     do_POST dispatch:
       POST /_/api/threads                  -> _api_thread_create
@@ -2386,6 +2482,11 @@ def _make_handler() -> type[http.server.SimpleHTTPRequestHandler]:
             if url.path == "/_/review":
                 self._serve_review(url)
                 return
+            if not url.path.startswith("/_/"):
+                fs_path = Path(self.translate_path(self.path))
+                if fs_path.is_dir() and not (fs_path / "index.html").is_file():
+                    self._serve_directory_gallery(url.path, fs_path)
+                    return
             super().do_GET()
 
         def do_POST(self) -> None:  # noqa: N802
@@ -2452,6 +2553,16 @@ def _make_handler() -> type[http.server.SimpleHTTPRequestHandler]:
             else:
                 body = render_gallery_page(artifact_id, path_param)
 
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            super().end_headers()
+            self.wfile.write(body)
+
+        def _serve_directory_gallery(self, raw_path: str, fs_path: Path) -> None:
+            """Render a browsed directory via render_directory_gallery instead
+            of falling through to the raw SimpleHTTPRequestHandler autoindex."""
+            body = render_directory_gallery(urllib.parse.unquote(raw_path), fs_path)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
