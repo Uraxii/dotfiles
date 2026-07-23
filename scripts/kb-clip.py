@@ -20,6 +20,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from datetime import date
@@ -33,6 +34,7 @@ USER_AGENT = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 FETCH_TIMEOUT_SEC = 20
+ALLOWED_URL_SCHEMES = {"http", "https"}
 
 # schema.org fields that mark a JSON-LD block as article-like enough to
 # pull author/date/description from.
@@ -62,6 +64,16 @@ class SourceMeta:
     tags: list[str]
 
 
+def check_url_scheme(url: str) -> None:
+    """Reject any URL whose scheme is not http/https (blocks file://,
+    ftp://, and other local/unintended-protocol reads via urlopen)."""
+    scheme = urllib.parse.urlparse(url).scheme
+    if scheme not in ALLOWED_URL_SCHEMES:
+        raise ValueError(
+            f"unsupported URL scheme: {scheme!r} (only http/https allowed)"
+        )
+
+
 def fetch_html(url: str) -> str:
     """Plain GET via stdlib urllib. Static pages only.
 
@@ -70,6 +82,7 @@ def fetch_html(url: str) -> str:
     # future headless-render path; not built now since a plain fetch
     # already covers this tool's static-page targets.
     """
+    check_url_scheme(url)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SEC) as response:
         raw = response.read()
