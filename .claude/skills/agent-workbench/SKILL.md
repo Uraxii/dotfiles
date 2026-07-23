@@ -81,3 +81,53 @@ Optional data-root overrides live in
 containers are running (the quadlets bind `%h`-relative paths); only
 `BEADS_HUB_DIR` is read directly by the Python code. See the env.example
 comments.
+
+## n8n Public API (agent-facing)
+
+n8n's Public REST API is enabled (pinned in `n8n.container`), letting an
+agent create and trigger workflows without a human in the loop for the
+API calls themselves.
+
+**One-time human bootstrap** (already done for the owner account setup;
+only the API key step remains): log into the n8n editor at
+http://127.0.0.1:5678, go to Settings -> n8n API -> Create an API Key,
+then store the value per `scripts/n8n-container/n8n.env.example`'s
+`N8N_API_KEY` / `N8N_API_KEY_CMD` Mode 2 block. There is no headless mint
+path for this key in n8n Community edition.
+
+**Agent resolves the key:**
+
+```bash
+API_KEY=$(scripts/n8n-container/n8n-secret.py resolve-api-key --data-dir ~/.local/share/n8n)
+```
+
+**Create a workflow** (body = a workflow JSON file):
+
+```bash
+curl -X POST http://127.0.0.1:5678/api/v1/workflows \
+  -H "Content-Type: application/json" \
+  -H "X-N8N-API-KEY: $API_KEY" \
+  --data @path/to/workflow.json
+```
+
+**Activate it** (makes its trigger nodes live):
+
+```bash
+curl -X POST http://127.0.0.1:5678/api/v1/workflows/<id>/activate \
+  -H "X-N8N-API-KEY: $API_KEY"
+```
+
+**Trigger an already-activated Webhook-triggered workflow** (no API key
+needed for the webhook call itself, only the two calls above use it):
+
+```bash
+curl -X POST http://127.0.0.1:5678/webhook/<path>
+```
+
+This only works for workflows containing a Webhook trigger node. The
+starter workflow at `workflows/image-approval-pipeline.n8n.json` uses a
+Form Trigger instead, so it is NOT webhook-triggerable as-is -- a
+separate, already-ticketed workflow-design concern.
+
+All endpoints above are `http://127.0.0.1:5678` (loopback-published;
+reachable over Tailscale via the host, same as the rest of this stack).
