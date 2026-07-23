@@ -115,3 +115,10 @@ kb.db
 # The tracked kb.env.example next to it carries placeholders only.
 kb.env
 !kb.env.example
+
+# n8n secrets. The real config lives at ~/.local/share/n8n/n8n.env, beside
+# the n8n sqlite DB and entirely outside this repo tree; this guards
+# against an accidental copy ever landing inside the repo (e.g. while
+# testing the container). The tracked n8n.env.example carries placeholders.
+n8n.env
+!n8n.env.example

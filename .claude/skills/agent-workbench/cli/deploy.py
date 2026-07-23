@@ -38,9 +38,23 @@ __all__ = ["register", "build_image", "install_quadlet", "wait_for_http"]
 
 KB_IMAGE = "localhost/kb-serve:latest"
 REVIEW_IMAGE = "localhost/review-serve:latest"
+# n8n is the OFFICIAL image, pinned by its multi-arch manifest-list digest
+# (n8n 2.31.5) -- NOT built here. The quadlet's Image= carries the same
+# digest and Podman auto-pulls it on first start, so `up` has no
+# build_image step for n8n (a single-owner service like kb-serve, not a
+# shared one like review-serve). ponytail: rely on quadlet auto-pull rather
+# than adding a pull_image() helper.
+N8N_IMAGE = (
+    "docker.io/n8nio/n8n@sha256:"
+    "cda6bafc7bb4873533e7affb82d1bd47282a7614bdf83242c2293f8ff281261a"
+)
 KB_HEALTH_URL = "http://127.0.0.1:9100/health"
 REVIEW_HEALTH_URL = "http://127.0.0.1:9099/"
+N8N_HEALTH_URL = "http://127.0.0.1:5678/healthz"
 HEALTH_WAIT_TRIES = 15
+# n8n runs DB migrations on first boot; give it more headroom than the
+# build-and-start services.
+N8N_HEALTH_WAIT_TRIES = 30
 HEALTH_CHECK_TIMEOUT_SEC = 3
 
 
@@ -129,13 +143,15 @@ def _http_status(url: str) -> int | None:
         return None
 
 
-def wait_for_http(url: str) -> bool:
-    """Poll ``url`` up to HEALTH_WAIT_TRIES times (1s apart) for HTTP 200.
+def wait_for_http(url: str, tries: int = HEALTH_WAIT_TRIES) -> bool:
+    """Poll ``url`` up to ``tries`` times (1s apart) for HTTP 200.
 
+    Default ``tries`` preserves the existing kb-serve/review-serve
+    behavior; n8n passes N8N_HEALTH_WAIT_TRIES for its slower first boot.
     Uses stdlib urllib; a refused/again-later connection counts as not-yet
     and is retried, never raised.
     """
-    for _ in range(HEALTH_WAIT_TRIES):
+    for _ in range(tries):
         if _http_status(url) == 200:
             return True
         time.sleep(1)
@@ -161,6 +177,9 @@ def _ensure_data_dirs() -> None:
     )
     Path(kb_home).mkdir(parents=True, exist_ok=True)
     Path(artifacts_home).mkdir(parents=True, exist_ok=True)
+    # n8n data dir the quadlet binds at /home/node/.n8n -- no env override,
+    # the quadlet path is fixed. n8n.env, if used, also lives in this dir.
+    Path(Path.home() / ".local" / "share" / "n8n").mkdir(parents=True, exist_ok=True)
 
 
 def cmd_up(args: argparse.Namespace) -> int:
@@ -178,6 +197,7 @@ def cmd_up(args: argparse.Namespace) -> int:
 
     install_quadlet("kb-serve", str(paths.KB_CONTAINER_DIR / "kb-serve.container"))
     install_quadlet("review-serve", str(paths.REVIEW_CONTAINER_DIR / "review-serve.container"))
+    install_quadlet("n8n", str(paths.N8N_CONTAINER_DIR / "n8n.container"))
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
 
     subprocess.run(["systemctl", "--user", "start", "kb-serve"], check=True)
@@ -197,6 +217,16 @@ def cmd_up(args: argparse.Namespace) -> int:
         else:
             print("agent-workbench: review-serve not healthy yet -- "
                   "check: journalctl --user -u review-serve")
+
+    if unit_active("n8n.service"):
+        print("agent-workbench: n8n already active, leaving it running")
+    else:
+        subprocess.run(["systemctl", "--user", "start", "n8n"], check=True)
+        print("agent-workbench: waiting for n8n health...")
+        if wait_for_http(N8N_HEALTH_URL, tries=N8N_HEALTH_WAIT_TRIES):
+            print(f"agent-workbench: n8n up at {N8N_HEALTH_URL}")
+        else:
+            print("agent-workbench: n8n not healthy yet -- check: journalctl --user -u n8n")
 
     beads_hub_dir = hub.hub_root()
     if beads_hub_dir.is_dir():
@@ -227,6 +257,14 @@ def cmd_down(args: argparse.Namespace) -> int:
     else:
         print("agent-workbench: kb-serve not installed by this bundle, leaving it untouched")
 
+    n8n_src = str(paths.N8N_CONTAINER_DIR / "n8n.container")
+    if quadlet_owned("n8n", n8n_src):
+        subprocess.run(["systemctl", "--user", "stop", "n8n"], check=False)
+        subprocess.run(["systemctl", "--user", "disable", "n8n"], check=False)
+        uninstall_quadlet("n8n", n8n_src)
+    else:
+        print("agent-workbench: n8n not installed by this bundle, leaving it untouched")
+
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
     return 0
 
@@ -240,6 +278,10 @@ def cmd_status(args: argparse.Namespace) -> int:
     print("--- review-serve ---")
     subprocess.run(["systemctl", "--user", "status", "review-serve", "--no-pager"], check=False)
     print(_health_line(REVIEW_HEALTH_URL))
+    print()
+    print("--- n8n ---")
+    subprocess.run(["systemctl", "--user", "status", "n8n", "--no-pager"], check=False)
+    print(_health_line(N8N_HEALTH_URL))
     print()
     print("--- bd hub (not a service) ---")
     beads_hub_dir = hub.hub_root()

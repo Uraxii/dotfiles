@@ -398,6 +398,7 @@ def test_cmd_status_only_runs_read_only_systemctl_status_never_mutating_verbs(
     assert calls == [
         ["systemctl", "--user", "status", "kb-serve", "--no-pager"],
         ["systemctl", "--user", "status", "review-serve", "--no-pager"],
+        ["systemctl", "--user", "status", "n8n", "--no-pager"],
     ]
     assert "unreachable" in capsys.readouterr().out
 
@@ -441,6 +442,76 @@ def test_quadlet_owned_true_only_for_this_bundles_own_symlink(
     hand_installed = quadlet_dir / "review-serve.container"
     hand_installed.write_text("", encoding="utf-8")  # real file, not our symlink
     assert deploy.quadlet_owned("review-serve", str(src)) is False
+
+
+def test_n8n_image_is_pinned_by_digest_never_a_floating_tag() -> None:
+    """Regression: N8N_IMAGE must stay a manifest-list digest pin, never
+    ``:latest`` or any other floating tag."""
+    assert deploy.N8N_IMAGE.startswith("docker.io/n8nio/n8n@sha256:")
+
+
+def test_cmd_up_installs_and_starts_n8n(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """cmd_up wires n8n alongside kb-serve/review-serve: quadlet installed,
+    unit started, health-waited -- none of it touches a live host."""
+    monkeypatch.setattr(deploy.Path, "home", classmethod(lambda cls: tmp_path))
+    monkeypatch.setenv("BEADS_HUB_DIR", str(tmp_path / "hub"))
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool = False) -> subprocess.CompletedProcess:
+        calls.append(cmd)
+        returncode = 1 if "is-active" in cmd else 0  # nothing pre-existing is active
+        return subprocess.CompletedProcess(cmd, returncode)
+
+    monkeypatch.setattr(deploy.subprocess, "run", fake_run)
+    monkeypatch.setattr(deploy, "wait_for_http", lambda url, tries=None: True)
+
+    assert deploy.cmd_up(argparse.Namespace()) == 0
+
+    assert ["systemctl", "--user", "start", "n8n"] in calls
+    n8n_src = str(deploy.paths.N8N_CONTAINER_DIR / "n8n.container")
+    assert deploy.quadlet_owned("n8n", n8n_src) is True
+
+
+def test_cmd_down_stops_and_removes_bundle_owned_n8n_quadlet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(deploy.Path, "home", classmethod(lambda cls: tmp_path))
+    n8n_src = str(deploy.paths.N8N_CONTAINER_DIR / "n8n.container")
+    quadlet_dir = deploy.quadlet_dir()
+    quadlet_dir.mkdir(parents=True)
+    (quadlet_dir / "n8n.container").symlink_to(Path(n8n_src).resolve())
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        deploy.subprocess, "run",
+        lambda cmd, check=False: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0),
+    )
+
+    assert deploy.cmd_down(argparse.Namespace()) == 0
+
+    assert ["systemctl", "--user", "stop", "n8n"] in calls
+    assert ["systemctl", "--user", "disable", "n8n"] in calls
+    assert not (quadlet_dir / "n8n.container").exists()
+
+
+def test_cmd_down_leaves_hand_installed_n8n_quadlet_untouched(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(deploy.Path, "home", classmethod(lambda cls: tmp_path))
+    quadlet_dir = deploy.quadlet_dir()
+    quadlet_dir.mkdir(parents=True)
+    (quadlet_dir / "n8n.container").write_text("", encoding="utf-8")  # real file, not our symlink
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        deploy.subprocess, "run",
+        lambda cmd, check=False: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0),
+    )
+
+    assert deploy.cmd_down(argparse.Namespace()) == 0
+
+    assert ["systemctl", "--user", "stop", "n8n"] not in calls
+    assert (quadlet_dir / "n8n.container").is_file()
 
 
 # ═══════════════════════════════════════════════════════════════════════

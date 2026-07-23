@@ -16,6 +16,7 @@ __all__ = [
     "REPO_ROOT",
     "SCRIPTS_DIR",
     "KB_CONTAINER_DIR",
+    "N8N_CONTAINER_DIR",
     "REVIEW_SKILL_DIR",
     "REVIEW_CONTAINER_DIR",
     "repo_root",
@@ -26,6 +27,10 @@ __all__ = [
 REPO_ROOT: Path = Path(__file__).resolve().parents[4]
 SCRIPTS_DIR: Path = REPO_ROOT / "scripts"
 KB_CONTAINER_DIR: Path = SCRIPTS_DIR / "kb-container"
+# n8n has no Containerfile of ours (official image, pinned by digest in its
+# quadlet). This dir holds only the n8n.container quadlet, n8n-secret.py,
+# and n8n.env.example; `deploy` installs the quadlet but never builds here.
+N8N_CONTAINER_DIR: Path = SCRIPTS_DIR / "n8n-container"
 REVIEW_SKILL_DIR: Path = REPO_ROOT / ".claude" / "skills" / "artifact-serve"
 REVIEW_CONTAINER_DIR: Path = REVIEW_SKILL_DIR / "container"
 
