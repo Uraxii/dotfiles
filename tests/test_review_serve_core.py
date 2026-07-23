@@ -221,3 +221,28 @@ def test_migrate_schema_is_idempotent(temp_env: Path) -> None:
     finally:
         conn.close()
     assert int(version) == review_serve.SCHEMA_VERSION
+
+
+@pytest.mark.parametrize("subcommand", ["run", "start"])
+def test_build_parser_port_and_host_honor_env_vars(
+    subcommand: str, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """H2 fix: --port/--host default from REVIEW_SERVE_PORT/REVIEW_SERVE_HOST
+    instead of a hardcoded DEFAULT_PORT/"127.0.0.1" literal, so a container
+    or systemd unit can steer the bound address without an extra CLI flag."""
+    monkeypatch.setenv("REVIEW_SERVE_PORT", "9321")
+    monkeypatch.setenv("REVIEW_SERVE_HOST", "0.0.0.0")
+    args = review_serve.build_parser().parse_args([subcommand])
+    assert args.port == 9321
+    assert args.host == "0.0.0.0"
+
+
+@pytest.mark.parametrize("subcommand", ["run", "start"])
+def test_build_parser_port_and_host_default_when_env_absent(
+    subcommand: str, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("REVIEW_SERVE_PORT", raising=False)
+    monkeypatch.delenv("REVIEW_SERVE_HOST", raising=False)
+    args = review_serve.build_parser().parse_args([subcommand])
+    assert args.port == review_serve.DEFAULT_PORT
+    assert args.host == "127.0.0.1"
