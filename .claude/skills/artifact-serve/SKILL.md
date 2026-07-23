@@ -1,62 +1,103 @@
 ---
 name: artifact-serve
-description: Stage artifacts/reports under /tmp/claude-artifacts/<project>/ + serve over local HTTP, optionally publish to Tailscale HTTPS URL for remote browser review. Auto-injects a per-page comment + file-upload widget so reviewers can leave feedback the agent reads back via `feedback --artifact <id>`. Use when user wants to share a generated mockup gallery, pipeline report, or static HTML output with a remote device, collect review notes against an artifact id, or attach reference screenshots/PDFs to a comment ("publish this report", "put this on tailscale", "let me leave feedback", "serve this dir").
+description: Publish images, renders, mockups, galleries, or HTML reports to the self-hosted review app (OpenSeadragon deep-zoom + Annotorious region pins + threaded, resolvable comments) and share the VIEWER URL for a human to review, never a raw file link. Use WHENEVER you generate visual output for the user to look at or give feedback on, when you need a human taste gate on renders/mockups, or to serve a report over Tailscale. Bundles the server + how to deploy it (rootless-podman container, or a bare daemon) if none is running. Read reviewer feedback back as JSON via `feedback --artifact <id>`.
 ---
 
-# artifact-serve
+# artifact-serve (review app)
 
-Stage + serve generated artifacts (mockups, HTML reports, dashboards) for remote browser view. Single shared root `/tmp/claude-artifacts/`. One stdlib HTTP daemon. Optional Tailscale HTTPS. Per-page comments + uploads stored in durable sqlite, retrievable by artifact id.
+Serve generated artifacts for review in a browser: high-res deep-zoom images
+with click-to-pin region annotations, threaded comments, resolve/unresolve, and
+per-line code comments. Stdlib-python daemon, optional Tailscale HTTPS, durable
+sqlite feedback the agent reads back. Linear-themed with a light/dark/auto
+toggle.
 
-## Quick start
+Scripts + container live beside this skill:
+`~/.claude/skills/artifact-serve/scripts/review-serve.py` and
+`~/.claude/skills/artifact-serve/container/`.
 
-```bash
-# 1. Stage a directory (always symlinked — never copied). --id ties feedback rows to the artifact.
-python3 ~/.claude/skills/artifact-serve/scripts/artifact-serve.py push \
-  --project bhwf --src /home/nikki/Git/bhwf/mockups --id cool-beaming-rivest-cd9eb3
+## Golden rule: share the VIEWER url, never a raw link
 
-# 2. Start the local daemon + expose over Tailscale HTTPS
-python3 ~/.claude/skills/artifact-serve/scripts/artifact-serve.py start --expose
+When you make images/renders/mockups for the user, do NOT paste a raw file path
+or a bare `.png` link. Push the artifact, then hand over the **viewer URL** so
+they land in the deep-zoom + pin UI:
 
-# 3. (After reviewer leaves comments) pull feedback as JSON for agent consumption
-python3 ~/.claude/skills/artifact-serve/scripts/artifact-serve.py feedback \
-  --artifact cool-beaming-rivest-cd9eb3
+```
+https://<tailnet-host>/_/review?artifact=<id>&src=<image>&view=image
 ```
 
-Optional shell alias:
-```bash
-alias as='python3 ~/.claude/skills/artifact-serve/scripts/artifact-serve.py'
-```
+The gallery for a whole pushed dir is `/_/review?artifact=<id>` (thumbnails that
+open the viewer). Code files use `...&view=code` (per-line comments).
 
-## Workflow
-
-1. **Push**: `as push --project NAME --src PATH [--as SUBDIR] [--id ID]`
-   Symlinks only. `NAME` + `SUBDIR` must match `[a-z0-9][a-z0-9_-]*`. `--id` defaults to `<project>/<subdir>` — pass an explicit slug (pipeline artifact-id, ticket id, etc.) to correlate feedback across re-pushes.
-2. **Start**: `as start [--port N] [--expose]`
-   Idempotent. Writes pid file. Regenerates root `index.html`.
-3. **Browse**: open printed URL. Every HTML page served gets a Feedback section auto-injected at the bottom (comment textarea + file picker + submit).
-4. **Feedback**: `as feedback --artifact ID` — JSON dump of comments + upload metadata for one artifact, across all sub-paths.
-5. **Stop**: `as stop` — daemon down + `tailscale serve --https=443 off`.
-6. **Clean**: `as clean --project NAME` — drops staging dir for one project. Feedback DB untouched.
-
-Verbs: `push`, `unpush`, `start`, `expose`, `unexpose`, `status`, `stop`, `clean`, `feedback`, `name`. Full sigs, API endpoints, upload rules in [REFERENCE.md](REFERENCE.md).
-
-Set your default comment-author name once: `as name nikki` → widget pre-fills it on every page, server stamps it on comments where the form leaves name blank.
-
-## Security
-
-- `--expose` / `expose` publishes served root over **entire Tailscale tailnet on HTTPS**, persistent until `unexpose`. Anyone w/ tailnet access can read AND post comments + uploads.
-- Server follows pushed symlinks — anything reachable from targets reachable from URL. Don't push parent dirs of secrets.
-- `/tmp/` wipes on reboot. **Feedback DB + uploads** live at `~/.local/share/claude-artifacts/` — durable.
-- Uploads: 100 MB per file, 500 MB per request, extension allowlist (img/pdf/text/zip/fig/psd/mp4). `.exe/.sh/.js/.html/.svg` blocked.
-
-Full security: [REFERENCE.md](REFERENCE.md).
-
-## Setup (one-time)
+## Step 0: is a server already running?
 
 ```bash
-chmod +x ~/.claude/skills/artifact-serve/scripts/artifact-serve.py
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:9099/    # 200 = up
+systemctl --user is-active review-serve                            # container instance?
 ```
 
-## Implementation
+If it answers 200, skip to Publish. If NOT, deploy one (next section).
 
-Helper at `scripts/artifact-serve.py`. stdlib only (`http.server`, `socketserver`, `subprocess`, `pathlib`, `argparse`, `sqlite3`, in-house multipart parser). Daemonizes via `os.fork`. Pid at `/tmp/claude-artifacts/.serve.pid`. Comments DB at `~/.local/share/claude-artifacts/feedback.db`. See [REFERENCE.md](REFERENCE.md) for storage layout, API endpoints, traversal rules, Tailscale wiring.
+## Deploy a server (only if none is running)
+
+Preferred: rootless-podman container, durable across reboot (systemd quadlet).
+Exact build + install steps are in
+`~/.claude/skills/artifact-serve/container/README.md`; short form:
+
+```bash
+# build the image + install the quadlet (see container/README.md for the exact context path)
+podman build -t review-serve -f ~/.claude/skills/artifact-serve/container/Containerfile ...
+cp ~/.claude/skills/artifact-serve/container/review-serve.container ~/.config/containers/systemd/
+systemctl --user daemon-reload && systemctl --user start review-serve
+```
+
+Bare daemon (no container), fine for a quick one-off:
+
+```bash
+python3 ~/.claude/skills/artifact-serve/scripts/review-serve.py start [--expose]
+```
+
+Expose over Tailscale (host-level; the container path keeps this on the host):
+
+```bash
+tailscale serve --bg --https=443 http://127.0.0.1:9099
+```
+
+> WARNING: expose publishes over the WHOLE tailnet with read AND write (anyone
+> on the tailnet can view and post). Do not push parent dirs of secrets; the
+> server follows pushed symlinks. `review-serve.py stop` also runs
+> `tailscale serve --https=443 off` as a side effect, tearing down the 443
+> mapping; for the container prefer `systemctl --user restart review-serve`.
+
+## Publish
+
+```bash
+RS=~/.claude/skills/artifact-serve/scripts/review-serve.py
+python3 $RS push --project NAME --src /path/to/dir --id <artifact-id>   # symlinks, never copies
+python3 $RS start                                                       # idempotent
+# share: http://127.0.0.1:9099/_/review?artifact=<artifact-id>
+```
+
+Verbs: `push unpush start run expose unexpose status stop clean feedback name`.
+`run` is the container foreground entry point; `name` sets your default comment
+author.
+
+## Read reviewer feedback back
+
+```bash
+python3 ~/.claude/skills/artifact-serve/scripts/review-serve.py feedback --artifact <id>
+```
+
+Returns JSON `{artifact_id, pushes[], threads[], comments[]}`. Each thread
+carries its anchor (image-region pin coords / code line / page), `resolved`
+state, and nested `replies[]` with any uploads. This is how you consume the
+human's pins + comments after they review.
+
+## Notes
+
+- Feedback DB + uploads are durable at `~/.local/share/claude-artifacts/`; the
+  staging root `/tmp/claude-artifacts/` wipes on reboot (re-push after).
+- Uploads: extension allowlist (img/pdf/text/zip/fig/psd/mp4), size caps;
+  `.svg/.html/.js` blocked. Attacker-supplied `SvgSelector` anchors are rejected
+  server-side.
+- Full API + security detail: [REFERENCE.md](REFERENCE.md). Container specifics:
+  [container/README.md](container/README.md).

@@ -17,9 +17,10 @@ Tree maintained as the Claude Code source of truth. Hermes-equivalent skills liv
 | [yeet](yeet/SKILL.md) | Stage + commit + push + open PR in one flow. |
 | [improve-codebase-architecture](improve-codebase-architecture/SKILL.md) | Find deepening / refactor opportunities. |
 | [write-a-skill](write-a-skill/SKILL.md) | Author new skills with proper structure. |
-| [artifact-serve](artifact-serve/SKILL.md) | Serve generated artifacts over HTTP / Tailscale + collect feedback. |
+| [artifact-serve](artifact-serve/SKILL.md) | Publish images/renders to the self-hosted review app (deep-zoom + region pins + threaded feedback); share the viewer URL, deploy the server (container/bare) if none running. |
 | [zoom-out](zoom-out/SKILL.md) | Broader-context recap for unfamiliar code. |
 | [record-decision](record-decision/SKILL.md) | Record an architectural/scope decision the same turn into a dated, auditable vault note; recency-weighted FTS5 retrieval. |
+| [capture-source](capture-source/SKILL.md) | Store a web source's content + metadata into the project knowledgebase (deterministic, no model spend) instead of dropping a bare link. |
 
 ### Matt Pocock engineering set (v1.1.0)
 
