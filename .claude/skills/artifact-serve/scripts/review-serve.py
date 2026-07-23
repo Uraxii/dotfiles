@@ -1343,6 +1343,7 @@ def regenerate_index() -> None:
     parts: list[str] = []
     parts.append("<!doctype html>")
     parts.append("<html lang='en'><head><meta charset='utf-8'>")
+    parts.append(_THEME_PREPAINT_SCRIPT)
     parts.append("<title>review-serve</title>")
     parts.append(
         "<style>" + _THEME_ROOT_CSS + """
@@ -1358,6 +1359,10 @@ def regenerate_index() -> None:
         code{background:var(--bg-overlay);padding:1px 4px;border-radius:2px;font-family:var(--font-mono)}
         """ + "</style></head><body>"
     )
+    # No manual theme-toggle button here: this file is served as a plain
+    # static page, so send_head's injected_page_widget() splices the
+    # feedback widget (and its own toggle button) in before </body> same as
+    # any other served HTML -- adding a second button here would double it up.
     parts.append("<header style='padding:var(--space-6) var(--space-6) 0'>"
                  "<h1>review-serve</h1></header>")
     parts.append(
@@ -1413,8 +1418,19 @@ ANNOTORIOUS_CSS_URL = "/_/assets/annotorious/annotorious.min.css"
 # at module load time (search-replace on the __THEME_CSS__ token, same
 # mechanism the legacy widget used for __CSS__/__JS__ — avoids a .format()
 # call colliding with the CSS/JS braces).
-_THEME_ROOT_CSS = r"""
-:root {
+#
+# Three modes, same custom-property names in every scope so every existing
+# var(--...) call site just works:
+#   - :root (no explicit choice = AUTO): defaults to dark, swaps to light
+#     inside @media (prefers-color-scheme: light) so the app follows the OS.
+#   - html[data-theme="dark"|"light"]: an explicit user choice, applied by
+#     the pre-paint script from localStorage. Wins over the media query
+#     because the selector carries more specificity, regardless of source
+#     order (see _THEME_TOGGLE_JS + _THEME_PREPAINT_SCRIPT below).
+
+# Color tokens only (not font/space/radius, which never change with theme).
+# Byte-identical to the pre-theming values; already WCAG-checked.
+_COLOR_TOKENS_DARK = r"""
   --bg-base: #0d0e10;
   --bg-elevated: #18191a;
   --bg-overlay: #232428;
@@ -1428,12 +1444,124 @@ _THEME_ROOT_CSS = r"""
   --status-resolved: #27a644;
   --status-unresolved: #d29922;
   --status-danger: #f85149;
+"""
+
+# Linear-light-matched: near-white surface ladder, same purple accent family,
+# dark text, GitHub-convention status hues darkened just enough to clear
+# AA (>=4.5:1 normal text, >=3:1 the border-strong UI control) against both
+# --bg-base and --bg-elevated. Full contrast table in the PR description.
+_COLOR_TOKENS_LIGHT = r"""
+  --bg-base: #ffffff;
+  --bg-elevated: #f7f8fa;
+  --bg-overlay: #eceef2;
+  --text-primary: #1a1a1f;
+  --text-secondary: #4a4f5a;
+  --text-muted: #666c7a;
+  --border: #e4e5e9;
+  --border-strong: #84899a;
+  --accent: #5c68d2;
+  --accent-hover: #4550b8;
+  --status-resolved: #1f8336;
+  --status-unresolved: #946b18;
+  --status-danger: #e31309;
+"""
+
+# Theme toggle: one fixed-position control, present on every page type
+# (gallery, viewer, code view, project index, and the widget injected into
+# arbitrary pushed pages) so switching modes anywhere is visible everywhere.
+# Cycles Light -> Dark -> Auto; state lives in localStorage under
+# _THEME_STORAGE_KEY, shared across every page since they're all same-origin.
+_THEME_STORAGE_KEY = "review-serve-theme"
+
+_THEME_TOGGLE_CSS = r"""
+.theme-toggle {
+  position: fixed; top: var(--space-3); right: var(--space-3); z-index: 1000;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  padding: 4px 12px; font-size: 12px; font-family: var(--font-ui);
+  cursor: pointer; line-height: 1.5;
+}
+.theme-toggle:hover { border-color: var(--border-strong); color: var(--text-primary); }
+"""
+
+_THEME_TOGGLE_HTML = (
+    # No static aria-label: the button's own textContent (set by render() in
+    # _THEME_TOGGLE_JS, e.g. "Theme: Dark") already doubles as its accessible
+    # name and updates on every click, so screen readers hear the current
+    # mode too instead of a fixed label that would go stale after a click.
+    '<button type="button" class="theme-toggle" '
+    'id="review-serve-theme-toggle"></button>'
+)
+
+# Pre-paint: a tiny inline script, first thing in <head>, so a stored
+# explicit choice is applied before the browser paints anything (no flash
+# of the auto/OS-default theme first). Auto has no stored value, so it's a
+# no-op here and the :root/@media cascade above just takes over.
+_THEME_PREPAINT_SCRIPT = (
+    "<script>try{var t=localStorage.getItem(" + json.dumps(_THEME_STORAGE_KEY)
+    + ");if(t==='light'||t==='dark')"
+    "document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>"
+)
+
+# Cycle + persist, shared verbatim by every page type. __STORAGE_KEY__ is
+# substituted at module load (same search-replace idiom as __THEME_CSS__).
+_THEME_TOGGLE_JS_RAW = r"""
+(function(){
+  var KEY = '__STORAGE_KEY__';
+  var MODES = ['auto', 'light', 'dark'];
+  var LABELS = { auto: 'Theme: Auto', light: 'Theme: Light', dark: 'Theme: Dark' };
+  function current(){
+    try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; }
+  }
+  function apply(mode){
+    if (mode === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', mode);
+  }
+  function render(btn, mode){ btn.textContent = LABELS[mode] || mode; }
+  var btn = document.getElementById('review-serve-theme-toggle');
+  if (!btn) return;
+  render(btn, current());
+  btn.addEventListener('click', function(){
+    var next = MODES[(MODES.indexOf(current()) + 1) % MODES.length];
+    apply(next);
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    render(btn, next);
+  });
+})();
+"""
+_THEME_TOGGLE_JS = _THEME_TOGGLE_JS_RAW.replace(
+    "__STORAGE_KEY__", _THEME_STORAGE_KEY
+)
+
+# Button + script together, for the pages that own their own <head> (gallery,
+# viewer, code, project index). The widget (injected into arbitrary pushed
+# HTML it doesn't own) wires the same two constants in separately, next to
+# its own script tag; see PAGE_COMMENT_WIDGET below.
+_THEME_TOGGLE_BLOCK = (
+    _THEME_TOGGLE_HTML + "\n<script>" + _THEME_TOGGLE_JS + "</script>"
+)
+
+_THEME_ROOT_CSS_RAW = r"""
+:root {
+__DARK_TOKENS__
   --font-ui: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --space-5: 24px; --space-6: 32px; --space-7: 48px;
   --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-pill: 9999px;
 }
+@media (prefers-color-scheme: light) {
+  :root {
+__LIGHT_TOKENS__
+  }
+}
+html[data-theme="dark"] {
+__DARK_TOKENS__
+}
+html[data-theme="light"] {
+__LIGHT_TOKENS__
+}
+__THEME_TOGGLE_CSS__
 * { box-sizing: border-box; }
 body {
   background: var(--bg-base); color: var(--text-primary);
@@ -1476,10 +1604,23 @@ textarea, input[type=text] {
 textarea:focus, input:focus { border-color: var(--border-strong); outline: none; }
 """
 
+# ponytail: .thread-badge tint backgrounds (#d2992222 etc.) stay hardcoded to
+# the dark-mode hex rather than var(--status-*), same as before theming. They
+# are only a translucent wash under themed text, so the small hue drift in
+# light mode is invisible; threading them through a var() would need a
+# color-mix() or a second token per status just for this one low-stakes spot.
+_THEME_ROOT_CSS = (
+    _THEME_ROOT_CSS_RAW
+    .replace("__DARK_TOKENS__", _COLOR_TOKENS_DARK)
+    .replace("__LIGHT_TOKENS__", _COLOR_TOKENS_LIGHT)
+    .replace("__THEME_TOGGLE_CSS__", _THEME_TOGGLE_CSS)
+)
+
 _GALLERY_PAGE_RAW = r"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+__PREPAINT__
 <title>__TITLE__</title>
 <style>__THEME_CSS__
 .gallery-grid {
@@ -1504,6 +1645,7 @@ header.page-header { padding: var(--space-6) var(--space-6) 0; }
 </style>
 </head>
 <body>
+__THEME_TOGGLE__
 <header class="page-header">
   <h1>Gallery</h1>
   <div class="thread-meta mono">__ARTIFACT__</div>
@@ -1513,7 +1655,12 @@ header.page-header { padding: var(--space-6) var(--space-6) 0; }
 </html>
 """
 
-GALLERY_PAGE_TEMPLATE = _GALLERY_PAGE_RAW.replace("__THEME_CSS__", _THEME_ROOT_CSS)
+GALLERY_PAGE_TEMPLATE = (
+    _GALLERY_PAGE_RAW
+    .replace("__THEME_CSS__", _THEME_ROOT_CSS)
+    .replace("__PREPAINT__", _THEME_PREPAINT_SCRIPT)
+    .replace("__THEME_TOGGLE__", _THEME_TOGGLE_BLOCK)
+)
 
 
 def render_gallery_page(artifact_id: str, sub_path: str) -> bytes:
@@ -1577,6 +1724,7 @@ _VIEWER_PAGE_RAW = r"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+__PREPAINT__
 <title>__TITLE__</title>
 <link rel="stylesheet" href="__ANNO_CSS_URL__">
 <style>__THEME_CSS__
@@ -1585,18 +1733,23 @@ body { display: flex; }
 #osd-viewer { flex: 1 1 auto; height: 100vh; background: var(--bg-base); }
 #thread-panel-wrap {
   flex: 0 0 340px; height: 100vh; overflow-y: auto; background: var(--bg-elevated);
-  border-left: 1px solid var(--border); padding: var(--space-4);
+  border-left: 1px solid var(--border); padding: 48px var(--space-4) var(--space-4);
   box-sizing: border-box;
 }
-.a9s-annotation.a9s-unresolved .a9s-outer,
+/* Outer ring stays a fixed dark halo (Annotorious's own default) so a pin
+   reads against ANY image backdrop, light or dark -- that axis is the image
+   content, independent of the app's own light/dark theme below. Inner ring
+   carries the themed accent/status color. */
+.a9s-annotation.a9s-unresolved .a9s-outer { stroke: rgba(0, 0, 0, .7); stroke-width: 3px; }
 .a9s-annotation.a9s-unresolved .a9s-inner { stroke: var(--accent); }
-.a9s-annotation.a9s-unresolved:hover .a9s-outer,
 .a9s-annotation.a9s-unresolved:hover .a9s-inner { stroke: var(--accent-hover); }
-.a9s-annotation.a9s-resolved .a9s-outer,
+.a9s-annotation.a9s-resolved .a9s-outer { stroke: rgba(0, 0, 0, .7); stroke-width: 3px; }
 .a9s-annotation.a9s-resolved .a9s-inner { stroke: var(--status-resolved); opacity: .6; }
+.a9s-annotation.selected .a9s-inner { stroke: var(--accent-hover); stroke-width: 2px; }
 </style>
 </head>
 <body>
+__THEME_TOGGLE__
 <div id="osd-viewer"></div>
 <div id="thread-panel-wrap">
   <h2>Comments</h2>
@@ -1712,7 +1865,12 @@ body { display: flex; }
 </html>
 """
 
-VIEWER_PAGE_TEMPLATE = _VIEWER_PAGE_RAW.replace("__THEME_CSS__", _THEME_ROOT_CSS)
+VIEWER_PAGE_TEMPLATE = (
+    _VIEWER_PAGE_RAW
+    .replace("__THEME_CSS__", _THEME_ROOT_CSS)
+    .replace("__PREPAINT__", _THEME_PREPAINT_SCRIPT)
+    .replace("__THEME_TOGGLE__", _THEME_TOGGLE_BLOCK)
+)
 
 
 def render_viewer_page(artifact_id: str, src_rel: str) -> bytes:
@@ -1747,6 +1905,7 @@ _CODE_PAGE_RAW = r"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+__PREPAINT__
 <title>__TITLE__</title>
 <style>__THEME_CSS__
 .code-view { font-family: var(--font-mono); font-size: 13px; line-height: 1.5; padding: var(--space-4) 0; }
@@ -1760,6 +1919,7 @@ _CODE_PAGE_RAW = r"""<!doctype html>
 </style>
 </head>
 <body>
+__THEME_TOGGLE__
 <header style="padding: var(--space-6) var(--space-6) 0"><h1>__TITLE__</h1></header>
 <div class="code-view">__CODE__</div>
 <div id="code-thread-panel"></div>
@@ -1873,7 +2033,12 @@ _CODE_PAGE_RAW = r"""<!doctype html>
 </html>
 """
 
-CODE_PAGE_TEMPLATE = _CODE_PAGE_RAW.replace("__THEME_CSS__", _THEME_ROOT_CSS)
+CODE_PAGE_TEMPLATE = (
+    _CODE_PAGE_RAW
+    .replace("__THEME_CSS__", _THEME_ROOT_CSS)
+    .replace("__PREPAINT__", _THEME_PREPAINT_SCRIPT)
+    .replace("__THEME_TOGGLE__", _THEME_TOGGLE_BLOCK)
+)
 
 
 def render_code_page(artifact_id: str, src_rel: str) -> bytes:
@@ -2044,12 +2209,10 @@ _PAGE_WIDGET_CSS_RAW = r"""
 #review-serve-widget {
   /* Theme tokens scoped to this widget, not :root — the widget is injected
      into arbitrary pushed HTML that never loads _THEME_ROOT_CSS, so it must
-     carry its own copy of the custom properties it uses. */
-  --bg-base: #0d0e10; --bg-elevated: #18191a; --bg-overlay: #232428;
-  --text-primary: #f2f3f3; --text-secondary: #d0d6e0; --text-muted: #8a8f98;
-  --border: #23252a; --border-strong: #34343a;
-  --accent: #5e6ad2; --accent-hover: #828fff;
-  --status-resolved: #27a644; --status-unresolved: #d29922; --status-danger: #f85149;
+     carry its own copy of the custom properties it uses. AUTO default here
+     is dark; @media/data-theme blocks below layer light + explicit choice
+     on top, same 3-mode structure as _THEME_ROOT_CSS_RAW. */
+__DARK_TOKENS__
   --font-ui: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
@@ -2060,6 +2223,18 @@ _PAGE_WIDGET_CSS_RAW = r"""
   padding: var(--space-6); border-top: 4px solid var(--border-strong);
   margin-top: var(--space-6);
 }
+@media (prefers-color-scheme: light) {
+  #review-serve-widget {
+__LIGHT_TOKENS__
+  }
+}
+html[data-theme="dark"] #review-serve-widget {
+__DARK_TOKENS__
+}
+html[data-theme="light"] #review-serve-widget {
+__LIGHT_TOKENS__
+}
+__THEME_TOGGLE_CSS__
 #review-serve-widget .thread-card {
   background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: var(--radius-md); padding: var(--space-4);
@@ -2107,6 +2282,7 @@ _PAGE_WIDGET_CSS_RAW = r"""
 
 _PAGE_WIDGET_BLOCK_RAW = """
 <style>__CSS__</style>
+__THEME_TOGGLE_HTML__
 <section id="review-serve-widget">
   <h2>Feedback</h2>
   <div>artifact: <span class="rs-aid">(loading)</span></div>
@@ -2123,11 +2299,27 @@ _PAGE_WIDGET_BLOCK_RAW = """
     <div class="rs-status"></div>
   </form>
 </section>
+<script>__THEME_JS__</script>
 <script>__JS__</script>
 """
 
+# ponytail: the widget can't run a head pre-paint on pages it doesn't own
+# (it's spliced in just before </body> of arbitrary pushed HTML), so an
+# explicit choice made elsewhere on the same origin can show a brief flash
+# of auto/OS-default here before this script runs. Acceptable: the widget's
+# own themed area is a small corner control + a footer section, not the
+# page content, and localStorage still keeps every page in sync afterward.
 PAGE_COMMENT_WIDGET = (
-    _PAGE_WIDGET_BLOCK_RAW.replace("__CSS__", _PAGE_WIDGET_CSS_RAW)
+    _PAGE_WIDGET_BLOCK_RAW
+    .replace(
+        "__CSS__",
+        _PAGE_WIDGET_CSS_RAW
+        .replace("__DARK_TOKENS__", _COLOR_TOKENS_DARK)
+        .replace("__LIGHT_TOKENS__", _COLOR_TOKENS_LIGHT)
+        .replace("__THEME_TOGGLE_CSS__", _THEME_TOGGLE_CSS),
+    )
+    .replace("__THEME_TOGGLE_HTML__", _THEME_TOGGLE_HTML)
+    .replace("__THEME_JS__", _THEME_TOGGLE_JS)
     .replace("__JS__", _PAGE_WIDGET_JS_RAW)
 )
 
