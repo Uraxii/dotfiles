@@ -30,10 +30,14 @@ touched.
    and the `nicolepaul.net` email domain, are left alone on purpose.
 3. **Identity values with no portable form** are hard-blocked, not
    rewritten:
-   - the email `accounts@nicolepaul.net`
-   - the tailnet id `taild402ad` (covers `*.taild402ad.ts.net` hosts too)
+   - `<your-email>`
+   - `<your-tailnet-id>` (covers `*.<your-tailnet-id>.ts.net` hosts too)
    - the machine hostname, read live via `hostname` at hook run time
      (never hardcoded, so this still works if the machine is renamed)
+
+   The email and tailnet id are loaded at hook run time from
+   `spikes/commit-linter/identity.local` (see "Identity config" below),
+   never hardcoded in this script or this doc.
 4. **Secret-shaped strings.** Hard blocked, never auto-fixed: API key
    prefixes (`sk-ant-`, `sk-proj-`, `ghp_`, `github_pat_`, `gho_`,
    `xoxb-`, `xoxp-`, AWS `AKIA...`), private key headers, and any
@@ -47,23 +51,42 @@ touched.
    five checks above, as a second, independent layer. Any finding blocks
    the commit; nothing is ever auto-fixed.
 
+## Identity config
+
+The email and tailnet id checked by pass 3 are not hardcoded anywhere
+tracked. They live in `spikes/commit-linter/identity.local`, a
+per-machine file already covered by this repo's blanket `*.local`
+gitignore rule:
+
+```
+EMAIL='<your-email>'
+TAILNET='<your-tailnet-id>'
+```
+
+The hook `source`s this file if it exists. A missing file (a fresh
+clone, another machine, CI) is normal, not an error: the hook prints a
+one-line note and skips those two needles, while the hostname check
+and every other pass still run. Create the file once per machine with
+your real values to get the email/tailnet block back.
+
 ## Self-exemption for the linter's own files
 
 `spikes/commit-linter/lint-staged.sh` and `spikes/commit-linter/README.md`
-document the secret prefixes, the `_KEY`/`_TOKEN`/`_SECRET` pattern, the
-email, and the tailnet id by name (as examples, and as the actual regex
-source), so they legitimately contain the trigger text those checks look
-for without containing a real leak. Left unexempted, the hook blocked
-its own files on their first real commit, and would have silently
-corrupted its own detection regex if the auto-fix pass had run on them
-(it would have rewritten `/var/home/nicole` inside the sed patterns
-themselves into `$HOME`, breaking detection).
+document the secret prefixes and the `_KEY`/`_TOKEN`/`_SECRET` pattern by
+name (as examples, and as the actual regex source), so they legitimately
+contain the trigger text that check looks for without containing a real
+leak. Left unexempted, the hook blocked its own files on their first real
+commit, and would have silently corrupted its own detection regex if the
+auto-fix pass had run on them (it would have rewritten `/var/home/nicole`
+inside the sed patterns themselves into `$HOME`, breaking detection).
 
 So these two files only are exempt from the pattern-matching passes:
-secret regex (pass 2), identity-value block (pass 3), and auto-fix
-(pass 4). They are NOT exempt from TruffleHog (pass 5): a real secret
-pasted into either file still blocks the commit, verified in testbed
-test 12.
+secret regex (pass 2) and auto-fix (pass 4). Pass 3 (identity-value
+block) no longer needs an exemption for these files -- since the email
+and tailnet id moved to `identity.local`, the tracked script and README
+no longer contain those literals at all. They are NOT exempt from
+TruffleHog (pass 5): a real secret pasted into either file still blocks
+the commit, verified in testbed test 12.
 
 ## TruffleHog layer
 
@@ -126,9 +149,9 @@ Values that have no portable replacement (email, tailnet id, hostname)
 are **blocked, not rewritten**. Rewriting a functional value like a
 tailnet permission rule would silently break it (the rule stops
 matching). The correct fix is to move that value out of the tracked
-file entirely, into an untracked local file such as
-`.claude/settings.local.json`, which `.gitignore` already exempts via
-its `*.local` / `.claude/**/*local*` rules.
+file entirely, into `spikes/commit-linter/identity.local` (see
+"Identity config" above), which `.gitignore` already exempts via its
+blanket `*.local` rule.
 
 ## Bypassing in an emergency
 
