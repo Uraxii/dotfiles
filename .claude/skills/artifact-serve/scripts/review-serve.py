@@ -3003,6 +3003,25 @@ def cmd_start(args: argparse.Namespace) -> int:
     return EXIT_OK  # not reached
 
 
+def cmd_run(args: argparse.Namespace) -> int:
+    """Run the server in the foreground: no fork, no setsid, no pidfile.
+
+    For a process supervisor that already owns the process lifecycle (a
+    container runtime, systemd) and wants a single foreground process it can
+    start/stop/restart and read logs from directly via stdout. `start`'s
+    fork+pidfile daemon model is for interactive CLI use; this is the
+    supervised equivalent.
+    """
+    ensure_root()
+    port = args.port
+    if not _port_free(port):
+        print(f"error: port {port} already in use by another process", file=sys.stderr)
+        return EXIT_SERVER
+    regenerate_index()
+    _serve_forever(port)
+    return EXIT_OK  # not reached; _serve_forever blocks until SIGTERM/SIGINT
+
+
 def cmd_expose(_args: argparse.Namespace) -> int:
     """Publish the running daemon via tailscale serve. Preserved."""
     pid = read_pid()
@@ -3156,9 +3175,11 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the CLI parser.
 
     Preserves the verb surface verbatim: push, unpush, start, expose,
-    unexpose, status, stop, clean, feedback, name. New review capabilities are
-    reached over HTTP, not new verbs (bd mirror is a `setting`, toggled via the
-    existing name/setting path). See DESIGN.md section 11.
+    unexpose, status, stop, clean, feedback, name. `run` is new: a foreground
+    variant of `start` for container/systemd supervision (no fork/pidfile).
+    Other review capabilities are reached over HTTP, not new verbs (bd mirror
+    is a `setting`, toggled via the existing name/setting path). See
+    DESIGN.md section 11.
     """
     p = argparse.ArgumentParser(
         prog="review-serve",
@@ -3187,6 +3208,14 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--port", type=int, default=DEFAULT_PORT)
     sp.add_argument("--expose", action="store_true", help="Also publish via tailscale.")
     sp.set_defaults(func=cmd_start)
+
+    sp = sub.add_parser(
+        "run",
+        help="Run the server in the foreground (no fork/pidfile); "
+        "for container/systemd supervision.",
+    )
+    sp.add_argument("--port", type=int, default=DEFAULT_PORT)
+    sp.set_defaults(func=cmd_run)
 
     sp = sub.add_parser("expose", help="Publish via tailscale serve.")
     sp.set_defaults(func=cmd_expose)
