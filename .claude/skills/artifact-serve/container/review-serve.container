@@ -1,0 +1,66 @@
+[Unit]
+Description=review-serve artifact review app
+After=network-online.target
+
+[Container]
+Image=localhost/review-serve:latest
+ContainerName=review-serve
+
+# Run as the invoking user (numeric UID/GID via systemd specifiers), not
+# container root, so files review-serve writes into the bind-mounted host
+# dirs below come out owned by the real user, not root or a shifted subuid.
+User=%U
+Group=%U
+UserNS=keep-id
+
+# review-serve.py resolves ROOT/FEEDBACK_ROOT via Path.home() and a hardcoded
+# /tmp/claude-artifacts constant. Setting HOME to the real host path (rather
+# than the image default /root) keeps Path.home() identical inside and
+# outside the container, so every bind mount below lands at the SAME
+# absolute path in both places and zero code paths need to change.
+Environment=HOME=%h
+
+# rw: the throwaway staging root review-serve symlinks artifacts into.
+Volume=/tmp/claude-artifacts:/tmp/claude-artifacts:rw
+# rw: durable feedback sqlite DB + uploaded review files.
+Volume=%h/.local/share/claude-artifacts:%h/.local/share/claude-artifacts:rw
+# ro: review-serve stages artifacts into ROOT as SYMLINKS pointing at real
+# files elsewhere under $HOME (e.g. ~/Projects/gvn/..., ~/comfy/...). The
+# container can only resolve those symlink targets if they are mounted at
+# the identical path, so the whole home directory is bind-mounted read-only.
+# Security note: this gives the container read access to everything under
+# $HOME, not just the artifact source trees currently in use -- a compromise
+# of review-serve (e.g. via a malicious upload or a bug in its request
+# handling) could read any file under $HOME. Narrow this to the specific
+# project roots the symlinks actually point into (see REFERENCE.md /
+# review-serve --status) if that blast radius is unacceptable.
+Volume=%h:%h:ro
+
+# review-serve.py hardcodes its bind address to 127.0.0.1 (see
+# _serve_forever), i.e. the container's OWN loopback. Podman's normal
+# port-publish path (pasta/slirp4netns NAT) delivers inbound traffic to the
+# container over its pasta-facing interface, not its loopback, so a
+# 127.0.0.1-only listener is unreachable through PublishPort= -- verified on
+# this host: identical minimal server bound to 127.0.0.1 was unreachable via
+# PublishPort, reachable instantly when bound to 0.0.0.0 or run with
+# Network=host. Changing the app's bind address was out of scope (the only
+# approved code change was the `run` foreground verb), so this container
+# shares the host network namespace instead. Net effect on exposure is the
+# same either way: the app only ever answers on 127.0.0.1:9099, host-wide,
+# because of its own hardcoded bind -- Network=host does not add any new
+# externally reachable surface. Tailscale stays a host concern: see README.md.
+Network=host
+
+# SELinux (enforcing on this host) would otherwise deny access to the broad
+# $HOME bind mount, or force a recursive relabel (`:z`/`:Z`) of the whole
+# home directory -- invasive and slow for a mount this wide. Disabling the
+# SELinux label check for this container is the documented trade-off that
+# goes with the host-FS-exposed-read-only design above.
+SecurityLabelDisable=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=30
+
+[Install]
+WantedBy=default.target

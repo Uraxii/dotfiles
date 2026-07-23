@@ -1,0 +1,17 @@
+FROM python:3.13-slim
+
+# review-serve.py is stdlib-only (see its own module docstring), so there is
+# no `pip install` step. The directory layout below intentionally mirrors the
+# source repo (<repo>/.claude/skills/artifact-serve/scripts + assets):
+# review-serve.py locates its own asset dir and repo root at runtime via
+# Path(__file__).resolve() math, so keeping the same relative depth means
+# zero code changes are needed to run it in the container.
+WORKDIR /app
+COPY scripts/review-serve.py .claude/skills/artifact-serve/scripts/review-serve.py
+COPY assets/ .claude/skills/artifact-serve/assets/
+
+EXPOSE 9099
+
+# Foreground, no fork/pidfile/tailscale (see the `run` verb in review-serve.py
+# and container/README.md). The container runtime is the process supervisor.
+ENTRYPOINT ["python3", "/app/.claude/skills/artifact-serve/scripts/review-serve.py", "run", "--port", "9099"]
