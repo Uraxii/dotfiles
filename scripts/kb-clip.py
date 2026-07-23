@@ -238,14 +238,25 @@ def slugify(text: str) -> str:
 
 
 def build_note_path(sources_dir: Path, slug: str) -> Path:
-    """Pick the destination filename, suffixing on a slug collision."""
-    base = sources_dir / f"{slug}.md"
-    if not base.exists():
-        return base
-    n = 2
-    while (candidate := sources_dir / f"{slug}-{n}.md").exists():
-        n += 1
-    return candidate
+    """Pick the destination filename, suffixing on a slug collision.
+
+    Atomically reserves the returned path with O_CREAT|O_EXCL so two
+    concurrent callers racing on the same slug can never both win the same
+    filename (the existence check and the reservation are one syscall,
+    closing the TOCTOU window a separate ``.exists()`` check would leave
+    open). Leaves the reserved file empty; callers write its real content
+    with their own ``write_text()`` right after.
+    """
+    n = 1
+    while True:
+        candidate = sources_dir / (f"{slug}.md" if n == 1 else f"{slug}-{n}.md")
+        try:
+            fd = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            n += 1
+            continue
+        os.close(fd)
+        return candidate
 
 
 def yaml_quote(value: str) -> str:
