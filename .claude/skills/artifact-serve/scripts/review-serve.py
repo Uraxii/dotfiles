@@ -73,13 +73,16 @@ UPLOAD_ROOT = FEEDBACK_ROOT / "uploads"
 SKILL_DIR = Path(__file__).resolve().parent.parent
 ASSETS_ROOT = SKILL_DIR / "assets"
 
-# Dotfiles repo root, used only to locate scripts/beads-hub.sh for the
-# optional bd mirror (section 11). This script always lives at
+# Dotfiles repo root, used only to locate the agent-workbench CLI for the
+# optional bd mirror (section 11): `agent-workbench hub path <project>`.
+# This script always lives at
 # <repo>/.claude/skills/artifact-serve/scripts/review-serve.py, so the repo
 # root is computed relative to this file rather than hardcoded — keeps the
 # path-standard identity-leak lint happy and the script portable.
 REPO_ROOT = Path(__file__).resolve().parents[4]
-BEADS_HUB_SCRIPT = REPO_ROOT / "scripts" / "beads-hub.sh"
+AGENT_WORKBENCH_CLI = (
+    REPO_ROOT / ".claude" / "skills" / "agent-workbench" / "agent-workbench"
+)
 
 DEFAULT_PORT = 9099
 EXIT_OK = 0
@@ -1143,9 +1146,9 @@ def bd_mirror_enabled() -> bool:
 
 def _bd_beads_dir(artifact_id: str) -> str | None:
     """Resolve the ~/.beads-hub board dir for the project that pushed
-    artifact_id, via `scripts/beads-hub.sh path <project>`. None on any
-    failure (missing script, unknown project, non-zero exit)."""
-    if not BEADS_HUB_SCRIPT.is_file():
+    artifact_id, via `agent-workbench hub path <project>`. None on any
+    failure (missing CLI, unknown project, non-zero exit)."""
+    if not AGENT_WORKBENCH_CLI.is_file():
         return None
     try:
         conn = db_connect()
@@ -1163,7 +1166,7 @@ def _bd_beads_dir(artifact_id: str) -> str | None:
         return None
     try:
         proc = subprocess.run(
-            [str(BEADS_HUB_SCRIPT), "path", row[0]],
+            [str(AGENT_WORKBENCH_CLI), "hub", "path", row[0]],
             check=False, capture_output=True, text=True, timeout=10,
         )
     except (subprocess.TimeoutExpired, OSError):
