@@ -108,3 +108,10 @@ spikes/commit-linter/testbed/
 # files) stay tracked.
 .beads/
 kb.db
+
+# kb-serve secrets. The real vault lives at ~/.knowledgebase/kb.env,
+# entirely outside this repo tree; this guards against an accidental copy
+# ever landing inside the repo (e.g. while testing the container build).
+# The tracked kb.env.example next to it carries placeholders only.
+kb.env
+!kb.env.example

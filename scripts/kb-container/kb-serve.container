@@ -1,0 +1,82 @@
+[Unit]
+Description=kb-serve knowledgebase HTTP facade
+After=network-online.target
+
+[Container]
+Image=localhost/kb-serve:latest
+ContainerName=kb-serve
+
+# Run as the invoking user (rootless keep-id), not container root, so
+# notes/index files kb-serve writes into the bind-mounted vault below come
+# out owned by the real host user.
+User=%U
+Group=%U
+UserNS=keep-id
+
+# kb-serve.py (via kb-index.py/kb-clip.py) resolves KB_HOME from the
+# KB_HOME env var, else ~/.knowledgebase. Setting both HOME and KB_HOME
+# explicitly to the real host path keeps that identical inside and
+# outside the container, so the volume mount below lands at the same
+# absolute path in both places.
+Environment=HOME=%h
+Environment=KB_HOME=%h/.knowledgebase
+
+# kb-serve.py's own --host default is 127.0.0.1 (see its module
+# docstring) -- correct for a bare host run, but inside a container that
+# binds only the container's OWN loopback, which Podman's normal
+# port-publish path (pasta/slirp4netns NAT) cannot reach: the exact
+# failure mode documented in artifact-serve/container/README.md. The fix
+# used there was Network=host; here we instead bind 0.0.0.0 inside the
+# container and let PublishPort= below do the actual host-side
+# restriction to 127.0.0.1 -- this is Podman's normal, intended model
+# (container binds broadly, host-side publish narrows), and it means this
+# container keeps its own network namespace instead of sharing the host's.
+Environment=KB_SERVE_HOST=0.0.0.0
+
+# Only the vault itself is mounted -- no broad $HOME bind like
+# artifact-serve needs (see its README's security note): kb-serve never
+# symlinks or reads arbitrary host paths outside KB_HOME.
+Volume=%h/.knowledgebase:%h/.knowledgebase:rw
+
+# Host-side restricted to loopback only; see the KB_SERVE_HOST comment
+# above for why the container itself still binds 0.0.0.0.
+PublishPort=127.0.0.1:9100:9100
+
+# Non-secret config (KB_ENRICH, KB_LLM_BASE_URL, KB_LLM_MODEL) and,
+# optionally, a static KB_LLM_API_KEY or a KB_LLM_API_KEY_CMD vault
+# command live in the gitignored, machine-local kb.env (see
+# kb.env.example next to this file). The leading `-` makes it optional --
+# first run may not have one yet.
+EnvironmentFile=-%h/.knowledgebase/kb.env
+
+# The RAW LLM API key is resolved separately, never straight from the
+# file above: kb-serve.py's own `resolve-secret` subcommand runs
+# KB_LLM_API_KEY_CMD if set (e.g. a Proton Pass `pass-cli` read, or any
+# other vault CLI) and falls back to the static KB_LLM_API_KEY otherwise,
+# then ExecStartPre below writes ONLY that resolved value to a tmpfs file
+# in the user's runtime dir. This second EnvironmentFile= is read after
+# the one above, so its KB_LLM_API_KEY line wins regardless of which
+# resolution mode fired. The raw key is never written to persistent disk,
+# never baked into the image, never logged: %t is the user's XDG runtime
+# dir (tmpfs), regenerated on every start, gone at logout/reboot.
+EnvironmentFile=%t/kb-serve.env
+
+# SELinux (enforcing on this host) would otherwise deny the vault bind
+# mount, or force a recursive relabel of it; disabling the label check
+# for this one container is simpler for a mount this narrow (unlike
+# artifact-serve's much broader $HOME mount, this one is low blast-radius
+# either way).
+SecurityLabelDisable=true
+
+[Service]
+# Resolve the LLM API key on the HOST, before the container starts, and
+# hand the container only the resolved value via the tmpfs EnvironmentFile
+# above. `umask 077` plus a fresh redirect keeps the file at mode 0600.
+# Never prints the value (kb-serve.py's resolve-secret prints exactly one
+# `KB_LLM_API_KEY=<value>` line; nothing else touches stdout here).
+ExecStartPre=/bin/sh -c 'umask 077 && %h/dotfiles/scripts/kb-serve.py resolve-secret --kb-home %h/.knowledgebase > %t/kb-serve.env'
+Restart=on-failure
+TimeoutStartSec=30
+
+[Install]
+WantedBy=default.target
