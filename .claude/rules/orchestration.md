@@ -58,12 +58,12 @@ confirmed working via its websocket API (`spikes/beads-board`); a manual
 browser click-test is still pending before it's the assumed primary
 channel end to end.
 
-zakia manages the UI's lifecycle via `scripts/board-ui.sh` (repo root):
-`up [REPO_DIR]` on workstream start when open `needs-user` tickets exist,
-reporting the returned URL to the user; it reuses an existing instance for
-that repo instead of duplicating one, and picks a free port automatically
-so concurrent projects don't collide. `down [REPO_DIR]` when the
-workstream ends. `status` lists running instances.
+zakia manages the UI's lifecycle via the `agent-workbench` skill's `board`
+subcommand: `board up [REPO_DIR]` on workstream start when open `needs-user`
+tickets exist, reporting the returned URL to the user; it reuses an existing
+instance for that repo instead of duplicating one, and picks a free port
+automatically so concurrent projects don't collide. `board down [REPO_DIR]`
+when the workstream ends. `board status` lists running instances.
 
 ### Escalation threshold (what earns a needs-user ticket)
 
@@ -99,21 +99,23 @@ when a standard or default already answers it is wrong.
 - All boards live centrally under `~/.beads-hub`, NEVER inside the project
   repo (no `<repo>/.beads`). The root is `~/.beads-hub`, not `~/.beads`,
   because bd 1.1.0 hard-refuses `bd init` under any `.beads`-named ancestor.
-  Layout (`scripts/beads-hub.sh`, root override `BEADS_HUB_DIR`):
+  Layout (the `agent-workbench` skill's `hub` subcommand, invoked at
+  `.claude/skills/agent-workbench/agent-workbench hub ...`, written
+  `agent-workbench hub` below; root override `BEADS_HUB_DIR`):
   - `~/.beads-hub/hub/.beads`     the bd multi-repo aggregator (prefix `hub`)
   - `~/.beads-hub/<name>/.beads`  one board per project (prefix `<name>`)
 - Each project board is the source of truth for that project's cross-task
   machine state: statuses, `blocked-by` deps, atomic claims, the Q&A log.
   Per-project prefixes keep ticket ids self-describing (`gvn-12`,
   `dotfiles-3`). Agents WRITE to the owning project's board:
-  `BEADS_DIR=$(scripts/beads-hub.sh path <name>) bd ...`.
-- The hub is the READ surface, not a second write target. `beads-hub.sh add
-  <name>` creates+registers a project board (`bd repo add`); `beads-hub.sh
-  sync` (`bd repo sync`) hydrates every project into one unified cross-project
-  view; `beads-hub.sh list` shows them.
+  `BEADS_DIR=$(agent-workbench hub path <name>) bd ...`.
+- The hub is the READ surface, not a second write target. `agent-workbench hub
+  add <name>` creates+registers a project board (`bd repo add`); `agent-workbench
+  hub sync` (`bd repo sync`) hydrates every project into one unified cross-project
+  view; `agent-workbench hub list` shows them.
 - Lazy init: project boards are created on demand, never on SessionStart. When
   a multi-agent workstream begins for a project with no board yet, zakia runs
-  `scripts/init-agent-workspace.sh` once before delegating; that creates and
+  `agent-workbench init-workspace` once before delegating; that creates and
   registers the project's board under `~/.beads-hub` (the hub auto-inits on first
   `beads-hub.sh add`). Solo, single-session, or one-off work needs no board.
   This doctrine (bubble-up, wake pings, token economy) still loads every
@@ -162,8 +164,8 @@ kb.db           FTS5 index over docs/kb/ now; a vector column may be added
 
 The bd board is NOT in the repo; it lives at `~/.beads-hub/<name>/.beads` (see
 Board substrate). Scaffolded idempotently by
-`scripts/init-agent-workspace.sh`, which creates + registers the project's
-board under `~/.beads` (`scripts/beads-hub.sh`).
+`agent-workbench init-workspace`, which creates + registers the project's
+board under `~/.beads-hub` (the `agent-workbench hub` subcommand).
 
 ## KB distillation rule
 
@@ -227,7 +229,7 @@ as the home for durable knowledge.
   is deterministic FTS5 (`scripts/kb-index.py query`, recency-weighted,
   `--project`/`--type` filters). Add vectors (`scripts/kb_embeddings.py` seam)
   only when FTS5 demonstrably misses.
-- Tooling: `scripts/kb.sh {init,add,path,index,clip,status}`. Written by the
+- Tooling: `agent-workbench kb {init,add,path,index,clip,status}`. Written by the
   OWNING agent in-context before it rotates/terminates. `record-decision`
   targets the vault by pointing `KB_DECISIONS_DIR` at
   `~/.knowledgebase/<project>/decisions`.
