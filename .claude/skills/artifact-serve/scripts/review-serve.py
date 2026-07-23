@@ -1356,49 +1356,25 @@ def regenerate_index() -> None:
     port = read_port() or DEFAULT_PORT
     total_entries = sum(len(e) for _, e in projects)
 
-    parts: list[str] = []
-    parts.append("<!doctype html>")
-    parts.append("<html lang='en'><head><meta charset='utf-8'>")
-    parts.append(_THEME_PREPAINT_SCRIPT)
-    parts.append("<title>review-serve</title>")
-    parts.append(
-        "<style>" + _THEME_ROOT_CSS + """
-        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-3);padding:var(--space-6)}
-        .tile{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-4);text-decoration:none;color:inherit;display:block}
-        .tile:hover{border-color:var(--border-strong)}
-        .tile h3{margin:0 0 4px;font-size:16px;color:var(--text-primary)}
-        .tile .sub{font-size:13px;color:var(--text-muted);word-break:break-all}
-        .tile .stats{font-size:12px;color:var(--text-muted);margin-top:8px}
-        .tile .gallery-link{display:inline-block;margin-top:8px;font-size:13px}
-        .empty{color:var(--text-muted);font-style:italic;padding:var(--space-6)}
-        .meta{color:var(--text-muted);font-size:14px;padding:0 var(--space-6)}
-        code{background:var(--bg-overlay);padding:1px 4px;border-radius:2px;font-family:var(--font-mono)}
-        """ + "</style></head><body>"
-    )
-    # No manual theme-toggle button here: this file is served as a plain
-    # static page, so send_head's injected_page_widget() splices the
-    # feedback widget (and its own toggle button) in before </body> same as
-    # any other served HTML -- adding a second button here would double it up.
-    parts.append("<header style='padding:var(--space-6) var(--space-6) 0'>"
-                 "<h1>review-serve</h1></header>")
-    parts.append(
+    body_parts: list[str] = [render_page_header("review-serve")]
+    body_parts.append(
         f"<div class='meta'>port <code>{port}</code> &middot; "
         f"{len(projects)} project(s) &middot; {total_entries} entry(ies) &middot; "
         f"regenerated {now}</div>"
     )
 
     if not projects:
-        parts.append(
+        body_parts.append(
             "<div class='empty'>No artifacts pushed yet. Run "
             "<code>review-serve.py push --project NAME --src PATH</code>.</div>"
         )
 
     for project_name, entries in projects:
-        parts.append(f"<h2 style='padding:0 var(--space-6)'>{html.escape(project_name)}</h2>")
+        body_parts.append(f"<h2 style='padding:0 var(--space-6)'>{html.escape(project_name)}</h2>")
         if not entries:
-            parts.append("<div class='empty'>(empty)</div>")
+            body_parts.append("<div class='empty'>(empty)</div>")
             continue
-        parts.append("<div class='grid'>")
+        body_parts.append("<div class='grid'>")
         for entry in entries:
             kind, count, mtime_iso = _entry_meta(entry)
             href = f"/{html.escape(project_name)}/{html.escape(entry.name)}/"
@@ -1407,18 +1383,36 @@ def regenerate_index() -> None:
                 f"<a class='gallery-link' href='{gallery}'>review gallery &rarr;</a>"
                 if gallery else ""
             )
-            parts.append(
-                f"<a class='tile' href='{href}'>"
+            body_parts.append(
+                f"<a class='card tile' href='{href}'>"
                 f"<h3>{html.escape(entry.name)}</h3>"
                 f"<div class='sub'>{kind}</div>"
                 f"<div class='stats'>{count} file(s) &middot; {mtime_iso}</div>"
                 f"{gallery_html}"
                 "</a>"
             )
-        parts.append("</div>")
+        body_parts.append("</div>")
 
-    parts.append("</body></html>")
-    atomic_write(INDEX_FILE, "\n".join(parts))
+    # No manual theme-toggle button here (include_theme_toggle=False): this
+    # file is served as a plain static page, so send_head's
+    # injected_page_widget() splices the feedback widget (and its own toggle
+    # button) in before </body> same as any other served HTML -- adding a
+    # second button here would double it up. .grid/.empty/.meta are
+    # index-only layout, not shared by any other page, so they stay local to
+    # this head_extra rather than living in assets/css/theme.css.
+    html_out = render_page(
+        title="review-serve",
+        head_extra=(
+            "<style>"
+            ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-3);padding:var(--space-6)}"
+            ".empty{color:var(--text-muted);font-style:italic;padding:var(--space-6)}"
+            ".meta{color:var(--text-muted);font-size:14px;padding:0 var(--space-6)}"
+            "</style>"
+        ),
+        body_html="".join(body_parts),
+        include_theme_toggle=False,
+    )
+    atomic_write(INDEX_FILE, html_out)
 
 
 # ── review page templates (inlined, like the legacy widget) ───────────
@@ -1428,12 +1422,16 @@ def regenerate_index() -> None:
 OSD_SCRIPT_URL = "/_/assets/openseadragon/openseadragon.min.js"
 ANNOTORIOUS_SCRIPT_URL = "/_/assets/annotorious/annotorious-openseadragon.min.js"
 ANNOTORIOUS_CSS_URL = "/_/assets/annotorious/annotorious.min.css"
+THEME_CSS_URL = "/_/assets/css/theme.css"
 
-# Linear-theme design tokens (colors, type, spacing, radius) shared by every
-# template via one :root{} block, baked into each *_TEMPLATE constant below
-# at module load time (search-replace on the __THEME_CSS__ token, same
-# mechanism the legacy widget used for __CSS__/__JS__ — avoids a .format()
-# call colliding with the CSS/JS braces).
+# Linear-theme design tokens (colors, type, spacing, radius). Page-owning
+# templates load them via assets/css/theme.css, linked into <head> by
+# render_page() below. The page-comment widget injected into arbitrary
+# pushed HTML can't rely on that external stylesheet being present on a page
+# it doesn't own, so it keeps its own scoped copy, baked at module load time
+# via search-replace on the __THEME_TOGGLE_CSS__ etc. tokens (same mechanism
+# the legacy widget used for __CSS__/__JS__ — avoids a .format() call
+# colliding with the CSS/JS braces).
 #
 # Three modes, same custom-property names in every scope so every existing
 # var(--...) call site just works:
@@ -1520,7 +1518,8 @@ _THEME_PREPAINT_SCRIPT = (
 )
 
 # Cycle + persist, shared verbatim by every page type. __STORAGE_KEY__ is
-# substituted at module load (same search-replace idiom as __THEME_CSS__).
+# substituted at module load (same search-replace idiom used by the widget's
+# own CSS/JS below).
 _THEME_TOGGLE_JS_RAW = r"""
 (function(){
   var KEY = '__STORAGE_KEY__';
@@ -1557,126 +1556,43 @@ _THEME_TOGGLE_BLOCK = (
     _THEME_TOGGLE_HTML + "\n<script>" + _THEME_TOGGLE_JS + "</script>"
 )
 
-_THEME_ROOT_CSS_RAW = r"""
-:root {
-__DARK_TOKENS__
-  --font-ui: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-  --space-5: 24px; --space-6: 32px; --space-7: 48px;
-  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-pill: 9999px;
-}
-@media (prefers-color-scheme: light) {
-  :root {
-__LIGHT_TOKENS__
-  }
-}
-html[data-theme="dark"] {
-__DARK_TOKENS__
-}
-html[data-theme="light"] {
-__LIGHT_TOKENS__
-}
-__THEME_TOGGLE_CSS__
-* { box-sizing: border-box; }
-body {
-  background: var(--bg-base); color: var(--text-primary);
-  font-family: var(--font-ui); margin: 0; line-height: 1.50; font-size: 16px;
-}
-h1 { font-size: 28px; font-weight: 600; line-height: 1.20; margin: 0 0 var(--space-4); }
-h2 { font-size: 22px; font-weight: 500; line-height: 1.25; margin: 0 0 var(--space-3); }
-a { color: var(--accent); }
-a:hover { color: var(--accent-hover); }
-.mono { font-family: var(--font-mono); font-size: 13px; }
+def render_page(
+    title: str,
+    head_extra: str = "",
+    body_html: str = "",
+    *,
+    include_theme_toggle: bool = True,
+) -> str:
+    """Assemble one full themed HTML page shared by every review-serve page.
 
-.thread-card {
-  background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: var(--space-4);
-  margin-bottom: var(--space-3); border-left: 3px solid var(--status-unresolved);
-}
-.thread-card.resolved { border-left-color: var(--status-resolved); opacity: 0.70; }
-.thread-card.danger { border-left-color: var(--status-danger); }
-.thread-badge {
-  display: inline-block; font-size: 12px; padding: 2px 8px;
-  border-radius: var(--radius-pill); font-weight: 500;
-}
-.thread-badge.unresolved { color: var(--status-unresolved); background: #d2992222; }
-.thread-badge.resolved { color: var(--status-resolved); background: #27a64422; }
-.thread-body { color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
-.thread-meta { color: var(--text-muted); font-size: 14px; margin-bottom: var(--space-2); }
-.empty { color: var(--text-muted); font-style: italic; }
-button, .btn {
-  background: var(--accent); color: #ffffff; border: none;
-  border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4);
-  font-family: var(--font-ui); font-size: 14px; cursor: pointer;
-}
-button:hover, .btn:hover { background: var(--accent-hover); }
-textarea, input[type=text] {
-  background: var(--bg-overlay); color: var(--text-primary);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: var(--space-2); font-family: inherit; font-size: 14px; width: 100%;
-  box-sizing: border-box;
-}
-textarea:focus, input:focus { border-color: var(--border-strong); outline: none; }
-"""
+    Wraps body_html in the standard doctype/head/body shell: the pre-paint
+    theme script, the shared assets/css/theme.css stylesheet, any
+    page-specific head_extra (extra <link>/<style> tags), and -- unless
+    include_theme_toggle is False -- the theme-toggle button. title is
+    html.escape'd here; callers must pass the raw, unescaped title.
+    """
+    toggle = _THEME_TOGGLE_BLOCK if include_theme_toggle else ""
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        + _THEME_PREPAINT_SCRIPT
+        + f"<title>{html.escape(title)}</title>"
+        + f'<link rel="stylesheet" href="{THEME_CSS_URL}">'
+        + head_extra
+        + "</head><body>"
+        + toggle
+        + body_html
+        + "</body></html>"
+    )
 
-# ponytail: .thread-badge tint backgrounds (#d2992222 etc.) stay hardcoded to
-# the dark-mode hex rather than var(--status-*), same as before theming. They
-# are only a translucent wash under themed text, so the small hue drift in
-# light mode is invisible; threading them through a var() would need a
-# color-mix() or a second token per status just for this one low-stakes spot.
-_THEME_ROOT_CSS = (
-    _THEME_ROOT_CSS_RAW
-    .replace("__DARK_TOKENS__", _COLOR_TOKENS_DARK)
-    .replace("__LIGHT_TOKENS__", _COLOR_TOKENS_LIGHT)
-    .replace("__THEME_TOGGLE_CSS__", _THEME_TOGGLE_CSS)
-)
 
-_GALLERY_PAGE_RAW = r"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-__PREPAINT__
-<title>__TITLE__</title>
-<style>__THEME_CSS__
-.gallery-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-4); padding: var(--space-6);
-}
-.gallery-tile {
-  display: block; background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: var(--radius-md); overflow: hidden; text-decoration: none;
-  color: inherit; transition: border-color .12s;
-}
-.gallery-tile:hover { border-color: var(--border-strong); }
-.gallery-tile img {
-  width: 100%; height: 160px; object-fit: cover; display: block;
-  background: var(--bg-overlay);
-}
-.gallery-caption {
-  padding: var(--space-2) var(--space-3); font-size: 14px;
-  color: var(--text-secondary); word-break: break-all;
-}
-header.page-header { padding: var(--space-6) var(--space-6) 0; }
-</style>
-</head>
-<body>
-__THEME_TOGGLE__
-<header class="page-header">
-  <h1>Gallery</h1>
-  <div class="thread-meta mono">__ARTIFACT__</div>
-</header>
-<div class="gallery-grid">__GRID__</div>
-</body>
-</html>
-"""
+def render_page_header(title_html: str, subline_html: str = "") -> str:
+    """Shared page-header block used by every page type except the viewer.
 
-GALLERY_PAGE_TEMPLATE = (
-    _GALLERY_PAGE_RAW
-    .replace("__THEME_CSS__", _THEME_ROOT_CSS)
-    .replace("__PREPAINT__", _THEME_PREPAINT_SCRIPT)
-    .replace("__THEME_TOGGLE__", _THEME_TOGGLE_BLOCK)
-)
+    title_html/subline_html are caller-supplied HTML fragments that must
+    already be escaped/safe, matching the convention used elsewhere in this
+    file (callers html.escape user-controlled strings before passing them).
+    """
+    return f'<header class="page-header"><h1>{title_html}</h1>{subline_html}</header>'
 
 
 def render_gallery_page(artifact_id: str, sub_path: str) -> bytes:
@@ -1706,7 +1622,7 @@ def render_gallery_page(artifact_id: str, sub_path: str) -> bytes:
                     f"/{urllib.parse.quote(rel)}"
                 )
                 tiles.append(
-                    f'<a class="gallery-tile" href="{view_href}">'
+                    f'<a class="card gallery-tile" href="{view_href}">'
                     f'<img src="{img_src}" loading="lazy" '
                     f'alt="{html.escape(img.name)}">'
                     f'<div class="gallery-caption">{html.escape(img.name)}'
@@ -1714,14 +1630,15 @@ def render_gallery_page(artifact_id: str, sub_path: str) -> bytes:
                 )
 
     grid = "".join(tiles) if tiles else '<p class="empty">no images found</p>'
-    title = html.escape(f"{artifact_id} / {sub_path or '.'}")
-    body = (
-        GALLERY_PAGE_TEMPLATE
-        .replace("__TITLE__", title)
-        .replace("__ARTIFACT__", html.escape(artifact_id))
-        .replace("__GRID__", grid)
+    title = f"{artifact_id} / {sub_path or '.'}"
+    body_html = (
+        render_page_header(
+            "Gallery",
+            f'<div class="thread-meta mono">{html.escape(artifact_id)}</div>',
+        )
+        + f'<div class="gallery-grid">{grid}</div>'
     )
-    return body.encode("utf-8")
+    return render_page(title=title, body_html=body_html).encode("utf-8")
 
 
 def _browse_tile(name: str, href: str, thumb_src: str | None) -> str:
@@ -1735,7 +1652,7 @@ def _browse_tile(name: str, href: str, thumb_src: str | None) -> str:
         if thumb_src else ""
     )
     return (
-        f'<a class="gallery-tile" href="{href}">{thumb}'
+        f'<a class="card gallery-tile" href="{href}">{thumb}'
         f'<div class="gallery-caption">{html.escape(name)}</div></a>'
     )
 
@@ -1745,9 +1662,10 @@ def render_directory_gallery(url_path: str, fs_dir: Path) -> bytes:
 
     Used by do_GET in place of the raw SimpleHTTPRequestHandler autoindex, so
     browsing a pushed directory never dead-ends on bare file links. Reuses
-    GALLERY_PAGE_TEMPLATE (same theme, same tile CSS) as render_gallery_page.
-    Lists fs_dir's direct children only (one level, matching how a directory
-    listing normally behaves); each becomes one tile:
+    the same render_page()-built gallery shell (theme, tile CSS) as
+    render_gallery_page. Lists fs_dir's direct children only (one level,
+    matching how a directory listing normally behaves); each becomes one
+    tile:
       - a subdirectory links to its own URL, so nested browsing recurses
         through this same renderer instead of ever falling back to raw
         autoindex;
@@ -1793,14 +1711,14 @@ def render_directory_gallery(url_path: str, fs_dir: Path) -> bytes:
             tiles.append(_browse_tile(entry.name, href, None))
 
     grid = "".join(tiles) if tiles else '<p class="empty">(empty directory)</p>'
-    title = html.escape(url_path or "/")
-    body = (
-        GALLERY_PAGE_TEMPLATE
-        .replace("__TITLE__", title)
-        .replace("__ARTIFACT__", title)
-        .replace("__GRID__", grid)
+    title = url_path or "/"
+    body_html = (
+        render_page_header(
+            "Gallery", f'<div class="thread-meta mono">{html.escape(title)}</div>'
+        )
+        + f'<div class="gallery-grid">{grid}</div>'
     )
-    return body.encode("utf-8")
+    return render_page(title=title, body_html=body_html).encode("utf-8")
 
 
 # Viewer page: OpenSeadragon simple-image deep zoom + Annotorious OSD plugin
@@ -1815,14 +1733,10 @@ def render_directory_gallery(url_path: str, fs_dir: Path) -> bytes:
 # also supports click-to-select-annotation. Resolved/unresolved recoloring
 # and hover state match the Linear theme exactly; only the "numbered circular
 # marker" shape itself is a lighter-weight stand-in.
-_VIEWER_PAGE_RAW = r"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-__PREPAINT__
-<title>__TITLE__</title>
-<link rel="stylesheet" href="__ANNO_CSS_URL__">
-<style>__THEME_CSS__
+# Viewer-only head CSS (no theme tokens/reset -- those live in
+# assets/css/theme.css, linked separately by render_page()). Layout for the
+# split OSD canvas + comment sidebar, plus the Annotorious pin recolor rules.
+_VIEWER_HEAD_CSS = r"""
 html, body { height: 100%; }
 body { display: flex; }
 #osd-viewer { flex: 1 1 auto; height: 100vh; background: var(--bg-base); }
@@ -1841,11 +1755,11 @@ body { display: flex; }
 .a9s-annotation.a9s-resolved .a9s-outer { stroke: rgba(0, 0, 0, .7); stroke-width: 3px; }
 .a9s-annotation.a9s-resolved .a9s-inner { stroke: var(--status-resolved); opacity: .6; }
 .a9s-annotation.selected .a9s-inner { stroke: var(--accent-hover); stroke-width: 2px; }
-</style>
-</head>
-<body>
-__THEME_TOGGLE__
-<div id="osd-viewer"></div>
+"""
+
+# Viewer body: full-bleed OSD canvas + comment sidebar, no page-header (see
+# render_viewer_page -- this page is intentionally headerless).
+_VIEWER_BODY_RAW = r"""<div id="osd-viewer"></div>
 <div id="thread-panel-wrap">
   <h2>Comments</h2>
   <div id="thread-panel"><p class="empty">loading...</p></div>
@@ -1956,16 +1870,7 @@ __THEME_TOGGLE__
   viewer.addHandler('open', loadThreads);
 })();
 </script>
-</body>
-</html>
 """
-
-VIEWER_PAGE_TEMPLATE = (
-    _VIEWER_PAGE_RAW
-    .replace("__THEME_CSS__", _THEME_ROOT_CSS)
-    .replace("__PREPAINT__", _THEME_PREPAINT_SCRIPT)
-    .replace("__THEME_TOGGLE__", _THEME_TOGGLE_BLOCK)
-)
 
 
 def render_viewer_page(artifact_id: str, src_rel: str) -> bytes:
@@ -1982,27 +1887,26 @@ def render_viewer_page(artifact_id: str, src_rel: str) -> bytes:
         f"/{urllib.parse.quote(project)}/{urllib.parse.quote(subdir)}"
         f"/{urllib.parse.quote(src_rel)}"
     )
-    title = html.escape(f"{artifact_id} / {src_rel}")
-    body = (
-        VIEWER_PAGE_TEMPLATE
-        .replace("__TITLE__", title)
+    title = f"{artifact_id} / {src_rel}"
+    body_html = (
+        _VIEWER_BODY_RAW
         .replace("__IMAGE_URL__", json.dumps(image_url))
         .replace("__ARTIFACT_ID__", json.dumps(artifact_id))
         .replace("__SUB_PATH__", json.dumps(src_rel))
         .replace("__OSD_URL__", OSD_SCRIPT_URL)
         .replace("__ANNO_JS_URL__", ANNOTORIOUS_SCRIPT_URL)
-        .replace("__ANNO_CSS_URL__", ANNOTORIOUS_CSS_URL)
     )
-    return body.encode("utf-8")
+    head_extra = (
+        f'<link rel="stylesheet" href="{ANNOTORIOUS_CSS_URL}">'
+        f"<style>{_VIEWER_HEAD_CSS}</style>"
+    )
+    page = render_page(title=title, head_extra=head_extra, body_html=body_html)
+    return page.encode("utf-8")
 
 
-_CODE_PAGE_RAW = r"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-__PREPAINT__
-<title>__TITLE__</title>
-<style>__THEME_CSS__
+# Code-page-only head CSS (no theme tokens/reset -- those live in
+# assets/css/theme.css, linked separately by render_page()).
+_CODE_PAGE_CSS = r"""
 .code-view { font-family: var(--font-mono); font-size: 13px; line-height: 1.5; padding: var(--space-4) 0; }
 .code-line { display: flex; padding: 0 var(--space-4); cursor: pointer; border-left: 3px solid transparent; }
 .code-line:hover { background: var(--bg-elevated); border-left-color: var(--accent); }
@@ -2011,12 +1915,12 @@ __PREPAINT__
 .code-src { white-space: pre; color: var(--text-secondary); }
 #code-thread-panel { padding: var(--space-4); max-width: 920px; }
 #code-thread-panel textarea { min-height: 4rem; margin: var(--space-2) 0; }
-</style>
-</head>
-<body>
-__THEME_TOGGLE__
-<header style="padding: var(--space-6) var(--space-6) 0"><h1>__TITLE__</h1></header>
-<div class="code-view">__CODE__</div>
+"""
+
+# Code-page body: the per-line source view + thread panel. The page header
+# (title) is built by render_page_header() at the call site instead of being
+# baked in here.
+_CODE_PAGE_BODY_RAW = r"""<div class="code-view">__CODE__</div>
 <div id="code-thread-panel"></div>
 <script>
 (function(){
@@ -2124,16 +2028,7 @@ __THEME_TOGGLE__
   loadThreads();
 })();
 </script>
-</body>
-</html>
 """
-
-CODE_PAGE_TEMPLATE = (
-    _CODE_PAGE_RAW
-    .replace("__THEME_CSS__", _THEME_ROOT_CSS)
-    .replace("__PREPAINT__", _THEME_PREPAINT_SCRIPT)
-    .replace("__THEME_TOGGLE__", _THEME_TOGGLE_BLOCK)
-)
 
 
 def render_code_page(artifact_id: str, src_rel: str) -> bytes:
@@ -2158,15 +2053,20 @@ def render_code_page(artifact_id: str, src_rel: str) -> bytes:
     ]
     code_html = "\n".join(rows) if rows else '<p class="empty">(empty file)</p>'
 
-    title = html.escape(f"{artifact_id} / {src_rel}")
-    body = (
-        CODE_PAGE_TEMPLATE
-        .replace("__TITLE__", title)
+    title = f"{artifact_id} / {src_rel}"
+    body_html = (
+        _CODE_PAGE_BODY_RAW
         .replace("__CODE__", code_html)
         .replace("__ARTIFACT_ID__", json.dumps(artifact_id))
         .replace("__SUB_PATH__", json.dumps(src_rel))
     )
-    return body.encode("utf-8")
+    body_html = render_page_header(html.escape(title)) + body_html
+    page = render_page(
+        title=title,
+        head_extra=f"<style>{_CODE_PAGE_CSS}</style>",
+        body_html=body_html,
+    )
+    return page.encode("utf-8")
 
 
 # Page-level comment widget, injected before </body> of any served HTML page
@@ -2303,10 +2203,10 @@ _PAGE_WIDGET_JS_RAW = r"""
 _PAGE_WIDGET_CSS_RAW = r"""
 #review-serve-widget {
   /* Theme tokens scoped to this widget, not :root — the widget is injected
-     into arbitrary pushed HTML that never loads _THEME_ROOT_CSS, so it must
-     carry its own copy of the custom properties it uses. AUTO default here
-     is dark; @media/data-theme blocks below layer light + explicit choice
-     on top, same 3-mode structure as _THEME_ROOT_CSS_RAW. */
+     into arbitrary pushed HTML that never loads assets/css/theme.css, so it
+     must carry its own copy of the custom properties it uses. AUTO default
+     here is dark; @media/data-theme blocks below layer light + explicit
+     choice on top, same 3-mode structure as theme.css. */
 __DARK_TOKENS__
   --font-ui: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
