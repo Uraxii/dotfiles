@@ -40,7 +40,16 @@ Volume=%h/.knowledgebase:%h/.knowledgebase:rw
 
 # Host-side restricted to loopback only; see the KB_SERVE_HOST comment
 # above for why the container itself still binds 0.0.0.0.
+# H2: make the port genuinely env-driven now that the ENTRYPOINT no longer
+# bakes it. Change this + PublishPort together to move the port.
+Environment=KB_SERVE_PORT=9100
 PublishPort=127.0.0.1:9100:9100
+
+# Hardening.
+ReadOnly=true
+Tmpfs=/tmp
+NoNewPrivileges=true
+DropCapability=ALL
 
 # Non-secret config (KB_ENRICH, KB_LLM_BASE_URL, KB_LLM_MODEL) and the
 # resolved LLM API key both land in one tmpfs env file, written by

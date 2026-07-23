@@ -3048,8 +3048,8 @@ def _redirect_stdio_to_log() -> None:
         os.close(fd_out)
 
 
-def _serve_forever(port: int) -> None:
-    """Child process entrypoint: bind 127.0.0.1:<port> and serve. Preserved."""
+def _serve_forever(host: str, port: int) -> None:
+    """Child process entrypoint: bind host:<port> and serve. Preserved."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
@@ -3066,8 +3066,8 @@ def _serve_forever(port: int) -> None:
 
     handler_cls = _make_handler()
     try:
-        with ReusableTCPServer(("127.0.0.1", port), handler_cls) as httpd:
-            log.info("serving %s on 127.0.0.1:%d", ROOT, port)
+        with ReusableTCPServer((host, port), handler_cls) as httpd:
+            log.info("serving %s on %s:%d", ROOT, host, port)
             httpd.serve_forever()
     except OSError as exc:
         log.error("bind failed: %s", exc)
@@ -3075,12 +3075,12 @@ def _serve_forever(port: int) -> None:
         sys.exit(EXIT_SERVER)
 
 
-def _port_free(port: int) -> bool:
-    """Probe whether 127.0.0.1:<port> can be bound (SO_REUSEADDR). Preserved."""
+def _port_free(host: str, port: int) -> bool:
+    """Probe whether host:<port> can be bound (SO_REUSEADDR). Preserved."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
-            s.bind(("127.0.0.1", port))
+            s.bind((host, port))
         except OSError:
             return False
     return True
@@ -3246,6 +3246,7 @@ def cmd_unpush(args: argparse.Namespace) -> int:
 def cmd_start(args: argparse.Namespace) -> int:
     """Boot the local daemon (fork), write pid/port, regen index. Preserved."""
     ensure_root()
+    host = args.host
     port = args.port
 
     existing_pid = read_pid()
@@ -3271,7 +3272,7 @@ def cmd_start(args: argparse.Namespace) -> int:
         )
         return EXIT_SERVER
 
-    if not _port_free(port):
+    if not _port_free(host, port):
         print(f"error: port {port} already in use by another process", file=sys.stderr)
         return EXIT_SERVER
 
@@ -3302,7 +3303,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     _redirect_stdio_to_log()
     PID_FILE.write_text(str(os.getpid()))
     PORT_FILE.write_text(str(port))
-    _serve_forever(port)
+    _serve_forever(host, port)
     return EXIT_OK  # not reached
 
 
@@ -3316,12 +3317,13 @@ def cmd_run(args: argparse.Namespace) -> int:
     supervised equivalent.
     """
     ensure_root()
+    host = args.host
     port = args.port
-    if not _port_free(port):
+    if not _port_free(host, port):
         print(f"error: port {port} already in use by another process", file=sys.stderr)
         return EXIT_SERVER
     regenerate_index()
-    _serve_forever(port)
+    _serve_forever(host, port)
     return EXIT_OK  # not reached; _serve_forever blocks until SIGTERM/SIGINT
 
 
@@ -3508,7 +3510,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=cmd_unpush)
 
     sp = sub.add_parser("start", help="Boot the local daemon.")
-    sp.add_argument("--port", type=int, default=DEFAULT_PORT)
+    sp.add_argument(
+        "--port", type=int,
+        default=int(os.environ.get("REVIEW_SERVE_PORT", DEFAULT_PORT)),
+    )
+    sp.add_argument("--host", default=os.environ.get("REVIEW_SERVE_HOST", "127.0.0.1"))
     sp.add_argument("--expose", action="store_true", help="Also publish via tailscale.")
     sp.set_defaults(func=cmd_start)
 
@@ -3517,7 +3523,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run the server in the foreground (no fork/pidfile); "
         "for container/systemd supervision.",
     )
-    sp.add_argument("--port", type=int, default=DEFAULT_PORT)
+    sp.add_argument(
+        "--port", type=int,
+        default=int(os.environ.get("REVIEW_SERVE_PORT", DEFAULT_PORT)),
+    )
+    sp.add_argument("--host", default=os.environ.get("REVIEW_SERVE_HOST", "127.0.0.1"))
     sp.set_defaults(func=cmd_run)
 
     sp = sub.add_parser("expose", help="Publish via tailscale serve.")
