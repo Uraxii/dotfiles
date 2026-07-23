@@ -61,17 +61,21 @@ Keys (all optional, see `kb.env.example` for full comments):
 **Either way, the raw key never touches the container image or a tracked
 file.** Resolution happens at start time:
 
-- **Container/quadlet**: the quadlet's `ExecStartPre=` runs
-  `kb-serve.py resolve-secret` **on the host**, before the container
-  starts. That subcommand runs `KB_LLM_API_KEY_CMD` if set (else falls
-  back to the static `KB_LLM_API_KEY`) and prints exactly one
+- **Container/quadlet**: the quadlet's `ExecStartPre=` builds one tmpfs
+  env file **on the host**, before the container starts. It first copies
+  over the non-secret passthrough keys (`KB_ENRICH`, `KB_LLM_BASE_URL`,
+  `KB_LLM_MODEL`) from `kb.env`, if that file exists, then runs
+  `kb-serve.py resolve-secret`, which runs `KB_LLM_API_KEY_CMD` if set
+  (else falls back to the static `KB_LLM_API_KEY`) and prints exactly one
   `KB_LLM_API_KEY=<value>` line — never logs it. `umask 077` plus the
-  redirect writes that line to `%t/kb-serve.env` (the user's XDG runtime
-  dir, i.e. `/run/user/<uid>/kb-serve.env`, mode 0600, tmpfs). The
-  container's second `EnvironmentFile=` points there, so the resolved key
-  overrides whatever (if anything) `kb.env` itself carried. The file lives
-  only in tmpfs: regenerated on every start, gone at logout/reboot, never
-  written to a persistent disk path.
+  redirect writes all of that to `%t/kb-serve.env` (the user's XDG
+  runtime dir, i.e. `/run/user/<uid>/kb-serve.env`, mode 0600, tmpfs),
+  which the container's `EnvironmentFile=` then loads. A missing `kb.env`
+  is a clean no-op — podman's `--env-file` requires its target to exist,
+  so passthrough config can't be read straight from `kb.env` itself, only
+  folded into this always-present tmpfs file. The file lives only in
+  tmpfs: regenerated on every start, gone at logout/reboot, never written
+  to a persistent disk path.
 - **Bare `kb-serve.py run`** (no container): the same resolution runs
   in-process at startup (`build_config`); the key is held in memory only,
   never written anywhere.
