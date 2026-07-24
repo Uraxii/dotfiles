@@ -107,6 +107,93 @@ services:
       start_period: 5s
       retries: 3
 
+  bdui:
+    build:
+      context: ./scripts/bdui-container
+      dockerfile: Containerfile
+    image: localhost/bdui:latest
+    container_name: bdui
+    # No `user:` override here, unlike kb-serve/review-serve -- PROVEN
+    # broken for this service, not just a cosmetic approximation gap (their
+    # own `user:` comment already says "drop it if it doesn't translate
+    # cleanly"). Verified two-part failure and two-part fix:
+    #   1) SELinux (enforcing on this host): a bind mount gets a private
+    #      MCS category unless labeling is disabled, so even root-in-
+    #      container got EACCES on the mount -- fixed by
+    #      `security_opt: label:disable` below (compose equivalent of the
+    #      quadlets' `SecurityLabelDisable=true`).
+    #   2) DAC: bd's board dirs are 0700/0600, owned (as seen from inside
+    #      the container) by uid 0. Plain compose has no real
+    #      UserNS=keep-id, so `user: "1000:1000"` maps to an unrelated host
+    #      subuid that owns nothing on the mount. Omitting `user:` runs
+    #      root-in-container, which under rootless podman's default subuid
+    #      mapping IS the invoking host user for file-ownership purposes.
+    # Reproduced with `stat .beads/metadata.json` and `bd list` (both
+    # "Permission denied" / "no beads database found" until both fixes
+    # applied together); cap_drop ALL + no-new-privileges + read_only
+    # rootfs still apply, so this isn't a meaningfully weaker container
+    # despite the nominal "root" label.
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3000"
+      # Container-internal HOME, NOT the ${HOME} used below for the volume
+      # path -- those two are different things and must stay different
+      # (see the comment on `working_dir` and `volumes`). registry-watcher.js
+      # writes $HOME/.beads/registry.json, a disposable discovery cache;
+      # pointing it at /tmp (backed by the tmpfs below) means read_only
+      # rootfs never blocks that write, mirroring n8n's own
+      # /home/node/.cache tmpfs fix for the same class of gotcha.
+      HOME: "/tmp"
+      # beads-ui's own `bd` subprocess calls (server/bd.js) read BEADS_DIR
+      # from their inherited env -- set explicitly rather than relying on
+      # the cwd-walk alone, matching this project's convention everywhere
+      # else BEADS_DIR is used.
+      BEADS_DIR: "${HOME}/.beads-hub/hub/.beads"
+    # `${HOME}` here is the COMPOSE variable substitution for the HOST's
+    # home dir (used only for the volume path and working_dir below) --
+    # unrelated to the container's own HOME=/tmp above. Do not collapse
+    # these into one; they serve different purposes.
+    working_dir: "${HOME}/.beads-hub/hub"
+    # bdui is a core piece of the workbench (board front end), not opt-in
+    # like n8n -- no profiles: gate, comes up by default.
+    #
+    # Host port 3100, not bdui's native 3000: the bare-host
+    # `agent-workbench board up` tool (cli/board.py) free-port-scans
+    # starting at 3000 on this same host, so publishing this container at
+    # 3000 too would risk a same-host bind collision between the two
+    # mechanisms. Internal container port stays bdui's native 3000.
+    ports:
+      - "127.0.0.1:3100:3000"
+    volumes:
+      # Whole hub tree, not just hub/: registered per-project board paths
+      # inside the aggregator's own config are absolute host paths (e.g.
+      # ~/.beads-hub/<name>/.beads), so cross-repo write-routing needs the
+      # same absolute path to resolve inside the container too.
+      - "${HOME}/.beads-hub:${HOME}/.beads-hub:rw"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+      # See the SELinux note above -- without this, root-in-container still
+      # gets EACCES on the bind-mounted board (MCS category mismatch).
+      - "label:disable"
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    healthcheck:
+      # Mirrors the Containerfile's baked HEALTHCHECK (node has no
+      # curl/wget guarantee in the slim image).
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get({host:'127.0.0.1',port:process.env.PORT||3000,path:'/'},res=>process.exit(res.statusCode<400?0:1)).on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
   n8n:
     # Official image, no build block. Pinned by digest -- do not change
     # without deliberately re-pinning (see the quadlet's own comment on
