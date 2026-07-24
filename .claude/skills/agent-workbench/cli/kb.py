@@ -241,7 +241,8 @@ def cmd_put(args: argparse.Namespace) -> int:
         result = _post_json("/put", payload)
     else:
         kb_serve = siblings.load_kb_serve()
-        result = kb_serve.kb_put(resolve_kb_home(args.kb_home), payload)
+        kb_home = resolve_kb_home(args.kb_home)
+        result = kb_serve.kb_put(kb_home, kb_serve.build_config(kb_home), payload)
     print(json.dumps(result))
     return 0
 
