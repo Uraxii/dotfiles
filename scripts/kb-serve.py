@@ -16,6 +16,10 @@ Endpoints (all JSON):
     GET  /query                -> FTS5 search (q, project, type, all)
     POST /enrich               -> fill question/summary via the configured
                                    LLM provider; clean no-op if disabled
+    POST /atomize               -> ingest a URL or raw content, split it into
+                                   atomic notes via a cheap LLM tier, falling
+                                   back to the deterministic heading-splitter
+                                   if disabled or the call fails; reindex
 
 CLI (also usable without the HTTP server, same functions):
     kb-serve.py run [--host H] [--port P] [--kb-home DIR]
@@ -23,18 +27,24 @@ CLI (also usable without the HTTP server, same functions):
                     (content read from stdin)
     kb-serve.py clip URL [--project P] [--kb-home DIR]
     kb-serve.py query Q [--project P] [--type T] [--all] [--kb-home DIR]
+    kb-serve.py atomize (--url URL | --content) [--project P] [--title T]
+                    [--type T] [--kb-home DIR]
+                    (with --content, content is read from stdin)
     kb-serve.py resolve-secret [--kb-home DIR]
                     prints "KB_LLM_API_KEY=<value>" for an EnvironmentFile=
                     to consume; never logs the value.
 
 Enrichment config (env, optionally sourced from the gitignored
 <kb_home>/kb.env): KB_ENRICH (0/1, default 0), KB_LLM_BASE_URL (default
-OpenRouter), KB_LLM_MODEL (default openai/gpt-4o-mini), and the API key
-via either KB_LLM_API_KEY (static) or KB_LLM_API_KEY_CMD (a vault CLI
-command whose stdout is the key, e.g. Proton Pass's pass-cli -- wins over
-the static value if both are set). With KB_ENRICH=0 or no resolvable key,
-/enrich is a clean no-op: zero network calls, zero crashes. The
-put/clip/query/atomize path never depends on any of this.
+OpenRouter), KB_LLM_MODEL (default openai/gpt-4o-mini), KB_ATOMIZE_MODEL
+(default anthropic/claude-sonnet-4.5, a capable general model chosen for
+reliable decontextualization; used only by /atomize, override for a
+cheaper tier if desired), and the API key via either KB_LLM_API_KEY (static) or
+KB_LLM_API_KEY_CMD (a vault CLI command whose stdout is the key, e.g.
+Proton Pass's pass-cli -- wins over the static value if both are set).
+With KB_ENRICH=0 or no resolvable key, /enrich is a clean no-op (zero
+network calls, zero crashes) and /atomize falls back to the deterministic
+splitter. The put/clip/query path never depends on any of this.
 """
 from __future__ import annotations
 
@@ -62,11 +72,14 @@ __all__ = [
     "build_config",
     "build_parser",
     "kb_atomize",
+    "kb_atomize_via_llm",
     "kb_clip_and_atomize",
     "kb_enrich",
+    "kb_ingest_and_atomize",
     "kb_put",
     "load_kb_env",
     "main",
+    "request_atomize_split",
     "resolve_api_key",
 ]
 
@@ -83,8 +96,15 @@ DEFAULT_NOTE_TYPE = "note"
 
 DEFAULT_LLM_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_LLM_MODEL = "openai/gpt-4o-mini"
+# A capable general-purpose model: atomize's decontextualization + section
+# granularity needs stay reliable. Override via KB_ATOMIZE_MODEL for a
+# cheaper tier if desired.
+DEFAULT_ATOMIZE_MODEL = "anthropic/claude-sonnet-4.5"
 LLM_TIMEOUT_SEC = 30.0
 API_KEY_CMD_TIMEOUT_SEC = 15.0
+# Atomizing needs the whole document to find its section boundaries,
+# hence a much bigger cap than enrich's 4000 (which only needs a gist).
+ATOMIZE_PROMPT_CHAR_LIMIT = 12000
 # ponytail: bounds one /enrich call's model spend to a fixed batch; call
 # /enrich again to keep going rather than adding pagination for a personal
 # vault of this size.
@@ -135,6 +155,7 @@ class KbServeConfig:
     llm_base_url: str
     llm_model: str
     llm_api_key: str | None
+    atomize_model: str = DEFAULT_ATOMIZE_MODEL
 
 
 def load_kb_env(kb_home: Path) -> dict[str, str]:
@@ -190,6 +211,7 @@ def build_config(kb_home: Path) -> KbServeConfig:
         llm_base_url=merged.get("KB_LLM_BASE_URL", DEFAULT_LLM_BASE_URL),
         llm_model=merged.get("KB_LLM_MODEL", DEFAULT_LLM_MODEL),
         llm_api_key=api_key,
+        atomize_model=merged.get("KB_ATOMIZE_MODEL", "").strip() or DEFAULT_ATOMIZE_MODEL,
     )
 
 
@@ -237,22 +259,31 @@ def kb_atomize(note_path: Path, kb_home: Path) -> list[Path]:
     return kb_atomize_mod.kb_atomize(note_path, kb_home)
 
 
+def _write_note_file(
+    kb_home: Path, project: str, note_type: str, title: str, source: str, content: str,
+) -> Path:
+    """Build the note's path under kb_home/<project>/<type dir>, render it,
+    and write it. Raises ValueError on an unrecognized note_type."""
+    dir_name = TYPE_TO_DIR.get(note_type)
+    if dir_name is None:
+        raise ValueError(f"unknown type {note_type!r}, expected one of {sorted(TYPE_TO_DIR)}")
+    notes_dir = kb_home / project / dir_name
+    notes_dir.mkdir(parents=True, exist_ok=True)
+    note_path = kb_clip.build_note_path(notes_dir, kb_clip.slugify(title))
+    note_path.write_text(render_note(note_type, title, source, project, content), encoding="utf-8")
+    return note_path
+
+
 def kb_put(kb_home: Path, payload: Mapping[str, object]) -> dict[str, object]:
     """Write one note, atomize it if it qualifies, reindex. Returns the
     created note path(s). Raises KeyError/ValueError on bad input."""
     project = _require_str(payload, "project")
     content = _require_str(payload, "content")
     note_type = str(payload.get("type") or DEFAULT_NOTE_TYPE)
-    dir_name = TYPE_TO_DIR.get(note_type)
-    if dir_name is None:
-        raise ValueError(f"unknown type {note_type!r}, expected one of {sorted(TYPE_TO_DIR)}")
     title = str(payload.get("title") or "untitled")
     source = str(payload.get("source") or "")
 
-    notes_dir = kb_home / project / dir_name
-    notes_dir.mkdir(parents=True, exist_ok=True)
-    note_path = kb_clip.build_note_path(notes_dir, kb_clip.slugify(title))
-    note_path.write_text(render_note(note_type, title, source, project, content), encoding="utf-8")
+    note_path = _write_note_file(kb_home, project, note_type, title, source, content)
 
     children = kb_atomize(note_path, kb_home)
     build_index(kb_home)
@@ -315,20 +346,15 @@ def find_unenriched_notes(
     return unenriched
 
 
-def request_enrichment(config: KbServeConfig, title: str, body: str) -> dict[str, str]:
-    """One chat-completions call asking for {question, summary} JSON.
+def _chat_completion_json(config: KbServeConfig, model: str, prompt: str) -> dict:
+    """One chat-completions POST expecting a JSON object back; shared by
+    request_enrichment and request_atomize_split -- only the model and
+    prompt differ between the two call sites.
 
-    Raises on any network/parse failure; kb_enrich decides how to degrade
-    (skip that note, keep going).
+    Raises on any network/parse failure; callers decide how to degrade.
     """
-    prompt = (
-        "Given this knowledgebase note, respond with ONLY a JSON object "
-        '{"question": "...", "summary": "..."}. question = the question '
-        "someone would search to find this note. summary = a 2-3 sentence "
-        f"summary of its content.\n\nTitle: {title}\n\n{body[:4000]}"
-    )
     payload = json.dumps({
-        "model": config.llm_model,
+        "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"},
     }).encode("utf-8")
@@ -344,11 +370,51 @@ def request_enrichment(config: KbServeConfig, title: str, body: str) -> dict[str
     with urllib.request.urlopen(request, timeout=LLM_TIMEOUT_SEC) as response:
         data = json.loads(response.read())
     content = data["choices"][0]["message"]["content"]
-    parsed = json.loads(content)
+    return json.loads(content)
+
+
+def request_enrichment(config: KbServeConfig, title: str, body: str) -> dict[str, str]:
+    """One chat-completions call asking for {question, summary} JSON.
+
+    Raises on any network/parse failure; kb_enrich decides how to degrade
+    (skip that note, keep going).
+    """
+    prompt = (
+        "Given this knowledgebase note, respond with ONLY a JSON object "
+        '{"question": "...", "summary": "..."}. question = the question '
+        "someone would search to find this note. summary = a 2-3 sentence "
+        f"summary of its content.\n\nTitle: {title}\n\n{body[:4000]}"
+    )
+    parsed = _chat_completion_json(config, config.llm_model, prompt)
     return {
         "question": str(parsed.get("question", "")),
         "summary": str(parsed.get("summary", "")),
     }
+
+
+def request_atomize_split(config: KbServeConfig, title: str, body: str) -> list[dict[str, str]]:
+    """One chat-completions call asking the cheap atomize tier to split a
+    document into self-contained atomic notes: {"notes": [{"title",
+    "body"}, ...]}.
+
+    Raises on any network/parse failure (including a missing/malformed
+    "notes" list); kb_atomize_via_llm decides how to degrade (falls back
+    to the deterministic splitter).
+    """
+    prompt = (
+        "Split the following knowledgebase note into distinct, "
+        "self-contained atomic notes. Respond with ONLY a JSON object "
+        '{"notes": [{"title": "...", "body": "..."}, ...]}.\n\n'
+        f"Title: {title}\n\n{body[:ATOMIZE_PROMPT_CHAR_LIMIT]}"
+    )
+    parsed = _chat_completion_json(config, config.atomize_model, prompt)
+    notes = parsed["notes"]
+    if not isinstance(notes, list):
+        raise KeyError("'notes' in atomize response is not a list")
+    return [
+        {"title": str(item.get("title", "")), "body": str(item.get("body", ""))}
+        for item in notes if isinstance(item, dict)
+    ]
 
 
 def apply_enrichment(note_path: Path, question: str, summary: str) -> None:
@@ -409,6 +475,69 @@ def kb_enrich(config: KbServeConfig, payload: Mapping[str, object]) -> dict[str,
     return {"enriched": len(enriched), "notes": enriched}
 
 
+# ── LLM-tier atomize (deterministic fallback, second model-spend path) ──
+
+
+def _write_llm_child_note(
+    note_path: Path, fields: dict[str, object], item: dict[str, str],
+) -> Path:
+    """Write one LLM-proposed atomic child note as a sibling of
+    note_path, reusing kb-atomize.py's own child-note renderer."""
+    slug = f"{note_path.stem}--{kb_clip.slugify(item['title'])}"
+    child_path = kb_clip.build_note_path(note_path.parent, slug)
+    child_path.write_text(
+        kb_atomize_mod.render_child_note(fields, note_path, item["title"], item["body"]),
+        encoding="utf-8",
+    )
+    return child_path
+
+
+def kb_atomize_via_llm(config: KbServeConfig, note_path: Path, kb_home: Path) -> tuple[list[Path], str]:
+    """Split note_path into atomic children via the configured cheap LLM
+    tier; falls back to the deterministic heading-splitter (kb_atomize)
+    when disabled, no key resolved, or the call fails -- same no-op
+    philosophy as kb_enrich, applied per-note. Returns (children, method)
+    where method is "llm" or "deterministic".
+    """
+    fields, body = kb_index.parse_frontmatter(note_path.read_text(encoding="utf-8"))
+    if config.enrich_enabled and config.llm_api_key:
+        try:
+            notes = request_atomize_split(config, str(fields.get("title", note_path.stem)), body)
+        except (OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, IndexError) as exc:
+            log.warning("LLM atomize failed for %s: %s", note_path, exc)
+        else:
+            children = [_write_llm_child_note(note_path, fields, item) for item in notes]
+            return children, "llm"
+
+    return kb_atomize(note_path, kb_home), "deterministic"
+
+
+def kb_ingest_and_atomize(
+    kb_home: Path, config: KbServeConfig, payload: Mapping[str, object],
+) -> dict[str, object]:
+    """Ingest a URL or raw content, atomize it via the configured LLM
+    tier (deterministic fallback), reindex. Mirrors kb_put's and
+    kb_clip_and_atomize's shape; unit-testable without a server. Raises
+    KeyError/ValueError on bad input, OSError/URLError on a failed fetch.
+    """
+    project = _require_str(payload, "project")
+    url = payload.get("url")
+    content = payload.get("content")
+    title = str(payload.get("title") or "untitled")
+    note_type = str(payload.get("type") or "source")
+
+    if url:
+        note_path = kb_clip.clip(str(url), project, kb_home)
+    elif content:
+        note_path = _write_note_file(kb_home, project, note_type, title, source="", content=str(content))
+    else:
+        raise KeyError("either 'url' or 'content' is required")
+
+    children, method = kb_atomize_via_llm(config, note_path, kb_home)
+    build_index(kb_home)
+    return {"parent": str(note_path), "children": [str(p) for p in children], "method": method}
+
+
 # ── HTTP server ─────────────────────────────────────────────────────────
 
 
@@ -421,8 +550,8 @@ class KbHTTPServer(ThreadingHTTPServer):
 
 
 class KbRequestHandler(BaseHTTPRequestHandler):
-    """Dispatches the 4 JSON endpoints onto the module-level pure
-    functions above; carries no logic of its own beyond wiring."""
+    """Dispatches the JSON endpoints onto the module-level pure functions
+    above; carries no logic of its own beyond wiring."""
 
     server: KbHTTPServer  # type: ignore[assignment]  # narrows the stdlib base's untyped .server attr
 
@@ -477,6 +606,8 @@ class KbRequestHandler(BaseHTTPRequestHandler):
             return self._handle_clip(payload)
         if parsed.path == "/enrich":
             return self._send_json(200, kb_enrich(self.server.config, payload))
+        if parsed.path == "/atomize":
+            return self._handle_atomize(payload)
         self._send_json(404, {"error": "not found"})
 
     def _handle_put(self, payload: dict[str, object]) -> None:
@@ -493,6 +624,15 @@ class KbRequestHandler(BaseHTTPRequestHandler):
             return self._send_json(400, {"error": str(exc)})
         except (OSError, urllib.error.URLError) as exc:
             return self._send_json(502, {"error": f"clip fetch failed: {exc}"})
+        self._send_json(201, result)
+
+    def _handle_atomize(self, payload: dict[str, object]) -> None:
+        try:
+            result = kb_ingest_and_atomize(self.server.config.kb_home, self.server.config, payload)
+        except (KeyError, ValueError) as exc:
+            return self._send_json(400, {"error": str(exc)})
+        except (OSError, urllib.error.URLError) as exc:
+            return self._send_json(502, {"error": f"atomize fetch failed: {exc}"})
         self._send_json(201, result)
 
 
@@ -530,6 +670,17 @@ def cmd_put(args: argparse.Namespace) -> int:
 def cmd_clip(args: argparse.Namespace) -> int:
     kb_home = kb_index.resolve_kb_home(args.kb_home)
     print(json.dumps(kb_clip_and_atomize(kb_home, {"url": args.url, "project": args.project})))
+    return 0
+
+
+def cmd_atomize(args: argparse.Namespace) -> int:
+    kb_home = kb_index.resolve_kb_home(args.kb_home)
+    payload: dict[str, object] = {"project": args.project, "title": args.title, "type": args.type}
+    if args.url:
+        payload["url"] = args.url
+    else:
+        payload["content"] = sys.stdin.read()
+    print(json.dumps(kb_ingest_and_atomize(kb_home, build_config(kb_home), payload)))
     return 0
 
 
@@ -575,6 +726,17 @@ def build_parser() -> argparse.ArgumentParser:
     clip_cmd.add_argument("--project", default="inbox")
     clip_cmd.add_argument("--kb-home", default=None)
 
+    atomize_cmd = sub.add_parser(
+        "atomize",
+        help="ingest a URL or raw content (stdin), atomize via the LLM tier "
+             "(deterministic fallback), index",
+    )
+    atomize_cmd.add_argument("--url", default=None, help="URL to ingest; omit to read content from stdin")
+    atomize_cmd.add_argument("--project", default="inbox")
+    atomize_cmd.add_argument("--title", default="untitled")
+    atomize_cmd.add_argument("--type", default="source")
+    atomize_cmd.add_argument("--kb-home", default=None)
+
     query_cmd = sub.add_parser("query", help="full-text search the index")
     query_cmd.add_argument("q")
     query_cmd.add_argument("--project", default=None)
@@ -595,7 +757,7 @@ def main(argv: list[str]) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     args = build_parser().parse_args(argv)
     dispatch = {
-        "run": cmd_run, "put": cmd_put, "clip": cmd_clip,
+        "run": cmd_run, "put": cmd_put, "clip": cmd_clip, "atomize": cmd_atomize,
         "query": cmd_query, "resolve-secret": cmd_resolve_secret,
     }
     return dispatch[args.command](args)
