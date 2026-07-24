@@ -19,11 +19,11 @@ import sys
 import threading
 import urllib.error
 import urllib.request
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -321,37 +321,35 @@ class _FakeResponse:
         return self._html
 
 
-def _urlopen_local_passthrough_else(
-    real_urlopen: Callable[..., object], *, html: bytes = b"", exc: Exception | None = None,
-) -> Callable[..., object]:
-    """Build a urllib.request.urlopen side_effect: calls to the
-    live_server's own 127.0.0.1 port pass through to the real urlopen (so
-    _post() keeps talking to the test server); any other URL -- the
-    "external" one /clip fetches -- is intercepted and never hits the
-    network: returns canned `html`, or raises `exc` if given."""
-
-    def _side_effect(request: urllib.request.Request, *args: object, **kwargs: object) -> object:
-        if "127.0.0.1" in request.full_url:
-            return real_urlopen(request, *args, **kwargs)
-        if exc is not None:
-            raise exc
-        return _FakeResponse(html)
-
-    return _side_effect
+def _fake_opener(*, html: bytes = b"", exc: Exception | None = None) -> MagicMock:
+    """Stand-in for what urllib.request.build_opener(...) returns.
+    kb_clip.fetch_html() calls opener.open() directly, never the
+    module-level urlopen(), so intercepting its outbound fetch means
+    mocking the opener -- matches test_kb_clip.py's own fetch_html
+    mocking convention."""
+    opener = MagicMock()
+    if exc is not None:
+        opener.open.side_effect = exc
+    else:
+        opener.open.return_value = _FakeResponse(html)
+    return opener
 
 
 def test_clip_happy_path_writes_source_note_with_extracted_content(
     live_server: tuple[str, KbServeConfig],
 ) -> None:
     base_url, config = live_server
-    real_urlopen = urllib.request.urlopen
-    with patch(
-        "urllib.request.urlopen", side_effect=_urlopen_local_passthrough_else(real_urlopen, html=_CANNED_HTML),
-    ) as mock_urlopen:
+    fake_opener = _fake_opener(html=_CANNED_HTML)
+    with (
+        patch("urllib.request.build_opener", return_value=fake_opener),
+        # example.invalid never resolves via real DNS; the SSRF guard is
+        # exercised on its own in test_kb_clip.py, not re-derived here.
+        patch.object(kb_serve.kb_clip, "check_destination_is_public"),
+    ):
         status, body = _post(base_url, "/clip", {"url": "https://example.invalid/article", "project": "proj1"})
 
     assert status == 201
-    external_calls = [c for c in mock_urlopen.call_args_list if "example.invalid" in c.args[0].full_url]
+    external_calls = [c for c in fake_opener.open.call_args_list if "example.invalid" in c.args[0].full_url]
     assert len(external_calls) == 1  # the outbound fetch went through the mock, never the real network
 
     note_path = Path(str(body["path"]))
@@ -376,12 +374,14 @@ def test_clip_fetch_failure_returns_clean_error_and_writes_no_note(tmp_path: Pat
     thread.start()
     base_url = f"http://127.0.0.1:{server.server_address[1]}"
     try:
-        real_urlopen = urllib.request.urlopen
-        with patch(
-            "urllib.request.urlopen",
-            side_effect=_urlopen_local_passthrough_else(
-                real_urlopen, exc=urllib.error.URLError("name resolution failed"),
+        with (
+            patch(
+                "urllib.request.build_opener",
+                return_value=_fake_opener(exc=urllib.error.URLError("name resolution failed")),
             ),
+            # example.invalid never resolves via real DNS; the SSRF guard is
+            # exercised on its own in test_kb_clip.py, not re-derived here.
+            patch.object(kb_serve.kb_clip, "check_destination_is_public"),
         ):
             status, body = _post(base_url, "/clip", {"url": "https://example.invalid/broken", "project": "proj1"})
     finally:
@@ -522,11 +522,13 @@ def test_atomize_content_happy_path_returns_llm_children_with_parent_ref(tmp_pat
 def test_atomize_url_happy_path_returns_llm_children(tmp_path: Path) -> None:
     config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
     llm_items = [{"title": "Child A", "body": "Body A content."}]
-    real_urlopen = urllib.request.urlopen
     with (
         _server_for_config(config) as base_url,
-        patch("urllib.request.urlopen", side_effect=_urlopen_local_passthrough_else(real_urlopen, html=_CANNED_HTML)),
+        patch("urllib.request.build_opener", return_value=_fake_opener(html=_CANNED_HTML)),
         patch.object(kb_serve, "request_atomize_split", return_value=llm_items) as mock_split,
+        # example.invalid never resolves via real DNS; the SSRF guard is
+        # exercised on its own in test_kb_clip.py, not re-derived here.
+        patch.object(kb_serve.kb_clip, "check_destination_is_public"),
     ):
         status, body = _post(base_url, "/atomize", {"url": "https://example.invalid/article", "project": "proj1"})
 
@@ -617,10 +619,12 @@ def test_atomize_both_url_and_content_given_prefers_url(tmp_path: Path) -> None:
     """Pins the real dispatch order (`if url: ... elif content:`) rather
     than inventing a stricter contract: url wins when both are given."""
     config = _config(tmp_path)
-    real_urlopen = urllib.request.urlopen
     with (
         _server_for_config(config) as base_url,
-        patch("urllib.request.urlopen", side_effect=_urlopen_local_passthrough_else(real_urlopen, html=_CANNED_HTML)),
+        patch("urllib.request.build_opener", return_value=_fake_opener(html=_CANNED_HTML)),
+        # example.invalid never resolves via real DNS; the SSRF guard is
+        # exercised on its own in test_kb_clip.py, not re-derived here.
+        patch.object(kb_serve.kb_clip, "check_destination_is_public"),
     ):
         status, body = _post(base_url, "/atomize", {
             "project": "proj1",
