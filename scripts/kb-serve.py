@@ -181,21 +181,24 @@ def load_kb_env(kb_home: Path) -> dict[str, str]:
 def resolve_api_key(env: Mapping[str, str]) -> str | None:
     """Resolve the LLM API key: KB_LLM_API_KEY_CMD (a vault CLI command,
     e.g. Proton Pass's `pass-cli item view ... --field api-key`) wins over
-    a static KB_LLM_API_KEY. Returns None if neither yields one. Never
+    a static KB_LLM_API_KEY when it succeeds with a non-empty result. If
+    the command is unset, fails, or yields nothing usable, falls back to
+    the static KB_LLM_API_KEY. Returns None if neither yields one. Never
     logs the resolved value.
     """
+    static_key = env.get("KB_LLM_API_KEY", "").strip() or None
     cmd = env.get("KB_LLM_API_KEY_CMD", "").strip()
-    if cmd:
-        try:
-            result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True,
-                timeout=API_KEY_CMD_TIMEOUT_SEC, check=True,
-            )
-        except (subprocess.SubprocessError, OSError) as exc:
-            log.warning("KB_LLM_API_KEY_CMD failed (%s); no key resolved", exc)
-            return None
-        return result.stdout.strip() or None
-    return env.get("KB_LLM_API_KEY", "").strip() or None
+    if not cmd:
+        return static_key
+    try:
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, text=True,
+            timeout=API_KEY_CMD_TIMEOUT_SEC, check=True,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        log.warning("KB_LLM_API_KEY_CMD failed (%s); no key resolved", exc)
+        return static_key
+    return result.stdout.strip() or static_key
 
 
 def build_config(kb_home: Path) -> KbServeConfig:
@@ -503,7 +506,10 @@ def kb_atomize_via_llm(config: KbServeConfig, note_path: Path, kb_home: Path) ->
     if config.enrich_enabled and config.llm_api_key:
         try:
             notes = request_atomize_split(config, str(fields.get("title", note_path.stem)), body)
-        except (OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError, IndexError) as exc:
+        except (
+            OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError,
+            KeyError, IndexError, ValueError,
+        ) as exc:
             log.warning("LLM atomize failed for %s: %s", note_path, exc)
         else:
             children = [_write_llm_child_note(note_path, fields, item) for item in notes]
