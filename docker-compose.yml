@@ -19,7 +19,6 @@ services:
       context: ./scripts
       dockerfile: kb-container/Containerfile
     image: localhost/kb-serve:latest
-    container_name: kb-serve
     # ponytail: "${UID:-1000}:${GID:-1000}" approximates the quadlet's
     # `User=%U Group=%U UserNS=keep-id` (bind-mounted files come out owned
     # by the real host user). Plain compose has no true user-namespace
@@ -74,7 +73,6 @@ services:
       context: ./.claude/skills/artifact-serve
       dockerfile: container/Containerfile
     image: localhost/review-serve:latest
-    container_name: review-serve
     # ponytail: see kb-serve's user: comment -- same best-effort
     # approximation of the quadlet's User/Group/UserNS=keep-id.
     user: "${UID:-1000}:${GID:-1000}"
@@ -112,7 +110,6 @@ services:
       context: ./scripts/bdui-container
       dockerfile: Containerfile
     image: localhost/bdui:latest
-    container_name: bdui
     # No `user:` override here, unlike kb-serve/review-serve -- PROVEN
     # broken for this service, not just a cosmetic approximation gap (their
     # own `user:` comment already says "drop it if it doesn't translate
@@ -199,7 +196,6 @@ services:
     # without deliberately re-pinning (see the quadlet's own comment on
     # how to re-pin on upgrade).
     image: "docker.io/n8nio/n8n@sha256:cda6bafc7bb4873533e7affb82d1bd47282a7614bdf83242c2293f8ff281261a"
-    container_name: n8n
     # n8n is opt-in: `docker-compose up` / `podman-compose up` with no
     # profile brings up only kb-serve + review-serve. n8n is intentionally
     # down right now by user choice; run with `--profile n8n` to include it.
