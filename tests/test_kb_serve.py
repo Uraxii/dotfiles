@@ -20,6 +20,7 @@ import threading
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -371,3 +372,220 @@ def test_clip_fetch_failure_returns_clean_error_and_writes_no_note(tmp_path: Pat
     assert "error" in body
     assert secret not in json.dumps(body)
     assert list(tmp_path.rglob("*.md")) == []  # no partial note written
+
+
+# ── config resolution: resolve_api_key + build_config ──────────────────
+
+
+def test_resolve_api_key_cmd_wins_over_static_key_when_both_set() -> None:
+    result = kb_serve.resolve_api_key({
+        "KB_LLM_API_KEY_CMD": "echo cmd-wins-value",
+        "KB_LLM_API_KEY": "static-value-should-lose",
+    })
+    assert result == "cmd-wins-value"
+
+
+def test_build_config_enrich_enabled_resolves_key_from_kb_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for var in ("KB_ENRICH", "KB_LLM_API_KEY", "KB_LLM_API_KEY_CMD"):
+        monkeypatch.delenv(var, raising=False)
+    (tmp_path / "kb.env").write_text("KB_ENRICH=1\nKB_LLM_API_KEY=env-file-key\n", encoding="utf-8")
+
+    config = kb_serve.build_config(tmp_path)
+
+    assert config.enrich_enabled is True
+    assert config.llm_api_key == "env-file-key"
+
+
+def test_build_config_enrich_disabled_skips_key_resolution_entirely(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """KB_ENRICH absent (default 0) must not even attempt key resolution --
+    the same zero-network no-op philosophy kb_enrich itself applies, pinned
+    here at the config layer instead."""
+    for var in ("KB_ENRICH", "KB_LLM_API_KEY", "KB_LLM_API_KEY_CMD"):
+        monkeypatch.delenv(var, raising=False)
+
+    with patch.object(kb_serve, "resolve_api_key") as mock_resolve:
+        config = kb_serve.build_config(tmp_path)
+
+    mock_resolve.assert_not_called()
+    assert config.enrich_enabled is False
+    assert config.llm_api_key is None
+
+
+# ── apply_enrichment: direct unit test ──────────────────────────────────
+
+
+def test_apply_enrichment_rewrites_only_question_and_summary_fields(tmp_path: Path) -> None:
+    note_path = tmp_path / "note.md"
+    note_path.write_text(
+        '---\n'
+        'type: "note"\n'
+        'title: "Sample"\n'
+        'question: ""\n'
+        'summary: ""\n'
+        '---\n\n'
+        'Body text.\n',
+        encoding="utf-8",
+    )
+
+    kb_serve.apply_enrichment(note_path, "What is this?", "It is a sample.")
+
+    text = note_path.read_text(encoding="utf-8")
+    assert 'question: "What is this?"' in text
+    assert 'summary: "It is a sample."' in text
+    assert 'title: "Sample"' in text  # untouched
+    assert text.endswith("Body text.\n")  # body untouched
+
+
+# ── /atomize ─────────────────────────────────────────────────────────────
+
+_ATOMIZE_SECTION_TEXT = "Alpha beta gamma delta epsilon zeta content padding sentence. "
+
+
+def _long_sectioned_body() -> str:
+    """A body comfortably over kb-atomize.py's ATOMIZE_MIN_CHARS (1500)
+    with two H2 sections, so the deterministic splitter actually
+    produces >=2 children."""
+    section = _ATOMIZE_SECTION_TEXT * 20
+    return f"## Section One\n\n{section}\n\n## Section Two\n\n{section}\n"
+
+
+@contextmanager
+def _server_for_config(config: KbServeConfig) -> Iterator[str]:
+    """Like the live_server fixture, but for a test-specific config (the
+    fixture always builds its own default via _config(tmp_path))."""
+    server = kb_serve.KbHTTPServer(("127.0.0.1", 0), kb_serve.KbRequestHandler, config)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base_url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        yield base_url
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_atomize_content_happy_path_returns_llm_children_with_parent_ref(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    llm_items = [
+        {"title": "First Child", "body": "First child body."},
+        {"title": "Second Child", "body": "Second child body."},
+    ]
+    with (
+        _server_for_config(config) as base_url,
+        patch.object(kb_serve, "request_atomize_split", return_value=llm_items) as mock_split,
+    ):
+        status, body = _post(base_url, "/atomize", {
+            "project": "proj1", "title": "Parent Note", "content": "Some parent content.",
+        })
+
+    assert status == 201
+    mock_split.assert_called_once()
+    assert body["method"] == "llm"
+    parent_path = Path(str(body["parent"]))
+    assert parent_path.is_relative_to(config.kb_home)
+    children = [Path(str(p)) for p in body["children"]]
+    assert len(children) == 2
+    for child_path, item in zip(children, llm_items, strict=True):
+        assert child_path.is_relative_to(config.kb_home)
+        text = child_path.read_text(encoding="utf-8")
+        assert f'title: "{item["title"]}"' in text
+        assert item["body"] in text
+        assert f'parent: "{parent_path}"' in text
+
+
+def test_atomize_url_happy_path_returns_llm_children(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    llm_items = [{"title": "Child A", "body": "Body A content."}]
+    real_urlopen = urllib.request.urlopen
+    with (
+        _server_for_config(config) as base_url,
+        patch("urllib.request.urlopen", side_effect=_urlopen_local_passthrough_else(real_urlopen, html=_CANNED_HTML)),
+        patch.object(kb_serve, "request_atomize_split", return_value=llm_items) as mock_split,
+    ):
+        status, body = _post(base_url, "/atomize", {"url": "https://example.invalid/article", "project": "proj1"})
+
+    assert status == 201
+    mock_split.assert_called_once()
+    assert body["method"] == "llm"
+    parent_path = Path(str(body["parent"]))
+    assert 'title: "Canned OG Title"' in parent_path.read_text(encoding="utf-8")
+    children = [Path(str(p)) for p in body["children"]]
+    assert len(children) == 1
+    text = children[0].read_text(encoding="utf-8")
+    assert 'title: "Child A"' in text
+    assert "Body A content." in text
+
+
+def test_atomize_deterministic_fallback_when_enrich_disabled(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=False)
+    with (
+        _server_for_config(config) as base_url,
+        patch.object(kb_serve, "request_atomize_split") as mock_split,
+    ):
+        status, body = _post(base_url, "/atomize", {
+            "project": "proj1", "title": "Long Parent", "content": _long_sectioned_body(),
+        })
+
+    mock_split.assert_not_called()
+    assert status == 201
+    assert body["method"] == "deterministic"
+    assert len(body["children"]) == 2
+
+
+def test_atomize_degrades_to_deterministic_on_llm_failure(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    with (
+        _server_for_config(config) as base_url,
+        patch.object(
+            kb_serve, "request_atomize_split",
+            side_effect=json.JSONDecodeError("bad json", "doc", 0),
+        ) as mock_split,
+    ):
+        status, body = _post(base_url, "/atomize", {
+            "project": "proj1", "title": "Long Parent", "content": _long_sectioned_body(),
+        })
+
+    mock_split.assert_called_once()
+    assert status == 201
+    assert body["method"] == "deterministic"
+    assert len(body["children"]) == 2
+
+
+def test_atomize_missing_project_returns_400(live_server: tuple[str, KbServeConfig]) -> None:
+    base_url, _ = live_server
+    status, body = _post(base_url, "/atomize", {"content": "some content"})
+    assert status == 400
+    assert "project" in str(body["error"])
+
+
+def test_atomize_missing_url_and_content_returns_400(live_server: tuple[str, KbServeConfig]) -> None:
+    base_url, _ = live_server
+    status, body = _post(base_url, "/atomize", {"project": "proj1"})
+    assert status == 400
+    assert "url" in str(body["error"]) or "content" in str(body["error"])
+
+
+def test_atomize_both_url_and_content_given_prefers_url(tmp_path: Path) -> None:
+    """Pins the real dispatch order (`if url: ... elif content:`) rather
+    than inventing a stricter contract: url wins when both are given."""
+    config = _config(tmp_path)
+    real_urlopen = urllib.request.urlopen
+    with (
+        _server_for_config(config) as base_url,
+        patch("urllib.request.urlopen", side_effect=_urlopen_local_passthrough_else(real_urlopen, html=_CANNED_HTML)),
+    ):
+        status, body = _post(base_url, "/atomize", {
+            "project": "proj1",
+            "url": "https://example.invalid/article",
+            "content": "This content must be ignored since url wins.",
+        })
+
+    assert status == 201
+    text = Path(str(body["parent"])).read_text(encoding="utf-8")
+    assert "canned paragraph" in text
+    assert "must be ignored" not in text
