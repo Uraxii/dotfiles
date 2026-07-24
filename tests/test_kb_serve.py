@@ -494,6 +494,63 @@ def _long_sectioned_body() -> str:
     return f"## Section One\n\n{section}\n\n## Section Two\n\n{section}\n"
 
 
+def test_request_atomize_split_small_body_makes_one_model_call(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    with patch.object(
+        kb_serve, "_chat_completion_json",
+        return_value={"notes": [{"title": "Only Child", "body": "Small body note."}]},
+    ) as mock_chat:
+        result = kb_serve.request_atomize_split(config, "Small Parent", "Small parent body.")
+
+    mock_chat.assert_called_once()
+    assert result == [{"title": "Only Child", "body": "Small body note."}]
+
+
+def test_request_atomize_split_long_body_keeps_tail_content(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    tail_marker = "tail-marker-survives-chunking"
+    body = (
+        f"# First Section\n\n{'A' * 7000}\n\n"
+        f"# Second Section\n\n{'B' * 7000}\n\n"
+        f"# Tail Section\n\n{tail_marker}\n"
+    )
+
+    def fake_chat(_config: KbServeConfig, _model: str, prompt: str) -> dict[str, object]:
+        if tail_marker in prompt:
+            return {"notes": [{"title": "Tail Child", "body": f"Saw {tail_marker}."}]}
+        return {"notes": [{"title": "Earlier Child", "body": "Earlier chunk."}]}
+
+    with patch.object(kb_serve, "_chat_completion_json", side_effect=fake_chat) as mock_chat:
+        result = kb_serve.request_atomize_split(config, "Long Parent", body)
+
+    assert mock_chat.call_count > 1
+    assert {item["title"] for item in result} >= {"Earlier Child", "Tail Child"}
+    assert any(tail_marker in item["body"] for item in result)
+
+
+def test_atomize_degrades_to_deterministic_when_later_chunk_fails(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    body = f"## Section One\n\n{'A' * 7000}\n\n## Section Two\n\n{'B' * 7000}\n"
+    with (
+        _server_for_config(config) as base_url,
+        patch.object(
+            kb_serve, "_chat_completion_json",
+            side_effect=[
+                {"notes": [{"title": "First LLM Child", "body": "First chunk."}]},
+                json.JSONDecodeError("bad json", "doc", 0),
+            ],
+        ) as mock_chat,
+    ):
+        status, response_body = _post(base_url, "/atomize", {
+            "project": "proj1", "title": "Long Parent", "content": body,
+        })
+
+    assert mock_chat.call_count == 2
+    assert status == 201
+    assert response_body["method"] == "deterministic"
+    assert len(response_body["children"]) == 2
+
+
 @contextmanager
 def _server_for_config(config: KbServeConfig) -> Iterator[str]:
     """Like the live_server fixture, but for a test-specific config (the

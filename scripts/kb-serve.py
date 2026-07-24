@@ -395,22 +395,67 @@ def request_enrichment(config: KbServeConfig, title: str, body: str) -> dict[str
     }
 
 
-def request_atomize_split(config: KbServeConfig, title: str, body: str) -> list[dict[str, str]]:
-    """One chat-completions call asking the cheap atomize tier to split a
-    document into self-contained atomic notes: {"notes": [{"title",
-    "body"}, ...]}.
+def _hard_cut_chunks(text: str, limit: int) -> list[str]:
+    return [text[index:index + limit] for index in range(0, len(text), limit)]
 
-    Raises on any network/parse failure (including a missing/malformed
-    "notes" list); kb_atomize_via_llm decides how to degrade (falls back
-    to the deterministic splitter).
-    """
-    prompt = (
-        "Split the following knowledgebase note into distinct, "
-        "self-contained atomic notes. Respond with ONLY a JSON object "
-        '{"notes": [{"title": "...", "body": "..."}, ...]}.\n\n'
-        f"Title: {title}\n\n{body[:ATOMIZE_PROMPT_CHAR_LIMIT]}"
-    )
-    parsed = _chat_completion_json(config, config.atomize_model, prompt)
+
+def _paragraph_chunks(section: str, limit: int) -> list[str]:
+    paragraphs = section.split("\n\n")
+    chunks: list[str] = []
+    current = ""
+    for index, paragraph in enumerate(paragraphs):
+        suffix = "\n\n" if index < len(paragraphs) - 1 else ""
+        unit = f"{paragraph}{suffix}"
+        if len(unit) > limit:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.extend(_hard_cut_chunks(unit, limit))
+        elif current and len(current) + len(unit) > limit:
+            chunks.append(current)
+            current = unit
+        else:
+            current += unit
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def _heading_sections(body: str) -> list[str]:
+    headings = list(re.finditer(r"(?m)^#", body))
+    if not headings:
+        return [body]
+    sections: list[str] = []
+    if headings[0].start() > 0:
+        sections.append(body[:headings[0].start()])
+    for index, heading in enumerate(headings):
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(body)
+        sections.append(body[heading.start():end])
+    return [section for section in sections if section]
+
+
+def _atomize_prompt_body_chunks(body: str) -> list[str]:
+    if len(body) <= ATOMIZE_PROMPT_CHAR_LIMIT:
+        return [body]
+    chunks: list[str] = []
+    current = ""
+    for section in _heading_sections(body):
+        if len(section) > ATOMIZE_PROMPT_CHAR_LIMIT:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.extend(_paragraph_chunks(section, ATOMIZE_PROMPT_CHAR_LIMIT))
+        elif current and len(current) + len(section) > ATOMIZE_PROMPT_CHAR_LIMIT:
+            chunks.append(current)
+            current = section
+        else:
+            current += section
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def _parse_atomize_notes(parsed: dict[str, object]) -> list[dict[str, str]]:
     notes = parsed["notes"]
     if not isinstance(notes, list):
         raise KeyError("'notes' in atomize response is not a list")
@@ -418,6 +463,27 @@ def request_atomize_split(config: KbServeConfig, title: str, body: str) -> list[
         {"title": str(item.get("title", "")), "body": str(item.get("body", ""))}
         for item in notes if isinstance(item, dict)
     ]
+
+
+def request_atomize_split(config: KbServeConfig, title: str, body: str) -> list[dict[str, str]]:
+    """Ask the cheap atomize tier to split a document into self-contained
+    atomic notes: {"notes": [{"title", "body"}, ...]}.
+
+    Raises on any network/parse failure (including a missing/malformed
+    "notes" list); kb_atomize_via_llm decides how to degrade (falls back
+    to the deterministic splitter).
+    """
+    notes: list[dict[str, str]] = []
+    for chunk in _atomize_prompt_body_chunks(body):
+        prompt = (
+            "Split the following knowledgebase note into distinct, "
+            "self-contained atomic notes. Respond with ONLY a JSON object "
+            '{"notes": [{"title": "...", "body": "..."}, ...]}.\n\n'
+            f"Title: {title}\n\n{chunk}"
+        )
+        parsed = _chat_completion_json(config, config.atomize_model, prompt)
+        notes.extend(_parse_atomize_notes(parsed))
+    return notes
 
 
 def apply_enrichment(note_path: Path, question: str, summary: str) -> None:
