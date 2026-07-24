@@ -96,12 +96,35 @@ def _addrinfo(ip: str) -> list[tuple]:
         "192.168.1.1",  # private LAN
         "::1",  # IPv6 loopback
         "100.64.0.1",  # Tailscale / CGNAT
+        "::ffff:127.0.0.1",  # IPv4-mapped IPv6 loopback
+        "::ffff:169.254.169.254",  # IPv4-mapped IPv6 cloud metadata
     ],
 )
 def test_check_destination_is_public_rejects_non_public_ip(resolved_ip: str) -> None:
+    """Regression guard: IPv4-mapped IPv6 (::ffff:x.x.x.x) cases silently
+    reopen this hole on a Python-runtime downgrade below 3.13, where
+    ipaddress.IPv6Address.is_global did not yet delegate to the embedded
+    IPv4 address."""
     with patch("socket.getaddrinfo", return_value=_addrinfo(resolved_ip)):
         with pytest.raises(ValueError, match="non-public address"):
             kb_clip.check_destination_is_public("http://target.example/page")
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "2130706433",  # decimal encoding of 127.0.0.1
+        "0177.0.0.1",  # octal encoding of 127.0.0.1
+    ],
+)
+def test_check_destination_is_public_rejects_encoded_ipv4_loopback(host: str) -> None:
+    """getaddrinfo normalizes decimal/octal IPv4 literals to their dotted
+    form (127.0.0.1 here), so the guard must still reject the resolved
+    address even though the hostname in the URL doesn't look like
+    loopback."""
+    with patch("socket.getaddrinfo", return_value=_addrinfo("127.0.0.1")):
+        with pytest.raises(ValueError, match="non-public address"):
+            kb_clip.check_destination_is_public(f"http://{host}/page")
 
 
 def test_check_destination_is_public_rejects_localhost_hostname() -> None:
@@ -131,6 +154,18 @@ def test_redirect_handler_rejects_redirect_to_internal_target() -> None:
                 MagicMock(), None, 302, "Found", MagicMock(),
                 "http://169.254.169.254/latest/meta-data/",
             )
+
+
+def test_redirect_handler_rejects_redirect_to_non_http_scheme() -> None:
+    """Ticket agent-workbench-5ov: a redirect hop to a non-http(s) scheme
+    (e.g. file://) must be rejected by the scheme check before the
+    destination check or the redirect is ever followed."""
+    handler = kb_clip._DestinationCheckingRedirectHandler()
+    with pytest.raises(ValueError, match="unsupported URL scheme"):
+        handler.redirect_request(
+            MagicMock(), None, 302, "Found", MagicMock(),
+            "file:///etc/passwd",
+        )
 
 
 def test_fetch_html_rejects_non_public_destination_without_reaching_urlopen() -> None:
