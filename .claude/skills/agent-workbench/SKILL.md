@@ -20,7 +20,7 @@ container, never inside its image.
 |---|---|---|
 | `kb` | `scripts/kb.sh` | knowledgebase vault: init/add/path/index/clip/put/query/atomize/status |
 | `hub` | `scripts/beads-hub.sh` | bd board hub: init/add/sync/list/path/status |
-| `board` | `scripts/board-ui.sh` | bdui web front end: up/down/status |
+| `board` | `scripts/board-ui.sh` | bdui web front end: up/down/status (bare-host, per-repo -- separate from the always-on compose `bdui` service below, which is the single global hub-aggregator view) |
 | `init-workspace` | `scripts/init-agent-workspace.sh` | scaffold docs/kb + workstreams + bd board + reindex hook into a repo |
 | `deploy` | `deploy/agent-workbench/agent-workbench` | build + run the kb-serve / review-serve containers |
 
@@ -90,7 +90,7 @@ deployed (quadlet or compose), review-serve is local/loopback-only
 ### docker-compose (portable alternative to the quadlets)
 
 `docker-compose.yml` at the repo root describes kb-serve, review-serve,
-and n8n as a podman-compose-compatible stack. It COEXISTS with the
+n8n, and bdui as a podman-compose-compatible stack. It COEXISTS with the
 quadlets, it does not replace them: `agent-workbench deploy up/down`
 (podman-quadlet user units) remains the live/production deploy mechanism
 on this host. The compose file is an additional portable artifact for
@@ -103,9 +103,18 @@ a compose `profiles: ["n8n"]` entry, so a plain compose-up brings up only
 kb-serve + review-serve, matching n8n's current intentionally-down state:
 
 ```bash
-podman-compose -f docker-compose.yml up -d               # kb-serve + review-serve only
+podman-compose -f docker-compose.yml up -d               # kb-serve + review-serve + bdui
 podman-compose --profile n8n -f docker-compose.yml up -d # adds n8n
 ```
+
+`bdui` (web front end for `bd`) is on by default -- no profile gate, it
+comes up with every plain compose-up. Published at
+`http://127.0.0.1:3100`, built from `scripts/bdui-container/Containerfile`,
+and serves the bd hub aggregator board (the cross-project view, not a
+single repo) via the `${HOME}/.beads-hub` mount. This is distinct from
+the bare-host `agent-workbench board up <repo_dir>` subcommand above,
+which is a per-repo dev-workstation tool for viewing one project's own
+board on a scanned free port.
 
 ## kb-serve LLM endpoints (agent-facing)
 
