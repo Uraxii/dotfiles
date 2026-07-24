@@ -398,6 +398,7 @@ def test_cmd_status_only_runs_read_only_systemctl_status_never_mutating_verbs(
     assert calls == [
         ["systemctl", "--user", "status", "kb-serve", "--no-pager"],
         ["systemctl", "--user", "status", "review-serve", "--no-pager"],
+        ["systemctl", "--user", "status", "bdui", "--no-pager"],
         ["systemctl", "--user", "status", "n8n", "--no-pager"],
     ]
     assert "unreachable" in capsys.readouterr().out

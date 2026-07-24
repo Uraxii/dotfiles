@@ -42,7 +42,11 @@ Environment=BEADS_DIR=%h/.beads-hub/hub/.beads
 # beads-ui's own cwd-walk (server/db.js, the live-reload watcher) also
 # finds .beads there -- belt-and-suspenders with the explicit BEADS_DIR
 # above for the `bd` CLI calls.
-WorkingDirectory=%h/.beads-hub/hub
+# ponytail: Quadlet's [Container] key is WorkingDir=, not
+# WorkingDirectory= (that name is a [Service]/.build-file key) -- the
+# mechanical translation from the compose service used the wrong key,
+# which quadlet-generator rejected outright (unit never generated).
+WorkingDir=%h/.beads-hub/hub
 
 # Whole hub tree, not just hub/: registered per-project board paths inside
 # the aggregator's own config are absolute host paths (e.g.
