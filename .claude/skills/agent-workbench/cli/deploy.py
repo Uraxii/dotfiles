@@ -2,7 +2,8 @@
 deploy/agent-workbench/agent-workbench.
 
 One-command local deploy of the hardened agent-workbench containers
-(kb-serve + review-serve) as rootless podman-quadlet systemd user units.
+(kb-serve + review-serve + bdui) as rootless podman-quadlet systemd user
+units.
 Subcommands:
     up      build images, install quadlets (symlink), start + health-check
     down    stop + disable + remove ONLY the quadlets this bundle installed
@@ -38,6 +39,7 @@ __all__ = ["register", "build_image", "install_quadlet", "wait_for_http"]
 
 KB_IMAGE = "localhost/kb-serve:latest"
 REVIEW_IMAGE = "localhost/review-serve:latest"
+BDUI_IMAGE = "localhost/bdui:latest"
 # n8n is the OFFICIAL image, pinned by its multi-arch manifest-list digest
 # (n8n 2.31.5) -- NOT built here. The quadlet's Image= carries the same
 # digest and Podman auto-pulls it on first start, so `up` has no
@@ -50,6 +52,7 @@ N8N_IMAGE = (
 )
 KB_HEALTH_URL = "http://127.0.0.1:9100/health"
 REVIEW_HEALTH_URL = "http://127.0.0.1:9099/"
+BDUI_HEALTH_URL = "http://127.0.0.1:3100/"
 N8N_HEALTH_URL = "http://127.0.0.1:5678/healthz"
 HEALTH_WAIT_TRIES = 15
 # n8n runs DB migrations on first boot; give it more headroom than the
@@ -194,9 +197,14 @@ def cmd_up(args: argparse.Namespace) -> int:
         REVIEW_IMAGE, str(paths.REVIEW_CONTAINER_DIR / "Containerfile"),
         str(paths.REVIEW_SKILL_DIR),
     )
+    build_image(
+        BDUI_IMAGE, str(paths.BDUI_CONTAINER_DIR / "Containerfile"),
+        str(paths.BDUI_CONTAINER_DIR),
+    )
 
     install_quadlet("kb-serve", str(paths.KB_CONTAINER_DIR / "kb-serve.container"))
     install_quadlet("review-serve", str(paths.REVIEW_CONTAINER_DIR / "review-serve.container"))
+    install_quadlet("bdui", str(paths.BDUI_CONTAINER_DIR / "bdui.container"))
     install_quadlet("n8n", str(paths.N8N_CONTAINER_DIR / "n8n.container"))
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
 
@@ -217,6 +225,16 @@ def cmd_up(args: argparse.Namespace) -> int:
         else:
             print("agent-workbench: review-serve not healthy yet -- "
                   "check: journalctl --user -u review-serve")
+
+    if unit_active("bdui.service"):
+        print("agent-workbench: bdui already active, leaving it running")
+    else:
+        subprocess.run(["systemctl", "--user", "start", "bdui"], check=True)
+        print("agent-workbench: waiting for bdui health...")
+        if wait_for_http(BDUI_HEALTH_URL):
+            print(f"agent-workbench: bdui up at {BDUI_HEALTH_URL}")
+        else:
+            print("agent-workbench: bdui not healthy yet -- check: journalctl --user -u bdui")
 
     if unit_active("n8n.service"):
         print("agent-workbench: n8n already active, leaving it running")
@@ -257,6 +275,14 @@ def cmd_down(args: argparse.Namespace) -> int:
     else:
         print("agent-workbench: kb-serve not installed by this bundle, leaving it untouched")
 
+    bdui_src = str(paths.BDUI_CONTAINER_DIR / "bdui.container")
+    if quadlet_owned("bdui", bdui_src):
+        subprocess.run(["systemctl", "--user", "stop", "bdui"], check=False)
+        subprocess.run(["systemctl", "--user", "disable", "bdui"], check=False)
+        uninstall_quadlet("bdui", bdui_src)
+    else:
+        print("agent-workbench: bdui not installed by this bundle, leaving it untouched")
+
     n8n_src = str(paths.N8N_CONTAINER_DIR / "n8n.container")
     if quadlet_owned("n8n", n8n_src):
         subprocess.run(["systemctl", "--user", "stop", "n8n"], check=False)
@@ -278,6 +304,10 @@ def cmd_status(args: argparse.Namespace) -> int:
     print("--- review-serve ---")
     subprocess.run(["systemctl", "--user", "status", "review-serve", "--no-pager"], check=False)
     print(_health_line(REVIEW_HEALTH_URL))
+    print()
+    print("--- bdui ---")
+    subprocess.run(["systemctl", "--user", "status", "bdui", "--no-pager"], check=False)
+    print(_health_line(BDUI_HEALTH_URL))
     print()
     print("--- n8n ---")
     subprocess.run(["systemctl", "--user", "status", "n8n", "--no-pager"], check=False)

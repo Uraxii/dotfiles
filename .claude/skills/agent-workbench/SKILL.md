@@ -22,7 +22,7 @@ container, never inside its image.
 | `hub` | `scripts/beads-hub.sh` | bd board hub: init/add/sync/list/path/status |
 | `board` | `scripts/board-ui.sh` | bdui web front end: up/down/status (bare-host, per-repo -- separate from the always-on compose `bdui` service below, which is the single global hub-aggregator view) |
 | `init-workspace` | `scripts/init-agent-workspace.sh` | scaffold docs/kb + workstreams + bd board + reindex hook into a repo |
-| `deploy` | `deploy/agent-workbench/agent-workbench` | build + run the kb-serve / review-serve containers |
+| `deploy` | `deploy/agent-workbench/agent-workbench` | build + run the kb-serve / review-serve / bdui containers |
 
 ### kb
 
@@ -69,11 +69,21 @@ agent-workbench deploy up | down | status
 
 ## Deploy + hardening
 
-`deploy up` builds and starts the two hardened containers as rootless
-podman-quadlet user units. Hardening (read-only rootfs, `cap-drop=ALL`,
-`no-new-privileges`, seccomp default, digest-pinned base image,
-HEALTHCHECK, narrowed mounts) and the env config surface are documented
-in `docs/agent-workbench-hardening-plan.md`.
+`deploy up` builds and starts kb-serve, review-serve, and bdui as
+rootless podman-quadlet user units (n8n's quadlet is also installed, but
+its image is pulled by digest rather than built -- see the n8n note
+below). Hardening (read-only rootfs, `cap-drop=ALL`, `no-new-privileges`,
+seccomp default, digest-pinned base image, HEALTHCHECK, narrowed mounts)
+and the env config surface are documented in
+`docs/agent-workbench-hardening-plan.md`.
+
+bdui (the bd board web front end) is a `deploy`-managed quadlet unit like
+the other two, not compose-only: `deploy up` builds
+`localhost/bdui:latest`, installs `scripts/bdui-container/bdui.container`,
+and health-checks `http://127.0.0.1:3100/`; `deploy down` removes it if
+this bundle owns the installed quadlet. It runs with `UserNS=keep-id` so
+the container's user maps to the real host user, matching ownership of
+the bind-mounted `~/.beads-hub` board files (0700/0600).
 
 Optional data-root overrides live in
 `.claude/skills/agent-workbench/agent-workbench.env.example`. NOTE:
@@ -107,14 +117,16 @@ podman-compose -f docker-compose.yml up -d               # kb-serve + review-ser
 podman-compose --profile n8n -f docker-compose.yml up -d # adds n8n
 ```
 
-`bdui` (web front end for `bd`) is on by default -- no profile gate, it
-comes up with every plain compose-up. Published at
-`http://127.0.0.1:3100`, built from `scripts/bdui-container/Containerfile`,
-and serves the bd hub aggregator board (the cross-project view, not a
-single repo) via the `${HOME}/.beads-hub` mount. This is distinct from
-the bare-host `agent-workbench board up <repo_dir>` subcommand above,
-which is a per-repo dev-workstation tool for viewing one project's own
-board on a scanned free port.
+`bdui` (web front end for `bd`) is on by default in compose -- no profile
+gate, it comes up with every plain compose-up -- and is also
+`deploy`-managed as its own quadlet unit (see "Deploy + hardening"
+above); either path publishes at `http://127.0.0.1:3100`, built from
+`scripts/bdui-container/Containerfile`, and serves the bd hub aggregator
+board (the cross-project view, not a single repo) via the
+`${HOME}/.beads-hub` mount. This is distinct from the bare-host
+`agent-workbench board up <repo_dir>` subcommand above, which is a
+per-repo dev-workstation tool for viewing one project's own board on a
+scanned free port.
 
 ## kb-serve LLM endpoints (agent-facing)
 
