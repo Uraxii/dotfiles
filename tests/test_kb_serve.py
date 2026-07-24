@@ -257,6 +257,27 @@ def test_resolve_api_key_never_logs_secret_on_command_failure(
     assert "KB_LLM_API_KEY_CMD failed" in caplog.text  # sanity: the warning path was actually hit
 
 
+def test_resolve_api_key_falls_back_to_static_key_when_cmd_fails() -> None:
+    """A failing KB_LLM_API_KEY_CMD (e.g. a vault CLI missing from the
+    container image) must not disable enrichment when a static
+    KB_LLM_API_KEY was already injected into the env."""
+    result = kb_serve.resolve_api_key({
+        "KB_LLM_API_KEY_CMD": "exit 1",
+        "KB_LLM_API_KEY": "static-fallback-value",
+    })
+    assert result == "static-fallback-value"
+
+
+def test_resolve_api_key_falls_back_to_static_key_when_cmd_stdout_empty() -> None:
+    """A KB_LLM_API_KEY_CMD that succeeds but prints nothing is not a
+    usable key; fall back to the static KB_LLM_API_KEY."""
+    result = kb_serve.resolve_api_key({
+        "KB_LLM_API_KEY_CMD": "true",
+        "KB_LLM_API_KEY": "static-fallback-value",
+    })
+    assert result == "static-fallback-value"
+
+
 # ── /clip ───────────────────────────────────────────────────────────────
 
 _CANNED_HTML = b"""<html>
@@ -544,6 +565,28 @@ def test_atomize_degrades_to_deterministic_on_llm_failure(tmp_path: Path) -> Non
         patch.object(
             kb_serve, "request_atomize_split",
             side_effect=json.JSONDecodeError("bad json", "doc", 0),
+        ) as mock_split,
+    ):
+        status, body = _post(base_url, "/atomize", {
+            "project": "proj1", "title": "Long Parent", "content": _long_sectioned_body(),
+        })
+
+    mock_split.assert_called_once()
+    assert status == 201
+    assert body["method"] == "deterministic"
+    assert len(body["children"]) == 2
+
+
+def test_atomize_degrades_to_deterministic_on_llm_value_error(tmp_path: Path) -> None:
+    """A malformed-but-valid-JSON LLM response (e.g. 'notes' present but
+    not a list) raises ValueError from request_atomize_split's own
+    parsing; that must degrade too, not 500."""
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    with (
+        _server_for_config(config) as base_url,
+        patch.object(
+            kb_serve, "request_atomize_split",
+            side_effect=ValueError("malformed atomize response"),
         ) as mock_split,
     ):
         status, body = _post(base_url, "/atomize", {
