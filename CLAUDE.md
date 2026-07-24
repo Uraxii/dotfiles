@@ -127,7 +127,8 @@ Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any r
 
 ## Spikes
 
-- `spikes/<name>/` are durable, committed prototype workspaces with their own READMEs. Current: `comfyui-driver`, `advisor-vision`, `beads-board`, `commit-linter`.
+- `spikes/<name>/` are durable, committed prototype workspaces with their own READMEs. Current: `comfyui-driver`, `advisor-vision`, `commit-linter`.
+  (`beads-board` was de-spiked to `scripts/bdui-container/`, now a proper compose service.)
 - Runtime junk (node_modules, testbeds) is gitignored.
 - Agents use spikes as scratch/spike workspaces, never `/tmp`.
 

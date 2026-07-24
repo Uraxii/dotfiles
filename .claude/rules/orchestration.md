@@ -54,7 +54,7 @@ as the board itself. The wake ping still carries only the ticket id; the
 full answer and audit trail live on the ticket, not the message.
 
 Note: beads-ui's write path (answer + close from the browser) is
-confirmed working via its websocket API (`spikes/beads-board`); a manual
+confirmed working via its websocket API (`scripts/bdui-container`); a manual
 browser click-test is still pending before it's the assumed primary
 channel end to end.
 
