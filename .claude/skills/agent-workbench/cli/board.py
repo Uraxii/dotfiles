@@ -36,6 +36,9 @@ __all__ = ["register", "resolve_repo", "repo_runtime_dir", "find_free_port"]
 
 PORT_START = 3000
 PORT_TRIES = 100
+# node/npm only exist via linuxbrew on this dev host, not on default PATH.
+# Prepended to PATH (cmd_up) only when the dir actually exists, so this
+# stays a no-op on hosts without a linuxbrew install.
 LINUXBREW_BIN = "/home/linuxbrew/.linuxbrew/bin"
 
 
@@ -57,12 +60,12 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
 
 def bdui_bin() -> Path:
-    """Path to the bdui executable under spikes/beads-board node_modules.
+    """Path to the bdui executable under scripts/bdui-container node_modules.
 
     Precondition: the returned path is executable (callers raise a clear
     error otherwise).
     """
-    bin_path = paths.REPO_ROOT / "spikes" / "beads-board" / "node_modules" / ".bin" / "bdui"
+    bin_path = paths.REPO_ROOT / "scripts" / "bdui-container" / "node_modules" / ".bin" / "bdui"
     if not os.access(bin_path, os.X_OK):
         raise RuntimeError(f"board-ui: bdui not found at {bin_path}")
     return bin_path
@@ -156,8 +159,10 @@ def cmd_up(args: argparse.Namespace) -> int:
         port_file.unlink(missing_ok=True)
 
     port = find_free_port()
-    env = {**os.environ, "PATH": f"{LINUXBREW_BIN}:{os.environ.get('PATH', '')}",
-           "BDUI_RUNTIME_DIR": str(run_dir)}
+    path = os.environ.get("PATH", "")
+    if Path(LINUXBREW_BIN).is_dir():
+        path = f"{LINUXBREW_BIN}:{path}"
+    env = {**os.environ, "PATH": path, "BDUI_RUNTIME_DIR": str(run_dir)}
     result = subprocess.run(
         [str(bdui), "start", "--host", "127.0.0.1", "--port", str(port)],
         cwd=repo_dir, env=env, check=False,

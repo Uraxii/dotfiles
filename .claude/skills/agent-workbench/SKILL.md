@@ -20,7 +20,7 @@ container, never inside its image.
 |---|---|---|
 | `kb` | `scripts/kb.sh` | knowledgebase vault: init/add/path/index/clip/put/query/atomize/status |
 | `hub` | `scripts/beads-hub.sh` | bd board hub: init/add/sync/list/path/status |
-| `board` | `scripts/board-ui.sh` | bdui web front end: up/down/status |
+| `board` | `scripts/board-ui.sh` | bdui web front end: up/down/status (bare-host, per-repo -- separate from the always-on compose `bdui` service below, which is the single global hub-aggregator view) |
 | `init-workspace` | `scripts/init-agent-workspace.sh` | scaffold docs/kb + workstreams + bd board + reindex hook into a repo |
 | `deploy` | `deploy/agent-workbench/agent-workbench` | build + run the kb-serve / review-serve containers |
 
@@ -81,6 +81,63 @@ Optional data-root overrides live in
 containers are running (the quadlets bind `%h`-relative paths); only
 `BEADS_HUB_DIR` is read directly by the Python code. See the env.example
 comments.
+
+**review-serve's network artifact-publish endpoint is NOT shipped.** It is
+held back pending an XSS lockdown (tracked as `agent-workbench-wxh`). As
+deployed (quadlet or compose), review-serve is local/loopback-only
+(127.0.0.1-bound) -- do not assume or rely on a network publish path.
+
+### docker-compose (portable alternative to the quadlets)
+
+`docker-compose.yml` at the repo root describes kb-serve, review-serve,
+n8n, and bdui as a podman-compose-compatible stack. It COEXISTS with the
+quadlets, it does not replace them: `agent-workbench deploy up/down`
+(podman-quadlet user units) remains the live/production deploy mechanism
+on this host. The compose file is an additional portable artifact for
+hosts without systemd-quadlet (plain docker, a cloud VM).
+
+It mirrors the same hardening as the quadlets: read-only rootfs,
+`cap-drop=ALL`, `no-new-privileges`, tmpfs mounts, healthchecks, ports
+bound to 127.0.0.1, and the same pinned n8n image digest. n8n sits behind
+a compose `profiles: ["n8n"]` entry, so a plain compose-up brings up only
+kb-serve + review-serve, matching n8n's current intentionally-down state:
+
+```bash
+podman-compose -f docker-compose.yml up -d               # kb-serve + review-serve + bdui
+podman-compose --profile n8n -f docker-compose.yml up -d # adds n8n
+```
+
+`bdui` (web front end for `bd`) is on by default -- no profile gate, it
+comes up with every plain compose-up. Published at
+`http://127.0.0.1:3100`, built from `scripts/bdui-container/Containerfile`,
+and serves the bd hub aggregator board (the cross-project view, not a
+single repo) via the `${HOME}/.beads-hub` mount. This is distinct from
+the bare-host `agent-workbench board up <repo_dir>` subcommand above,
+which is a per-repo dev-workstation tool for viewing one project's own
+board on a scanned free port.
+
+## kb-serve LLM endpoints (agent-facing)
+
+Two optional, LLM-backed endpoints exist on the running kb-serve service
+(see `scripts/kb-serve.py`'s module docstring for exact behavior):
+
+- `POST /enrich` -- fills in a note's `question`/`summary` frontmatter
+  fields via the configured LLM. Gated by `KB_ENRICH` (must be `1`;
+  default `0` is a clean no-op, zero network calls) plus a resolvable API
+  key (`KB_LLM_API_KEY`, or preferably `KB_LLM_API_KEY_CMD`, a vault CLI
+  command whose stdout is the key -- see
+  `scripts/kb-container/kb.env.example` for the exact modes/format).
+- `POST /atomize` -- LLM-assisted atomize/split of a URL or raw document
+  content into decontextualized child notes, using a "strong" model tier
+  (bigger than enrich's, since atomize needs real
+  decontextualization/section-splitting, not just a gist). If
+  `KB_ENRICH`/the key isn't configured, it falls back to the deterministic
+  heading-based split (no model call) -- never fails, just degrades.
+
+Both are off/degraded by default; opt in via `KB_ENRICH=1` plus a
+configured key in the real `~/.knowledgebase/kb.env` (see
+`scripts/kb-container/kb.env.example` for the template -- never document
+or imply a real secret value there).
 
 ## n8n Public API (agent-facing)
 
