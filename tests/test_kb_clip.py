@@ -1,16 +1,22 @@
-"""Tests for scripts/kb-clip.py -- URL-scheme allowlisting in fetch_html.
+"""Tests for scripts/kb-clip.py -- URL-scheme allowlisting and SSRF
+destination guard in fetch_html.
 
 Verifies the H1 fix: file:// (and any non-http(s) scheme) is rejected
 before urlopen is ever called, closing the local-file-read reachable via
 the kb-serve /clip endpoint.
+
+Also verifies the SSRF fix (ticket agent-workbench-h5u): fetch_html
+resolves the hostname via DNS and rejects any URL whose resolved IP is
+not public, on the initial URL AND on every redirect hop.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import socket
 import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -71,3 +77,83 @@ def test_build_note_path_reserves_atomically_past_a_preexisting_collision(tmp_pa
     assert result == sources_dir / "slug-2.md"
     assert result.exists()
     assert result.stat().st_size == 0
+
+
+def _addrinfo(ip: str) -> list[tuple]:
+    """One socket.getaddrinfo() result tuple for a given IPv4/IPv6 literal,
+    shaped like the real stdlib return value."""
+    family = socket.AF_INET6 if ":" in ip else socket.AF_INET
+    sockaddr = (ip, 0, 0, 0) if family == socket.AF_INET6 else (ip, 0)
+    return [(family, socket.SOCK_STREAM, 6, "", sockaddr)]
+
+
+@pytest.mark.parametrize(
+    "resolved_ip",
+    [
+        "127.0.0.1",  # loopback
+        "169.254.169.254",  # cloud metadata / link-local
+        "10.0.0.5",  # private LAN
+        "192.168.1.1",  # private LAN
+        "::1",  # IPv6 loopback
+        "100.64.0.1",  # Tailscale / CGNAT
+    ],
+)
+def test_check_destination_is_public_rejects_non_public_ip(resolved_ip: str) -> None:
+    with patch("socket.getaddrinfo", return_value=_addrinfo(resolved_ip)):
+        with pytest.raises(ValueError, match="non-public address"):
+            kb_clip.check_destination_is_public("http://target.example/page")
+
+
+def test_check_destination_is_public_rejects_localhost_hostname() -> None:
+    with patch("socket.getaddrinfo", return_value=_addrinfo("127.0.0.1")):
+        with pytest.raises(ValueError, match="non-public address"):
+            kb_clip.check_destination_is_public("http://localhost/page")
+
+
+def test_check_destination_is_public_rejects_public_hostname_resolving_to_loopback() -> None:
+    """The DNS-normalization case: a hostname that LOOKS public but its
+    DNS record points at loopback (attacker-controlled DNS rebinding)."""
+    with patch("socket.getaddrinfo", return_value=_addrinfo("127.0.0.1")):
+        with pytest.raises(ValueError, match="non-public address"):
+            kb_clip.check_destination_is_public("http://sneaky.example.invalid/page")
+
+
+def test_check_destination_is_public_allows_public_ip() -> None:
+    with patch("socket.getaddrinfo", return_value=_addrinfo("93.184.216.34")):
+        kb_clip.check_destination_is_public("http://example.invalid/page")  # must not raise
+
+
+def test_redirect_handler_rejects_redirect_to_internal_target() -> None:
+    handler = kb_clip._DestinationCheckingRedirectHandler()
+    with patch("socket.getaddrinfo", return_value=_addrinfo("169.254.169.254")):
+        with pytest.raises(ValueError, match="non-public address"):
+            handler.redirect_request(
+                MagicMock(), None, 302, "Found", MagicMock(),
+                "http://169.254.169.254/latest/meta-data/",
+            )
+
+
+def test_fetch_html_rejects_non_public_destination_without_reaching_urlopen() -> None:
+    with patch("socket.getaddrinfo", return_value=_addrinfo("127.0.0.1")):
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            with pytest.raises(ValueError, match="non-public address"):
+                kb_clip.fetch_html("http://localhost/page")
+        mock_urlopen.assert_not_called()
+
+
+def test_fetch_html_allows_public_destination(tmp_path: Path) -> None:
+    """Full happy path: public destination resolves, the actual network
+    fetch is mocked so no real request goes out."""
+    fake_response = MagicMock()
+    fake_response.__enter__.return_value = fake_response
+    fake_response.__exit__.return_value = False
+    fake_response.read.return_value = b"<html>ok</html>"
+    fake_response.headers.get_content_charset.return_value = "utf-8"
+    fake_opener = MagicMock()
+    fake_opener.open.return_value = fake_response
+
+    with patch("socket.getaddrinfo", return_value=_addrinfo("93.184.216.34")):
+        with patch("urllib.request.build_opener", return_value=fake_opener):
+            result = kb_clip.fetch_html("http://example.invalid/page")
+
+    assert result == "<html>ok</html>"
