@@ -109,6 +109,26 @@ def test_put_writes_note_with_expected_frontmatter(live_server: tuple[str, KbSer
     assert "Body text." in text
 
 
+def test_put_uses_llm_atomize_when_enrichment_enabled(tmp_path: Path) -> None:
+    config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
+    llm_items = [{"title": "Child A", "body": "Body A content."}]
+    with (
+        _server_for_config(config) as base_url,
+        patch.object(kb_serve, "request_atomize_split", return_value=llm_items) as mock_split,
+    ):
+        status, body = _post(base_url, "/put", {
+            "project": "proj1", "title": "Parent Note", "content": "Some parent content.",
+        })
+
+    mock_split.assert_called_once()
+    assert status == 201
+    assert set(body.keys()) == {"path", "children"}
+    assert len(body["children"]) == 1
+    child_text = Path(str(body["children"][0])).read_text(encoding="utf-8")
+    assert 'title: "Child A"' in child_text
+    assert "Body A content." in child_text
+
+
 def test_put_missing_required_field_returns_400(live_server: tuple[str, KbServeConfig]) -> None:
     base_url, _ = live_server
     status, body = _post(base_url, "/put", {"title": "No project or content"})
@@ -166,7 +186,7 @@ def test_enrich_enabled_without_key_makes_zero_network_calls(tmp_path: Path) -> 
 
 def test_enrich_success_rewrites_only_question_and_summary(tmp_path: Path) -> None:
     config = _config(tmp_path, enrich_enabled=True, llm_api_key="fake-key")
-    put_result = kb_serve.kb_put(tmp_path, {
+    put_result = kb_serve.kb_put(tmp_path, _config(tmp_path), {
         "project": "proj1", "title": "Widget Guide", "content": "This widget does things.",
     })
     note_path = Path(str(put_result["path"]))
@@ -206,7 +226,7 @@ def test_find_unenriched_notes_rejects_dotdot_relative_escape(tmp_path: Path) ->
 
 
 def test_find_unenriched_notes_happy_path_returns_candidate(tmp_path: Path) -> None:
-    put_result = kb_serve.kb_put(tmp_path, {
+    put_result = kb_serve.kb_put(tmp_path, _config(tmp_path), {
         "project": "proj1", "title": "Real Note", "content": "content",
     })
     note_path = Path(str(put_result["path"]))

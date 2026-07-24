@@ -277,7 +277,7 @@ def _write_note_file(
     return note_path
 
 
-def kb_put(kb_home: Path, payload: Mapping[str, object]) -> dict[str, object]:
+def kb_put(kb_home: Path, config: KbServeConfig, payload: Mapping[str, object]) -> dict[str, object]:
     """Write one note, atomize it if it qualifies, reindex. Returns the
     created note path(s). Raises KeyError/ValueError on bad input."""
     project = _require_str(payload, "project")
@@ -288,7 +288,7 @@ def kb_put(kb_home: Path, payload: Mapping[str, object]) -> dict[str, object]:
 
     note_path = _write_note_file(kb_home, project, note_type, title, source, content)
 
-    children = kb_atomize(note_path, kb_home)
+    children, _method = kb_atomize_via_llm(config, note_path, kb_home)
     build_index(kb_home)
     return {"path": str(note_path), "children": [str(p) for p in children]}
 
@@ -618,7 +618,7 @@ class KbRequestHandler(BaseHTTPRequestHandler):
 
     def _handle_put(self, payload: dict[str, object]) -> None:
         try:
-            result = kb_put(self.server.config.kb_home, payload)
+            result = kb_put(self.server.config.kb_home, self.server.config, payload)
         except (KeyError, ValueError) as exc:
             return self._send_json(400, {"error": str(exc)})
         self._send_json(201, result)
@@ -669,7 +669,7 @@ def cmd_put(args: argparse.Namespace) -> int:
         "project": args.project, "title": args.title, "type": args.type,
         "source": args.source, "content": sys.stdin.read(),
     }
-    print(json.dumps(kb_put(kb_home, payload)))
+    print(json.dumps(kb_put(kb_home, build_config(kb_home), payload)))
     return 0
 
 
