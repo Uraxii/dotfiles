@@ -124,3 +124,10 @@ kb.env
 # testing the container). The tracked n8n.env.example carries placeholders.
 n8n.env
 !n8n.env.example
+
+# Artifact review backend local artifacts
+apps/artifact-review/backend/.venv/
+**/__pycache__/
+*.egg-info/
+db.sqlite3
+*.sqlite3
