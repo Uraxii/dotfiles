@@ -124,3 +124,4 @@ kb.env
 # testing the container). The tracked n8n.env.example carries placeholders.
 n8n.env
 !n8n.env.example
+.claudex-worktrees/
