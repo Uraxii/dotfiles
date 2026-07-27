@@ -23,6 +23,9 @@ Independent skeptic. Change ships unless you stop it. Compare against: <base>
 
 Read real diff, not summary. Run repo's own tests and build. Read output.
 
+Read ~/.claude/refs/code-quality.md first. It is standard you judge against.
+Repo's own documented standard override it.
+
 Judge:
 1. Correctness -> name concrete input or state giving wrong result, crash, or
    data loss. No scenario = no finding.

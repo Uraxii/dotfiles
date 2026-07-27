@@ -15,7 +15,7 @@ read or summarize it into the note.
 ## Capture a web source
 
 ```bash
-~/dotfiles/.claude/skills/agent-workbench/agent-workbench kb clip "<url>" --project <project>
+agent-workbench kb clip "<url>" --project <project>
 ```
 
 - Writes `~/.knowledgebase/<project>/sources/<slug>.md` with frontmatter
@@ -28,7 +28,7 @@ read or summarize it into the note.
 ## Then find it
 
 ```bash
-~/dotfiles/.claude/skills/agent-workbench/agent-workbench kb query "<terms>" --project <project> --type source
+agent-workbench kb query "<terms>" --project <project> --type source
 ```
 
 ## Rules
@@ -41,5 +41,4 @@ read or summarize it into the note.
 - JS-heavy or auth-gated pages may not extract cleanly; note that and fall back
   to citing the url in `## Refs` if the body comes back empty.
 
-Full knowledgebase doctrine: `~/.claude/rules/orchestration.md`
-("Knowledgebase"). Decisions use the separate `record-decision` skill.
+Full knowledgebase doctrine: `~/dotfiles/CLAUDE.md` ("Knowledgebase").

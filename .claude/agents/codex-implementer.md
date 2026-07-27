@@ -23,7 +23,7 @@ codex exec \
 <task verbatim from brief: context, exact paths, error text, constraints,
 deliverable, definition of done>
 
-Read ~/.claude/rules/code-quality.md first. It bind.
+Read ~/.claude/refs/code-quality.md first. It bind.
 
 Smallest change satisfying definition of done. Leave adjacent code alone.
 Run repo's own tests or build for code you touched, read the output. Report
