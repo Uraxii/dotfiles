@@ -13,7 +13,7 @@ Subcommands (see each cli/*.py module docstring):
     board           bdui web front-end lifecycle (port of scripts/board-ui.sh)
     init-workspace  scaffold a repo's agent workspace (port of
                     scripts/init-agent-workspace.sh)
-    deploy          build + run the kb-serve / review-serve containers
+    deploy          build + run the kb-serve / artifact-serve containers
                     (port of deploy/agent-workbench/agent-workbench)
 """
 from __future__ import annotations

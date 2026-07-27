@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="agent-workbench",
         description="Locally deployable agent workbench: knowledgebase "
                      "vault, bd board hub, board web UI, workspace "
-                     "scaffold, and hardened kb-serve/review-serve "
+                     "scaffold, and hardened kb-serve/artifact-serve "
                      "containers.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

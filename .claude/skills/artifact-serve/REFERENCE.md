@@ -1,6 +1,6 @@
 # artifact-serve — reference
 
-Detailed verb table, storage layout, security model, feedback subsystem, Tailscale wiring. See [SKILL.md](SKILL.md) for quick start.
+Detailed verb table, storage layout, security model, feedback subsystem, Tailscale wiring, and compatibility notes for the canonical `artifact-serve.py` entrypoint. See [SKILL.md](SKILL.md) for quick start.
 
 ## Storage layout
 
@@ -46,13 +46,14 @@ Detailed verb table, storage layout, security model, feedback subsystem, Tailsca
 |------|-------|-----------|
 | `push` | `--project NAME` (req) `--src PATH` (req) `[--as SUBDIR]` `[--id ARTIFACT_ID]` | Relative symlink at `/tmp/claude-artifacts/<project>/<subdir>/` → `PATH`. Always symlink. `NAME` + `SUBDIR` must match `[a-z0-9][a-z0-9_-]*`. `--id` is opaque (any string); defaults to `<project>/<subdir>`. Records (project, subdir, artifact_id, src_path) in `artifact_index`. Overwrites prior entry. Re-runs index regen. |
 | `unpush` | `--project NAME` `--subdir SUBDIR` | Remove entry. No-op if absent. Index regen. Feedback rows untouched. |
-| `start` | `[--port N=9099]` `[--expose]` | Boot daemon, write pid + port files, regen index. Idempotent. `--expose` chains to `expose`. |
+| `start` | `[--port N=9099]` `[--host HOST=127.0.0.1]` `[--expose]` | Boot daemon, write pid + port files, regen index. Idempotent. `--expose` chains to `expose`. Defaults also honor `ARTIFACT_SERVE_PORT` and `ARTIFACT_SERVE_HOST`. |
 | `expose` | none | Run `tailscale serve --bg --https=443 http://127.0.0.1:<port>`. Needs daemon running. Errors if `tailscale` not on PATH, daemon offline, or tailnet Serve feature not enabled. |
 | `unexpose` | none | Run `tailscale serve --https=443 off`. Idempotent. |
 | `status` | none | Print pid, port, local URL, tailnet URL (if exposed), mounted `<project>/<subdir>` list. |
 | `stop` | none | Kill daemon, run `unexpose`, clear pid/port files. Staging dirs intact. Feedback DB untouched. |
 | `clean` | `--project NAME` (req) | Remove `/tmp/claude-artifacts/<project>/` + entries. Refuses w/o `--project` (no global wipe). Feedback DB untouched. |
-| `feedback` | `--artifact ID` (req) | Print JSON dump of comments + upload metadata for one artifact, across all sub-paths. Includes `pushes` (all `(project, subdir, src_path, last_pushed)` rows pointing at this artifact_id) and `comments` (each w/ uploads array). |
+| `run` | `[--port N=9099]` `[--host HOST=127.0.0.1]` | Run the server in the foreground for container or systemd supervision. Defaults also honor `ARTIFACT_SERVE_PORT` and `ARTIFACT_SERVE_HOST`. |
+| `feedback` | `--artifact ID` (req) | Print JSON dump of comments + upload metadata for one artifact, across all sub-paths. Includes `pushes` (all `(project, subdir, src_path, last_pushed)` rows pointing at this artifact_id) and `threads` with nested `replies[]`. |
 | `name` | `[VALUE]` `[--clear]` | Get / set / clear the global default comment-author name. 0 args → print current. 1 arg → upsert. `--clear` → delete row. Stored in `setting` k/v table. Widget pre-fills the name input from `/_/api/settings`; server stamps default when form-author is empty. Max 80 chars. |
 
 ## Examples
@@ -154,9 +155,9 @@ CREATE TABLE setting (
 ## Server behaviour
 
 - Single stdlib `http.server.SimpleHTTPRequestHandler` subclass.
-- Bind: `127.0.0.1:<port>` only. Tailscale daemon proxies inbound; no OS firewall hole needed.
+- Bind: `--host:<port>` only, default `127.0.0.1`. Tailscale daemon proxies inbound; no OS firewall hole needed. Container and quadlet paths can override with `ARTIFACT_SERVE_HOST=0.0.0.0`.
 - `socketserver.TCPServer` subclass w/ `allow_reuse_address = True`.
-- Daemonization: `os.fork()`. Parent writes pid file + exits 0. Child closes stdin/stdout/stderr, redirects diagnostics to `.serve.log`.
+- Daemonization: `os.fork()` for `start`. Parent writes pid file + exits 0. Child closes stdin/stdout/stderr, redirects diagnostics to `.serve.log`. `run` stays foreground for container or systemd supervision.
 - Idempotent `start`: read pid file → `os.kill(pid, 0)` liveness check → alive on same port → print URL, exit 0.
 - Auto-regen `index.html` at server root. Rebuilt on `start`, `push`, `unpush`. Plain HTML, inline `<style>`, dark theme, no JS. One tile per `<project>/<subdir>`: project, subdir, symlink target (via `os.readlink`), entry mtime, file count.
 - HTML injection: `send_head` reads body, splices feedback block before `</body>`, returns mutated BytesIO. `Content-Length` suppressed on `text/html` responses (server sends via HTTP/1.0 close-framing).

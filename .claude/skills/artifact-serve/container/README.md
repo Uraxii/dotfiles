@@ -1,31 +1,31 @@
-# review-serve container
+# artifact-serve container
 
-Rootless-podman packaging of `review-serve.py` for durable, boot-surviving
+Rootless-podman packaging of `artifact-serve.py` for durable, boot-surviving
 deployment via a systemd user quadlet.
 
 ## Files
 
 - `Containerfile` — builds the image (`python:3.13-slim`, stdlib-only, no
   `pip install`).
-- `review-serve.container` — the quadlet unit. Tracked copy; the install
-  target is `~/.config/containers/systemd/review-serve.container` (see
+- `artifact-serve.container` — the quadlet unit. Tracked copy; the install
+  target is `~/.config/containers/systemd/artifact-serve.container` (see
   Install below).
 
 ## Build
 
 ```bash
 cd ~/dotfiles/.claude/skills/artifact-serve
-podman build -t localhost/review-serve:latest -f container/Containerfile .
+podman build -t localhost/artifact-serve:latest -f container/Containerfile .
 ```
 
 ## Install the quadlet
 
 ```bash
 mkdir -p ~/.config/containers/systemd
-cp ~/dotfiles/.claude/skills/artifact-serve/container/review-serve.container \
-   ~/.config/containers/systemd/review-serve.container
+cp ~/dotfiles/.claude/skills/artifact-serve/container/artifact-serve.container \
+   ~/.config/containers/systemd/artifact-serve.container
 systemctl --user daemon-reload
-systemctl --user start review-serve
+systemctl --user start artifact-serve
 ```
 
 The unit carries `WantedBy=default.target`, so quadlet auto-wires it into
@@ -40,49 +40,37 @@ the repo.
 
 ## Mounts and their security note
 
-review-serve stages every artifact into `/tmp/claude-artifacts/<project>/`
+artifact-serve stages every artifact into `/tmp/claude-artifacts/<project>/`
 as a **symlink** pointing at the real file elsewhere on disk (see
-`review-serve.py push`). A container can only resolve those symlinks if the
-real targets are reachable at the identical absolute path inside the
-container, so:
+`artifact-serve.py push`). The tracked quadlet mounts only the paths the
+renamed entrypoint itself needs:
 
 | Mount | Path | Mode | Why |
 |---|---|---|---|
 | staging root | `/tmp/claude-artifacts` | rw | where artifacts get symlinked in; also the pid/port/log bookkeeping files |
 | feedback store | `~/.local/share/claude-artifacts` | rw | durable sqlite feedback DB + uploaded review files |
-| home directory | `~` | ro | symlink targets live under here (`~/Projects/...`, `~/comfy/...`); mounting the whole home dir is the pragmatic choice over enumerating every project root the symlinks currently point into |
 
-**Security implication**: the `~` ro mount gives the container read access to
-everything under the home directory, not just the artifact source trees
-currently staged. A compromise of review-serve (a bug in its request
-handling, or a malicious upload) could read any file under `~`. If that
-blast radius is unacceptable, narrow the mount to the specific project roots
-the symlinks point into (see `review-serve.py status` for the current list)
-instead of the whole home directory.
+**Security implication**: the broad home-directory mount is gone. The current
+quadlet only exposes the staging root plus the durable feedback store to the
+container, which keeps the host read surface much smaller than the old shape.
+If you need container mode to follow symlink targets outside those mounted
+paths, add explicit extra binds for those roots instead of reintroducing a
+whole-home mount.
 
 The container also runs `--userns keep-id --user <uid>:<uid>` so files it
 writes into the two `rw` mounts come out owned by the real host user, not
 container root or a shifted subuid range. SELinux (enforcing on this host)
-would otherwise deny the broad `~` mount, or force a slow, invasive
-recursive relabel of the whole home directory; the quadlet disables the
-SELinux label check for this one container instead
-(`SecurityLabelDisable=true`) as the trade-off that goes with the
-host-FS-exposed-read-only design above.
+still needs the label check disabled for the feedback-dir bind, so the
+quadlet keeps `SecurityLabelDisable=true` as the trade-off that goes with this
+narrow allowlist.
 
 ## Networking
 
-`review-serve.py`'s server hardcodes its bind address to `127.0.0.1` (see
-`_serve_forever`). Verified on this host: a server bound only to `127.0.0.1`
-inside a container is unreachable through Podman's normal port-publish path
-(`PublishPort=`, backed by pasta/slirp4netns), because that path delivers
-inbound traffic over the container's NAT-facing interface, not its loopback.
-Changing the app's bind address was out of scope for this container work, so
-the quadlet uses `Network=host` instead: the container shares the host
-network namespace, so the app's own `127.0.0.1:9099` bind **is** the host's
-`127.0.0.1:9099`, with no port mapping involved. Net exposure is identical
-either way — the app only ever answers on loopback because of its own
-hardcoded bind; `Network=host` does not add any new externally reachable
-surface, it just makes the existing loopback-only bind reachable at all.
+The current quadlet does not use `Network=host`. It sets
+`ARTIFACT_SERVE_HOST=0.0.0.0` inside the container and publishes only
+`127.0.0.1:9099:9099` on the host with `PublishPort=`. Result: the app is
+reachable on host loopback at `http://127.0.0.1:9099/`, while keeping normal
+Podman network-namespace isolation.
 
 Tailscale stays entirely a **host** concern — it is never run inside the
 container. To publish the container over the tailnet, run on the host:
@@ -97,24 +85,24 @@ inside the container image (no tailscale binary is installed there).
 
 ## Foreground mode (`run` verb)
 
-review-serve's normal `start` verb forks + writes a pidfile (a CLI daemon
+artifact-serve's normal `start` verb forks + writes a pidfile (a CLI daemon
 model). Containers and systemd want a single foreground process they
 supervise directly, so a new `run` verb was added: same server, no fork, no
 `setsid`, no pidfile — it blocks in the foreground until SIGTERM/SIGINT,
 logging to stdout (captured by `podman logs` / `journalctl --user`). This is
-the only code change made to `review-serve.py` for containerization.
+the only code change made to `artifact-serve.py` for containerization.
 
 ## Bare-to-container cutover
 
 1. Build the image and install the quadlet (above).
 2. Stop the bare instance with its own `stop` verb:
    ```bash
-   ~/dotfiles/.claude/skills/artifact-serve/scripts/review-serve.py stop
+   ~/dotfiles/.claude/skills/artifact-serve/scripts/artifact-serve.py stop
    ```
    Note: `stop` also runs `tailscale serve --https=443 off` as part of its
    normal shutdown — re-run the `tailscale serve --bg ...` command above
    once the container is up, to point port 443 back at 9099.
-3. `systemctl --user start review-serve` (or let the already-running unit
+3. `systemctl --user start artifact-serve` (or let the already-running unit
    take over the now-free port).
 4. Verify: `curl http://127.0.0.1:9099/`, an artifact URL, and that
-   `systemctl --user restart review-serve` survives cleanly.
+   `systemctl --user restart artifact-serve` survives cleanly.
