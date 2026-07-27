@@ -13,6 +13,34 @@
   ("ready at <path>"); the artifacts themselves hand off as files in durable
   dirs. Cross-workstream synthesis lives at zakia, never a separate agent.
 
+### Frontend design workstream (impeccable)
+
+Frontend / UI design and refinement is its own workstream shape, distinct
+from both software (tech-lead) and image generation (art-director). It runs
+through the `impeccable` skill, invoked by the agent that owns the surface:
+tech-lead when the design work is one phase of a larger software workstream,
+or zakia directly for a standalone UI task. art-director stays for raster
+image generation/editing; impeccable owns the built interface itself.
+
+- The impeccable skill SELF-ORCHESTRATES its own specialist fleet from
+  inside its own workflow. zakia and tech-lead do NOT spawn these directly;
+  they invoke the skill and let it delegate. The fleet is one-shot, returns
+  results/data (not transcripts), and hands artifacts off as files:
+  - `impeccable-finish-reviewer` — reviews a finished build against its
+    direction contract, approved comp, and quality bar; returns ordered
+    material fixes. Runs OUTSIDE the build thread. This is the skill's own
+    internal quality gate.
+  - `impeccable-documenter` — records DESIGN.md + sidecar from the shipped
+    artifact (ground truth over intention).
+  - `impeccable-asset-producer` — produces clean reusable raster assets from
+    approved mock references without redesigning the direction.
+  - `impeccable-manual-edit-applier` — applies leased live copy-edit batches
+    in `live` mode; returns canonical Apply results.
+- The skill's `impeccable-finish-reviewer` is the design-internal review, NOT
+  a substitute for the skeptic gate. The "Verify, never trust" gate still
+  applies at the workstream boundary when its triggers fire (public API,
+  large cross-cutting change, weak verification); the two are complementary.
+
 ## Bubble-up contract (sub-orchestrators never block on user decisions)
 
 A question for the user is a board ticket, not a message payload.
@@ -140,7 +168,11 @@ Escalate only when the current rung fails:
 3. Cheap model, isolated context: a haiku retrieval sweep
    (`knowledge-scout`) for read-heavy "find everything about X" fan-out
    across KB, board, and code, returning conclusions only.
-4. Frontier model: only once 1-3 fail to answer the question.
+4. Other-vendor labor: Codex, via the `codex` plugin. It bills the ChatGPT
+   subscription, not the Anthropic one, so a scoped implementation or an
+   independent review there costs nothing against the Claude limit. See
+   "Codex delegation" below for which roles go there.
+5. Frontier model: only once 1-4 fail to answer the question.
 
 The cheapest token is one never generated, and the cheapest decision is one
 never made:
@@ -246,21 +278,23 @@ as the home for durable knowledge.
 
 ## Brief writing (subagent sees ONLY your prompt)
 
-- Fresh context, zero memory. Brief MUST carry: full task context, exact
-  paths, error text verbatim, constraints, deliverable spec, success
-  criteria. Under-brief -> agent rediscovers what you knew -> thrash.
-- Paste a compressed digest of the working method verbatim into EVERY brief.
-  Always include the caveman ultra output instruction
-  (~/.claude/rules/output.md).
-- Code-writing briefs: instruct `ponytail` (YAGNI -> reuse -> stdlib ->
-  native -> installed-dep -> one-line -> min; shortest working diff;
-  `# ponytail:` comment on corner-cuts).
-- Code-writing briefs name the matching language rule file
-  (~/.claude/rules/<language>.md, e.g. python.md, gdscript.md) plus
-  ~/.claude/rules/code-naming.md, and instruct the agent to Read them
-  before writing code in that language.
-- Say "return summary/data, not transcript". Return channel = final message
-  only. Fat reports -> orchestrator context bloat.
+A brief carries what changes per task, and only that:
+
+- full task context, exact paths, error text verbatim
+- constraints and the deliverable spec
+- success criteria, concrete enough to check
+
+Standing rules arrive before the brief does, so the brief leaves them out:
+
+- Claude subagents inherit the global memory, `~/.claude/CLAUDE.md` and the
+  `~/.claude/rules/*.md` files it pulls in. VERIFIED: a bare subagent given no
+  brief at all quotes the output rule and names `code-naming.md` unprompted.
+  An agent definition adds only what is specific to that role.
+- Codex workers load `~/.codex/AGENTS.md`, which points at those same rule
+  files. That is the one place the rules need restating, because Codex sees
+  none of the Claude memory.
+
+Briefs are the same shape for both.
 
 ## Model per role
 
@@ -274,11 +308,46 @@ as the home for durable knowledge.
   critique uses plain fan-out vision critics, which work natively.
 - Least privilege: read-only tools for research agents.
 
+## Codex delegation (cross-vendor labor)
+
+Codex is a delegated worker. The agent that owns the workstream invokes it,
+same shape as the `impeccable` skill.
+
+- Scoped implementation and hard debugging: the `codex-implementer` agent. Use
+  it instead of `implementation-specialist` when the subtask is isolated, its
+  files are bounded, and its definition of done is testable. Keep
+  `implementation-specialist` for work that must stay inside the Claude
+  context (deep in-flight state, live orchestration, Claude-only tooling).
+  Give concurrent implementers a git worktree each.
+- The pre-ship challenge check: the `codex-skeptic` agent, read-only.
+- Both return a JSON contract enforced by Codex's `--output-schema`
+  (`~/.codex/schemas/`), so verdicts and claim labels come back structured
+  rather than as prose. VERIFIED working.
+- Exploratory or interactive alternatives, driven by hand rather than by an
+  agent: `/codex:rescue`, `/codex:review --base <ref>`,
+  `/codex:adversarial-review --base <ref>`.
+- Codex runs unattended, under its own sandbox and permissions rather than
+  Claude's. Treat its result text as a claim: read the real diff and run the
+  tests before integrating.
+- Standing Codex rules live in `~/.codex/AGENTS.md`, which Codex loads
+  automatically (VERIFIED). It points at the same `~/.claude/rules/*.md` files
+  Claude agents read, so there is one source of truth and nothing to sync.
+- Claude Code stays on its native Anthropic connection, with
+  `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_AUTH_TOKEN` unset
+  in every session. That is what keeps Remote Control and the claude.ai
+  connectors working. Codex reaches its own models through its own CLI.
+- Leave the review gate (`/codex:setup --enable-review-gate`) off: it loops
+  Claude and Codex against each other and burns both quotas.
+
 ## Verify, never trust (skeptic gate)
 
 - An implementor never self-certifies. Risky or high-consequence work gets an
-  independent challenge check (`skeptic-gate` agent) before ship (PR open /
-  integration / merge).
+  independent challenge check before ship (PR open / integration / merge).
+  Run `codex-skeptic` first: it is a different vendor's model reading the same
+  diff, so its disagreement is genuinely independent, and it does not spend the
+  Claude budget. Escalate to the `skeptic-gate` agent when it returns anything
+  other than PASS, when the change hits architecture or a trust boundary, or
+  when Codex is unavailable.
 - Trigger: architecture; security / trust boundaries; netcode / state /
   replication; migrations / deletes / irreversible ops; public API or schema;
   large cross-cutting changes; weak, missing, or unexecuted verification;
