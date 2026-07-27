@@ -114,10 +114,10 @@ The Django backend must match the current HTTP contract exactly unless a row say
 | GET | `/_/review` | `review_page` | query `artifact`, optional `view`, `src`, `path` | HTML review page | 200, 400, 404 | No view renders gallery. `view=image` renders simple-image OpenSeadragon. `view=code` renders escaped line viewer. |
 | GET | `/_/tiles/<artifact>/<path:src>/<path:tile>` | `deep_zoom_tile` | reserved future route | tile bytes | 404 or 501 in parity slice | No dynamic DZI exists today. If implemented later, it must use staged-root guards and SSRF guard for any remote fetch. This addition would require a lockstep `artifact-serve` skill doc change. |
 | POST | `/_/api/publish` | `api_publish` | disabled by default | disabled by default | 404 or 501 while disabled | Not current parity. If enabled, it is restricted to non-active types and forces a lockstep skill-doc update. |
-| GET | `/spa/<path:rel>` or configured static prefix | `spa_asset` | route `rel` | React bundle asset bytes | 200, 404 | Serves the React/TypeScript frontend build with traversal guard. Exact prefix may be chosen by frontend implementation. |
+| GET | `/_/app/assets/<path:rel>` | `spa_asset` | route `rel` | React bundle asset bytes | 200, 404 | Vite `base: '/_/app/'`. Placing hashed JS/CSS under the reserved `/_/` namespace means a pushed project literally named `assets` can never collide with the SPA's own asset paths. Resolve under `REVIEW_SERVE_SPA_ROOT`; traversal guard. |
 | GET | `/<project>/<subdir>/<path:rel>` | `static_artifact` | static URL path | raw bytes, rewritten HTML, or generated directory gallery | 200, 301, 404, normal static statuses | Serve staged files. HTML gets feedback widget and sandbox CSP. |
 | GET | `/<project>/<subdir>/` | `static_artifact` | directory URL | static index or generated gallery | 200, normal static statuses | Lists direct child dirs, images, code files, and raw fallback links. |
-| GET | catch-all frontend route | `spa_index` | any unmatched non-reserved app route | React `index.html` | 200, 404 | Only after `/_/api`, `/_/assets`, `/_/review`, `/_/tiles`, and artifact routes. Do not mask bad reserved API paths. |
+| GET | `/` and any unmatched non-reserved, non-artifact top-level route | `spa_index` | route path | React `index.html` (the unified app shell) | 200, 404 | Registered LAST, after `/_/api`, `/_/assets`, `/_/app`, `/_/review`, `/_/tiles`, and the `/<project>/<subdir>/...` artifact routes. `GET /` serving the SPA shell satisfies both the parity health-route contract (200) and the container healthcheck; the SPA replaces the old static tile-grid root page with its own API-driven view. The SPA should avoid its own single-segment top-level client routes beyond `/` (use query params or hash routing for mode/view state) so it never has to compete with a real two-segment pushed-artifact path. Do not mask bad reserved API paths under `/_/*`. |
 
 ### DTO shapes
 
@@ -254,25 +254,26 @@ Register routes in this order:
 
 1. `/_/api/*`
 2. `/_/assets/*`
-3. `/_/review`
-4. `/_/tiles/*`
-5. `/`
+3. `/_/app/*` (SPA hashed assets)
+4. `/_/review`
+5. `/_/tiles/*`
 6. Static artifact routes under `/<project>/<subdir>/...`
-7. React SPA catch-all for non-reserved app routes
+7. `/` and React SPA catch-all for every remaining non-reserved, non-artifact route
 
 The reserved `/_/` namespace remains safe because project and subdir names must match `^[a-z0-9][a-z0-9_-]*$`.
 
 ### React SPA bundle
 
-The Django backend serves the React build from `REVIEW_SERVE_SPA_ROOT`:
+The Django backend serves the React build from `REVIEW_SERVE_SPA_ROOT`. Decided prefix: Vite `base: '/_/app/'`, so every hashed asset URL the bundle emits lives under the reserved `/_/` namespace and can never collide with a pushed project directory (`NAME_RE` forbids a leading `_`).
 
 | Request | Behavior |
 |---|---|
-| SPA asset path | Resolve under `REVIEW_SERVE_SPA_ROOT`; return asset bytes with MIME type and traversal guard. |
-| SPA app path | Return `index.html` so React router can handle the path. |
-| Reserved backend path | Never fall through to the SPA. Bad `/_/api`, `/_/assets`, `/_/review`, and `/_/tiles` paths return backend 404 or 405. |
+| `/_/app/assets/<rel>` | Resolve under `REVIEW_SERVE_SPA_ROOT`; return asset bytes with MIME type and traversal guard. |
+| `GET /` | Return the SPA `index.html` (the unified app shell). This is also the health-route target. |
+| Any other unmatched top-level path that is not `/_/api`, `/_/assets`, `/_/app`, `/_/review`, `/_/tiles`, and does not resolve as a two-segment `/<project>/<subdir>/...` artifact path | Return the SPA `index.html` so client-side view state (mode, query params, hash) can render. Registered last in urls.py. |
+| Reserved backend path | Never fall through to the SPA. Bad `/_/api`, `/_/assets`, `/_/app`, `/_/review`, and `/_/tiles` paths return backend 404 or 405. |
 
-If the frontend implementation chooses a different asset prefix, update this table and the frontend config in the same commit.
+This prefix is now fixed by decision `artifact-server-spa-mount` (`~/.knowledgebase/agent-workbench/decisions/`); do not change it without recording a superseding decision and updating both the frontend `vite.config.ts` `base` and this table in the same commit.
 
 ### Artifact-id resolution
 

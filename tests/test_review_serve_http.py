@@ -39,7 +39,7 @@ def test_index_route_is_live(live_server: str) -> None:
     status, body, headers = http_request(live_server + "/")
     assert status == 200
     assert headers["content-type"].startswith("text/html")
-    assert b"review-serve" in body
+    assert b"artifact-serve" in body
 
 
 def test_pushed_image_served_200_with_correct_bytes(

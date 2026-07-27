@@ -6,7 +6,7 @@ deploy, main dispatcher). Every test keeps KB_HOME / BEADS_HUB_DIR /
 XDG_RUNTIME_DIR / HOME pinned under tmp_path (or mocks the subprocess /
 urllib calls a real host would otherwise receive), so nothing here ever
 touches the real ~/.knowledgebase, ~/.beads-hub, or a live kb-serve /
-review-serve / bdui process. Mirrors tests/test_kb_serve.py's style:
+artifact-serve / bdui process. Mirrors tests/test_kb_serve.py's style:
 tmp_path per vault, mocked urllib for anything that would hit the
 network, real subprocess only where it is provably read-only (never
 here -- deploy's mutating verbs are always mocked).
@@ -397,7 +397,7 @@ def test_cmd_status_only_runs_read_only_systemctl_status_never_mutating_verbs(
     assert deploy.cmd_status(argparse.Namespace()) == 0
     assert calls == [
         ["systemctl", "--user", "status", "kb-serve", "--no-pager"],
-        ["systemctl", "--user", "status", "review-serve", "--no-pager"],
+        ["systemctl", "--user", "status", "artifact-serve", "--no-pager"],
         ["systemctl", "--user", "status", "bdui", "--no-pager"],
         ["systemctl", "--user", "status", "n8n", "--no-pager"],
     ]
@@ -440,9 +440,9 @@ def test_quadlet_owned_true_only_for_this_bundles_own_symlink(
     (quadlet_dir / "kb-serve.container").symlink_to(src)
     assert deploy.quadlet_owned("kb-serve", str(src)) is True
 
-    hand_installed = quadlet_dir / "review-serve.container"
+    hand_installed = quadlet_dir / "artifact-serve.container"
     hand_installed.write_text("", encoding="utf-8")  # real file, not our symlink
-    assert deploy.quadlet_owned("review-serve", str(src)) is False
+    assert deploy.quadlet_owned("artifact-serve", str(src)) is False
 
 
 def test_n8n_image_is_pinned_by_digest_never_a_floating_tag() -> None:
@@ -454,7 +454,7 @@ def test_n8n_image_is_pinned_by_digest_never_a_floating_tag() -> None:
 def test_cmd_up_installs_and_starts_n8n(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """cmd_up wires n8n alongside kb-serve/review-serve: quadlet installed,
+    """cmd_up wires n8n alongside kb-serve/artifact-serve: quadlet installed,
     unit started, health-waited -- none of it touches a live host."""
     monkeypatch.setattr(deploy.Path, "home", classmethod(lambda cls: tmp_path))
     monkeypatch.setenv("BEADS_HUB_DIR", str(tmp_path / "hub"))

@@ -29,7 +29,7 @@ from pathlib import Path
 import pytest
 
 KB_HEALTH_URL = "http://127.0.0.1:9100/health"
-REVIEW_URL = "http://127.0.0.1:9099/"
+ARTIFACT_SERVE_URL = "http://127.0.0.1:9099/"
 REQUEST_TIMEOUT_SEC = 3
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -38,9 +38,9 @@ KB_TEST_IMAGE = "localhost/kb-serve:hardened-test"
 KB_TEST_CONTAINER = "kb-serve-hardened-test"
 KB_TEST_PORT = 19100
 
-REVIEW_TEST_IMAGE = "localhost/review-serve:hardened-test"
-REVIEW_TEST_CONTAINER = "review-serve-hardened-test"
-REVIEW_TEST_PORT = 19099
+ARTIFACT_SERVE_TEST_IMAGE = "localhost/artifact-serve:hardened-test"
+ARTIFACT_SERVE_TEST_CONTAINER = "artifact-serve-hardened-test"
+ARTIFACT_SERVE_TEST_PORT = 19099
 
 BUILD_TIMEOUT_SEC = 180
 RUN_TIMEOUT_SEC = 30
@@ -97,7 +97,7 @@ def test_kb_serve_health() -> None:
 
 def test_review_serve_health() -> None:
     _require_tooling()
-    status = _http_status(REVIEW_URL)
+    status = _http_status(ARTIFACT_SERVE_URL)
     if status is None:
         pytest.skip("review-serve not reachable at 127.0.0.1:9099 -- stack not up")
     assert status == 200
@@ -152,7 +152,7 @@ def review_serve_boundary(tmp_path: Path):
     _require_podman()
     _run(
         [
-            "podman", "build", "-t", REVIEW_TEST_IMAGE,
+            "podman", "build", "-t", ARTIFACT_SERVE_TEST_IMAGE,
             "-f", str(REPO_ROOT / ".claude/skills/artifact-serve/container/Containerfile"),
             str(REPO_ROOT / ".claude/skills/artifact-serve"),
         ],
@@ -163,21 +163,21 @@ def review_serve_boundary(tmp_path: Path):
     artifacts_root = tmp_path / "claude-artifacts"
     artifacts_root.mkdir()
     subprocess.run(
-        ["podman", "rm", "-f", REVIEW_TEST_CONTAINER], capture_output=True,
+        ["podman", "rm", "-f", ARTIFACT_SERVE_TEST_CONTAINER], capture_output=True,
     )
     _run(
         [
-            "podman", "run", "--rm", "-d", "--name", REVIEW_TEST_CONTAINER,
-            "-p", f"{REVIEW_TEST_PORT}:9099",
+            "podman", "run", "--rm", "-d", "--name", ARTIFACT_SERVE_TEST_CONTAINER,
+            "-p", f"{ARTIFACT_SERVE_TEST_PORT}:9099",
             "--user", f"{os.getuid()}:{os.getgid()}", "--userns=keep-id",
             "-e", f"HOME={fake_home}",
-            "-e", "REVIEW_SERVE_HOST=0.0.0.0", "-e", "REVIEW_SERVE_PORT=9099",
+            "-e", "ARTIFACT_SERVE_HOST=0.0.0.0", "-e", "ARTIFACT_SERVE_PORT=9099",
             "--read-only", "--tmpfs", "/tmp", "--cap-drop=ALL",
             "--security-opt", "no-new-privileges",
             "--security-opt", "label=disable",
             "-v", f"{artifacts_root}:/tmp/claude-artifacts:rw",
             "-v", f"{fake_home}:{fake_home}:rw",
-            REVIEW_TEST_IMAGE,
+            ARTIFACT_SERVE_TEST_IMAGE,
         ],
         timeout=RUN_TIMEOUT_SEC,
     )
@@ -185,7 +185,7 @@ def review_serve_boundary(tmp_path: Path):
         yield
     finally:
         subprocess.run(
-            ["podman", "rm", "-f", REVIEW_TEST_CONTAINER], capture_output=True,
+            ["podman", "rm", "-f", ARTIFACT_SERVE_TEST_CONTAINER], capture_output=True,
         )
 
 
@@ -195,5 +195,5 @@ def test_kb_serve_container_boundary(kb_serve_boundary: None) -> None:
 
 
 def test_review_serve_container_boundary(review_serve_boundary: None) -> None:
-    status = _wait_for_status(f"http://127.0.0.1:{REVIEW_TEST_PORT}/")
+    status = _wait_for_status(f"http://127.0.0.1:{ARTIFACT_SERVE_TEST_PORT}/")
     assert status == 200

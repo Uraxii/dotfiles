@@ -25,16 +25,16 @@ import pytest
 
 _SCRIPT_PATH = (
     Path(__file__).resolve().parent.parent
-    / ".claude" / "skills" / "artifact-serve" / "scripts" / "review-serve.py"
+    / ".claude" / "skills" / "artifact-serve" / "scripts" / "artifact-serve.py"
 )
-_MODULE_NAME = "review_serve"
+_MODULE_NAME = "artifact_serve"
 
 if _MODULE_NAME in sys.modules:
     review_serve: ModuleType = sys.modules[_MODULE_NAME]
 else:
     _spec = importlib.util.spec_from_file_location(_MODULE_NAME, _SCRIPT_PATH)
     if _spec is None or _spec.loader is None:
-        raise ImportError(f"cannot load review-serve.py from {_SCRIPT_PATH}")
+        raise ImportError(f"cannot load artifact-serve.py from {_SCRIPT_PATH}")
     review_serve = importlib.util.module_from_spec(_spec)
     sys.modules[_MODULE_NAME] = review_serve
     _spec.loader.exec_module(review_serve)
