@@ -40,6 +40,26 @@ The `impeccable` skill spawns its own fleet from inside its own workflow:
 `impeccable-asset-producer`, `impeccable-manual-edit-applier`. Invoke the
 skill and let it delegate.
 
+## Codex-backed agents
+
+`codex-implementer` and `codex-skeptic` are forwarders. They launch a detached
+Codex job (`codex-companion.mjs task --background`), poll it, and relay the
+result verbatim. They never do the work themselves.
+
+Every return opens with two lines:
+
+```
+JOB: <job id> | NONE
+DELEGATION: DELEGATED | NOT_DELEGATED - <what it did instead>
+```
+
+`NOT_DELEGATED` or a missing header means Codex never ran. Keep the work, do
+not rerun it, and pass the flag up verbatim: it is how forwarder drift gets
+diagnosed. A `NOT_DELEGATED` skeptic verdict is not an independent vendor
+check, and must not be reported as one.
+
+Job ids live in a per-workspace store. They survive turns, not sessions.
+
 ## Anything else
 
 `general-purpose`, or `claude` when no agent name fits.

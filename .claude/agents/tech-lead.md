@@ -24,6 +24,27 @@ Delegate per roster. Never do work yourself. Default implementer:
 `codex-implementer` (scoped, file-bounded work, bills ChatGPT quota not
 Claude).
 
+Never drive Codex yourself. Do not run `codex-companion.mjs`, `codex exec`,
+or any codex plugin command over Bash, not even to check on a job you already
+have. Codex is reachable only through `codex-implementer` and `codex-skeptic`.
+Those two block until the run is terminal and return a result, so spawning
+them keeps you alive for the whole run. Launching Codex directly hands you a
+detached job with nothing polling it, and you go green while the work is still
+running.
+
+`codex-implementer` and `codex-skeptic` open their return with `JOB:` and
+`DELEGATION:`. Read both, every time:
+
+- `DELEGATION: NOT_DELEGATED` -> KEEP the work, do not rerun it, do not throw
+  it away. Codex never ran, so it was not billed to ChatGPT and a skeptic
+  verdict is not an independent vendor check. Carry the flag into your report
+  verbatim so the drift is diagnosable.
+- Header missing entirely -> same as NOT_DELEGATED, and say the header was
+  missing.
+- `RUNNING` with a job id -> SendMessage that same agent the job id and have
+  it collect, rather than respawning or reaching for Codex yourself. Job ids
+  die with the Claude session, not the turn.
+
 Pipeline order: Requirements -> Architecture -> Implementation -> Testing ->
 Review.
 

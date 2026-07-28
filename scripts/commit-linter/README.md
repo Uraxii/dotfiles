@@ -9,8 +9,15 @@ part of this repo's tracked files). It is a thin wrapper that calls the
 real script here:
 
 ```
-spikes/commit-linter/lint-staged.sh
+scripts/commit-linter/lint_staged.py
 ```
+
+Python 3, standard library only -- no third-party packages, no venv. The
+only external binary it needs is `trufflehog` (pass 5, see below); `git`
+itself is assumed. It was a bash script (`spikes/commit-linter/lint-staged.sh`)
+until the repo adopted the rule that nothing under `spikes/` is ever
+committed; the port is behaviour-for-behaviour, same passes, same
+messages, same exit codes.
 
 Keeping the logic in a tracked file means it can be reviewed and improved
 like normal code, while the hook installation itself stays local per
@@ -22,30 +29,29 @@ Only the STAGED content of staged files is scanned, i.e. exactly what
 would be committed. Working-tree-only or untracked changes are never
 touched.
 
-1. **Expanded home paths.** `/var/home/nicole` and `/home/nicole` are
+1. **Expanded home paths.** Real home directories after shell expansion are
    auto-replaced with a portable form (see standard below).
-2. **Bare username in path-like contexts.** `nicole` is replaced with
+2. **Bare username in path-like contexts.** The local username is replaced with
    `$USER` only when it sits next to a `/` or `@` (e.g.
-   `/run/media/nicole/`, `nicole@host`). Plain prose mentions of the name,
-   and the `nicolepaul.net` email domain, are left alone on purpose.
+   `~/media/$USER/`, `$USER@host`). Plain prose mentions of the name,
+   and email domains containing the same letters, are left alone on purpose.
 3. **Identity values with no portable form** are hard-blocked, not
    rewritten:
    - `<your-email>`
    - `<your-tailnet-id>` (covers `*.<your-tailnet-id>.ts.net` hosts too)
-   - the machine hostname, read live via `hostname` at hook run time
-     (never hardcoded, so this still works if the machine is renamed)
+   - the machine hostname, read live via `socket.gethostname()` at hook
+     run time (never hardcoded, so this still works if the machine is renamed)
 
    The email and tailnet id are loaded at hook run time from
-   `spikes/commit-linter/identity.local` (see "Identity config" below),
+   `scripts/commit-linter/identity.local` (see "Identity config" below),
    never hardcoded in this script or this doc.
-4. **Secret-shaped strings.** Hard blocked, never auto-fixed: API key
-   prefixes (`sk-ant-`, `sk-proj-`, `ghp_`, `github_pat_`, `gho_`,
-   `xoxb-`, `xoxp-`, AWS `AKIA...`), private key headers, and any
-   `*_KEY` / `*_TOKEN` / `*_SECRET` assignment to a long base64-ish
-   value. Exempt: `*_STORAGE_KEY` / `*_CACHE_KEY` / `*_COOKIE_NAME`
-   constants assigned a plain lowercase kebab/snake value (no
-   uppercase, no `+`/`/`/`=`) -- these are storage/cookie key names,
-   not secrets. TruffleHog (check 6) still scans them.
+4. **Secret-shaped strings.** Hard blocked, never auto-fixed: known API key
+   prefixes, private key headers, and any `*_KEY` / `*_TOKEN` /
+   `*_SECRET` assignment to a long base64-ish value. Exempt:
+   `*_STORAGE_KEY` / `*_CACHE_KEY` / `*_COOKIE_NAME` constants assigned a
+   plain lowercase kebab/snake value (no uppercase, no `+`/`/`/`=`) --
+   these are storage/cookie key names, not secrets. TruffleHog (check 6)
+   still scans them.
 5. **Partial staging.** If a staged file also has unstaged changes on
    disk (the index and working tree disagree), the hook refuses to
    rewrite it silently. It blocks the commit and asks you to stage the
@@ -57,7 +63,7 @@ touched.
 ## Identity config
 
 The email and tailnet id checked by pass 3 are not hardcoded anywhere
-tracked. They live in `spikes/commit-linter/identity.local`, a
+tracked. They live in `scripts/commit-linter/identity.local`, a
 per-machine file already covered by this repo's blanket `*.local`
 gitignore rule:
 
@@ -66,30 +72,26 @@ EMAIL='<your-email>'
 TAILNET='<your-tailnet-id>'
 ```
 
-The hook `source`s this file if it exists. A missing file (a fresh
-clone, another machine, CI) is normal, not an error: the hook prints a
-one-line note and skips those two needles, while the hostname check
-and every other pass still run. Create the file once per machine with
-your real values to get the email/tailnet block back.
+The hook PARSES this file (two `KEY=value` shell assignments, `#`
+comments allowed) if it exists; it never `source`s or execs it. A
+missing file (a fresh clone, another machine, CI) is normal, not an
+error: the hook prints a one-line note and skips those two needles,
+while the hostname check and every other pass still run. Create the
+file once per machine with your real values to get the email/tailnet
+block back.
 
-## Self-exemption for the linter's own files
+## Self-exemption for the linter itself
 
-`spikes/commit-linter/lint-staged.sh` and `spikes/commit-linter/README.md`
-document the secret prefixes and the `_KEY`/`_TOKEN`/`_SECRET` pattern by
-name (as examples, and as the actual regex source), so they legitimately
-contain the trigger text that check looks for without containing a real
-leak. Left unexempted, the hook blocked its own files on their first real
-commit, and would have silently corrupted its own detection regex if the
-auto-fix pass had run on them (it would have rewritten `/var/home/nicole`
-inside the sed patterns themselves into `$HOME`, breaking detection).
+`scripts/commit-linter/lint_staged.py` contains the secret prefixes and the
+`_KEY`/`_TOKEN`/`_SECRET` pattern as regex source, so it legitimately
+contains the trigger text without containing a real leak. Left unexempted,
+the hook blocked the script on its first real commit.
 
-So these two files only are exempt from the pattern-matching passes:
-secret regex (pass 2) and auto-fix (pass 4). Pass 3 (identity-value
-block) no longer needs an exemption for these files -- since the email
-and tailnet id moved to `identity.local`, the tracked script and README
-no longer contain those literals at all. They are NOT exempt from
-TruffleHog (pass 5): a real secret pasted into either file still blocks
-the commit, verified in testbed test 12.
+Only that script is exempt from the secret regex (pass 2) and auto-fix
+(pass 4). The README is not exempt. Pass 3 (identity-value block) does not
+need an exemption for tracked files because the email and tailnet id live in
+`identity.local`. The script is NOT exempt from TruffleHog (pass 5): a real
+secret pasted into it still blocks the commit.
 
 ## TruffleHog layer
 
@@ -152,7 +154,7 @@ Values that have no portable replacement (email, tailnet id, hostname)
 are **blocked, not rewritten**. Rewriting a functional value like a
 tailnet permission rule would silently break it (the rule stops
 matching). The correct fix is to move that value out of the tracked
-file entirely, into `spikes/commit-linter/identity.local` (see
+file entirely, into `scripts/commit-linter/identity.local` (see
 "Identity config" above), which `.gitignore` already exempts via its
 blanket `*.local` rule.
 
@@ -180,9 +182,11 @@ that is why this hook is not running.
 
 ## Testing
 
-A throwaway test repo lives at `spikes/commit-linter/testbed/` (git
-history for it is not meaningful; it exists only to exercise the hook).
-Do not run this hook's tests against `/tmp`; that clears on reboot.
+Exercised against a throwaway git repo created outside this one, never
+against a real commit here: `git init` a scratch dir, stage the case,
+then run `python3 <repo>/scripts/commit-linter/lint_staged.py` from
+inside it and check the exit code. (The old checked-in
+`spikes/commit-linter/testbed/` went away with the `spikes/` ban.)
 
 Covers: home path fix in `.sh` and `.md`, username-in-path fix vs email
 domain left untouched, secret regex block, tailnet block, partial
