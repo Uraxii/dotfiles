@@ -295,7 +295,9 @@ def autofix(files: list[str]) -> None:
     for path in files:
         if is_binary(path) or path in SELF_FILES:
             continue
-        original = staged_text(path)
+        raw = git(["show", f":{path}"]).decode(errors="replace")
+        trailing_newlines = len(raw) - len(raw.rstrip("\n"))
+        original = raw.rstrip("\n")
         fixed = fixed_text(path, original)
         if fixed == original:
             continue
@@ -303,7 +305,7 @@ def autofix(files: list[str]) -> None:
             f"FIXED: {path} on line(s) "
             f"{', '.join(str(number) for number in changed_lines(original, fixed))}"
         )
-        Path(path).write_text(fixed + "\n")
+        Path(path).write_text(fixed + "\n" * trailing_newlines)
         git(["add", "--", path])
 
 
@@ -327,10 +329,8 @@ def fail_usernames(files: list[str]) -> bool:
 
 
 def copy_staged_blobs(files: list[str], scratch: Path) -> None:
-    """Materialize each staged text blob under scratch, preserving its path."""
+    """Materialize each staged blob under scratch, preserving its path."""
     for path in files:
-        if is_binary(path):
-            continue
         target = scratch / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(git(["show", f":{path}"]))
