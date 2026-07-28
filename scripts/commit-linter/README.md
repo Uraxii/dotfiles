@@ -13,8 +13,8 @@ scripts/commit-linter/lint_staged.py
 ```
 
 Python 3, standard library only -- no third-party packages, no venv. The
-required external binary is `trufflehog` (pass 5, see below); `git` itself
-is assumed. Pass 6 can also use StepSecurity Dev Machine Guard when
+required external binary is `trufflehog` (pass 6, see below); `git` itself
+is assumed. Pass 7 can also use StepSecurity Dev Machine Guard when
 installed. It was a bash script
 (`spikes/commit-linter/lint-staged.sh`) until the repo adopted the rule
 that nothing under `spikes/` is ever committed; the port is
@@ -55,12 +55,15 @@ touched.
    home directories after shell expansion are auto-replaced with a portable
    form (see standard below). The local username is replaced with `$USER`
    only when it sits next to a `/` or `@` (e.g. `~/media/$USER/`,
-   `$USER@host`). Plain prose mentions of the name, and email domains
-   containing the same letters, are left alone on purpose.
-5. **Everything TruffleHog's 750+ detectors know about.** Runs after the
-   four checks above, as a second, independent layer. Any finding blocks
+   `$USER@host`).
+5. **Bare username anywhere else.** After pass 4 has auto-fixed portable
+   path and login contexts, any remaining bare username is hard-blocked,
+   never auto-fixed. Replace it with `$USER`, or move the value into
+   `scripts/commit-linter/identity.local` if it is identity config.
+6. **Everything TruffleHog's 750+ detectors know about.** Runs after the
+   five checks above, as a second, independent layer. Any finding blocks
    the commit; nothing is ever auto-fixed.
-6. **StepSecurity Dev Machine Guard supply-chain scan.** If installed, runs
+7. **StepSecurity Dev Machine Guard supply-chain scan.** If installed, runs
    after TruffleHog and blocks on CRITICAL/HIGH findings. On a clean run it
    prints `dev-machine-guard: clean` to stdout. If absent, this optional
    pass skips silently and never blocks.
@@ -92,11 +95,12 @@ block back.
 contains the trigger text without containing a real leak. Left unexempted,
 the hook blocked the script on its first real commit.
 
-Only that script is exempt from the secret regex (pass 2) and auto-fix
-(pass 4). The README is not exempt. Pass 3 (identity-value block) does not
-need an exemption for tracked files because the email and tailnet id live in
-`identity.local`. The script is NOT exempt from TruffleHog (pass 5): a real
-secret pasted into it still blocks the commit.
+Only that script is exempt from the secret regex (pass 2), auto-fix
+(pass 4), and bare-username block (pass 5). The README is not exempt. Pass 3
+(identity-value block) does not need an exemption for tracked files because
+the email and tailnet id live in `identity.local`. The script is NOT exempt
+from TruffleHog (pass 6): a real secret pasted into it still blocks the
+commit.
 
 ## TruffleHog layer
 
@@ -149,7 +153,7 @@ cost, not file count).
 
 ## StepSecurity Dev Machine Guard layer
 
-Pass 6 is an optional StepSecurity Dev Machine Guard supply-chain scan.
+Pass 7 is an optional StepSecurity Dev Machine Guard supply-chain scan.
 The linter invokes `~/.local/share/stepsecurity-dmg/dmg-scan.sh`, which
 drives `~/.local/share/stepsecurity-dmg/stepsecurity-dev-machine-guard`
 and blocks on CRITICAL/HIGH findings. On a clean run it prints
@@ -206,8 +210,9 @@ then run `python3 <repo>/scripts/commit-linter/lint_staged.py` from
 inside it and check the exit code. (The old checked-in
 `spikes/commit-linter/testbed/` went away with the `spikes/` ban.)
 
-Covers: home path fix in `.sh` and `.md`, username-in-path fix vs email
-domain left untouched, secret regex block, tailnet block, partial
-staging block, a clean commit, a TruffleHog-only finding (real-shaped
-fake Slack webhook) block, a clean commit with the TruffleHog layer
-active, and a missing-`trufflehog`-on-`PATH` block.
+Covers: home path fix in `.sh` and `.md`, username-in-path and
+username-before-`@` fixes before the bare-username block, bare username
+block, secret regex block, tailnet block, partial staging block, a clean
+commit, a TruffleHog-only finding (real-shaped fake Slack webhook) block,
+a clean commit with the TruffleHog layer active, and a
+missing-`trufflehog`-on-`PATH` block.

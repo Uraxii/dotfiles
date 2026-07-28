@@ -83,6 +83,10 @@ SECRETVAR_RE = re.compile(
     r"[A-Za-z_]*(_KEY|_TOKEN|_SECRET)[ \t]*[:=]"
     r"[ \t]*[\"']?[A-Za-z0-9+/_=-]{20,}"
 )
+USERNAME_RE = re.compile(
+    rf"(?<![A-Za-z0-9_]){re.escape(USER_NAME)}(?!(?-i:[a-z0-9_]))",
+    re.IGNORECASE,
+)
 # Storage/cache/cookie key NAME constants (e.g. `_THEME_STORAGE_KEY =
 # "artifact-serve-theme"`) aren't secrets, but a 20+ char kebab/snake
 # name trips SECRETVAR_RE's length check. Post-filter those specific
@@ -303,6 +307,25 @@ def autofix(files: list[str]) -> None:
         git(["add", "--", path])
 
 
+def fail_usernames(files: list[str]) -> bool:
+    """Pass 5: block bare usernames left after auto-fix."""
+    failed = False
+    for path in files:
+        if is_binary(path) or path in SELF_FILES:
+            continue
+        hits = numbered_hits(staged_text(path), USERNAME_RE)
+        if not hits:
+            continue
+        report(
+            path,
+            "BLOCKED: bare username in staged content. Replace with $USER, "
+            f"or move identity config to {IDENTITY_LOCAL_HINT}:",
+            hits,
+        )
+        failed = True
+    return failed
+
+
 def copy_staged_blobs(files: list[str], scratch: Path) -> None:
     """Materialize each staged text blob under scratch, preserving its path."""
     for path in files:
@@ -363,7 +386,7 @@ def finding_location(finding: dict[str, object], scratch: Path) -> str:
 
 
 def fail_trufflehog(files: list[str]) -> bool:
-    """Pass 5: TruffleHog scan of staged content, fail-closed.
+    """Pass 6: TruffleHog scan of staged content, fail-closed.
 
     A missing trufflehog binary blocks the commit; it never silently
     skips the scan. A missing scanner must not look like a clean scan.
@@ -392,7 +415,7 @@ def fail_trufflehog(files: list[str]) -> bool:
 
 
 def run_dmg_scan() -> int:
-    """Pass 6: StepSecurity Dev Machine Guard supply-chain scan.
+    """Pass 7: StepSecurity Dev Machine Guard supply-chain scan.
 
     Optional: machines without DMG installed skip silently, never blocked.
     """
@@ -428,6 +451,8 @@ def main() -> int:
     autofix(files)
     # Re-read the staged list: pass 4 may have re-staged fixed files, but
     # the set of files being committed is unchanged.
+    if fail_usernames(staged_files()):
+        return 1
     if fail_trufflehog(staged_files()):
         return 1
     return run_dmg_scan()
