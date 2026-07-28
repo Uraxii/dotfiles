@@ -256,7 +256,11 @@ def fixed_text(path: str, content: str) -> str:
     home_form = "~" if path.endswith(".md") else "$HOME"
     fixed = content
     for expanded_home in HOME_FORMS:
-        fixed = fixed.replace(expanded_home, home_form)
+        fixed = re.sub(
+            re.escape(expanded_home) + r"(?![A-Za-z0-9_.\-])",
+            home_form,
+            fixed,
+        )
     # Line-anchored (MULTILINE) to match sed's per-line ^ and $.
     fixed = re.sub(
         rf"(^|/){re.escape(USER_NAME)}(/|$)",
@@ -264,7 +268,11 @@ def fixed_text(path: str, content: str) -> str:
         fixed,
         flags=re.MULTILINE,
     )
-    return fixed.replace(f"{USER_NAME}@", f"{USER_FORM}@")
+    return re.sub(
+        rf"(?<![A-Za-z0-9_.\-]){re.escape(USER_NAME)}@",
+        f"{USER_FORM}@",
+        fixed,
+    )
 
 
 def changed_lines(original: str, fixed: str) -> list[int]:
