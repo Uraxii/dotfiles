@@ -13,11 +13,12 @@ scripts/commit-linter/lint_staged.py
 ```
 
 Python 3, standard library only -- no third-party packages, no venv. The
-only external binary it needs is `trufflehog` (pass 5, see below); `git`
-itself is assumed. It was a bash script (`spikes/commit-linter/lint-staged.sh`)
-until the repo adopted the rule that nothing under `spikes/` is ever
-committed; the port is behaviour-for-behaviour, same passes, same
-messages, same exit codes.
+required external binary is `trufflehog` (pass 5, see below); `git` itself
+is assumed. Pass 6 can also use StepSecurity Dev Machine Guard when
+installed. It was a bash script
+(`spikes/commit-linter/lint-staged.sh`) until the repo adopted the rule
+that nothing under `spikes/` is ever committed; the port is
+behaviour-for-behaviour, same passes, same messages, same exit codes.
 
 Keeping the logic in a tracked file means it can be reviewed and improved
 like normal code, while the hook installation itself stays local per
@@ -29,12 +30,17 @@ Only the STAGED content of staged files is scanned, i.e. exactly what
 would be committed. Working-tree-only or untracked changes are never
 touched.
 
-1. **Expanded home paths.** Real home directories after shell expansion are
-   auto-replaced with a portable form (see standard below).
-2. **Bare username in path-like contexts.** The local username is replaced with
-   `$USER` only when it sits next to a `/` or `@` (e.g.
-   `~/media/$USER/`, `$USER@host`). Plain prose mentions of the name,
-   and email domains containing the same letters, are left alone on purpose.
+1. **Partial staging.** If a staged file also has unstaged changes on
+   disk (the index and working tree disagree), the hook refuses to
+   rewrite it silently. It blocks the commit and asks you to stage the
+   whole file or none of it.
+2. **Secret-shaped strings.** Hard blocked, never auto-fixed: known API key
+   prefixes, private key headers, and any `*_KEY` / `*_TOKEN` /
+   `*_SECRET` assignment to a long base64-ish value. Exempt:
+   `*_STORAGE_KEY` / `*_CACHE_KEY` / `*_COOKIE_NAME` constants assigned a
+   plain lowercase kebab/snake value (no uppercase, no `+`/`/`/`=`) --
+   these are storage/cookie key names, not secrets. TruffleHog (pass 5)
+   still scans them.
 3. **Identity values with no portable form** are hard-blocked, not
    rewritten:
    - `<your-email>`
@@ -45,20 +51,19 @@ touched.
    The email and tailnet id are loaded at hook run time from
    `scripts/commit-linter/identity.local` (see "Identity config" below),
    never hardcoded in this script or this doc.
-4. **Secret-shaped strings.** Hard blocked, never auto-fixed: known API key
-   prefixes, private key headers, and any `*_KEY` / `*_TOKEN` /
-   `*_SECRET` assignment to a long base64-ish value. Exempt:
-   `*_STORAGE_KEY` / `*_CACHE_KEY` / `*_COOKIE_NAME` constants assigned a
-   plain lowercase kebab/snake value (no uppercase, no `+`/`/`/`=`) --
-   these are storage/cookie key names, not secrets. TruffleHog (check 6)
-   still scans them.
-5. **Partial staging.** If a staged file also has unstaged changes on
-   disk (the index and working tree disagree), the hook refuses to
-   rewrite it silently. It blocks the commit and asks you to stage the
-   whole file or none of it.
-6. **Everything TruffleHog's 750+ detectors know about.** Runs after the
-   five checks above, as a second, independent layer. Any finding blocks
+4. **Expanded home paths and bare username in path-like contexts.** Real
+   home directories after shell expansion are auto-replaced with a portable
+   form (see standard below). The local username is replaced with `$USER`
+   only when it sits next to a `/` or `@` (e.g. `~/media/$USER/`,
+   `$USER@host`). Plain prose mentions of the name, and email domains
+   containing the same letters, are left alone on purpose.
+5. **Everything TruffleHog's 750+ detectors know about.** Runs after the
+   four checks above, as a second, independent layer. Any finding blocks
    the commit; nothing is ever auto-fixed.
+6. **StepSecurity Dev Machine Guard supply-chain scan.** If installed, runs
+   after TruffleHog and blocks on CRITICAL/HIGH findings. On a clean run it
+   prints `dev-machine-guard: clean` to stdout. If absent, this optional
+   pass skips silently and never blocks.
 
 ## Identity config
 
@@ -141,6 +146,19 @@ clean scan.
 commit measured consistently around 3.6 to 4.0 seconds wall time in
 testing (most of that is TruffleHog's own startup and detector-init
 cost, not file count).
+
+## StepSecurity Dev Machine Guard layer
+
+Pass 6 is an optional StepSecurity Dev Machine Guard supply-chain scan.
+The linter invokes `~/.local/share/stepsecurity-dmg/dmg-scan.sh`, which
+drives `~/.local/share/stepsecurity-dmg/stepsecurity-dev-machine-guard`
+and blocks on CRITICAL/HIGH findings. On a clean run it prints
+`dev-machine-guard: clean` to stdout.
+
+Unlike TruffleHog, this pass skips silently when the wrapper is absent or
+not executable. A machine without DMG installed is never blocked by pass 6;
+TruffleHog fails closed on a missing binary because that secret scan is a
+required layer.
 
 ## Replacement standard, per context, and why
 

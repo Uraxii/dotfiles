@@ -215,25 +215,31 @@ def identity_needles() -> list[str]:
 
 
 def fail_identity(files: list[str]) -> bool:
-    """Pass 3: block identity values that have no portable replacement."""
+    """Pass 3: block identity values that have no portable replacement.
+
+    Reports line numbers only: printing the needle or matching line would
+    leak the value this pass exists to keep out of the repo.
+    """
     failed = False
     needles = identity_needles()
     for path in files:
         if is_binary(path):
             continue
-        content = staged_text(path)
-        for needle in needles:
-            hits = numbered_hits(content, needle)
-            if not hits:
-                continue
-            report(
-                path,
-                f'BLOCKED: identifying value "{needle}" in {path} (no portable '
-                "replacement exists). Move this to "
-                "scripts/commit-linter/identity.local instead:",
-                hits,
-            )
-            failed = True
+        numbers = [
+            number
+            for number, line in enumerate(staged_text(path).splitlines(), 1)
+            if any(needle in line for needle in needles)
+        ]
+        if not numbers:
+            continue
+        print(
+            f"BLOCKED: identifying value in {path} on line(s) "
+            f"{', '.join(str(number) for number in numbers)} (no portable "
+            "replacement exists). Move it to "
+            "scripts/commit-linter/identity.local.",
+            file=sys.stderr,
+        )
+        failed = True
     return failed
 
 
@@ -317,7 +323,7 @@ def trufflehog_findings(scratch: Path) -> list[dict[str, object]] | None:
             findings.append(json.loads(line))
         except json.JSONDecodeError:
             findings.append({})
-    if result.returncode:
+    if result.returncode or (result.stdout.strip() and not findings):
         print("BLOCKED: trufflehog scanner failed.", file=sys.stderr)
         return None
     return findings
@@ -382,7 +388,11 @@ def run_dmg_scan() -> int:
 
 def main() -> int:
     """Run every staged-content lint pass; return the process exit code."""
-    repo_root = git(["rev-parse", "--show-toplevel"]).decode().strip()
+    try:
+        repo_root = git(["rev-parse", "--show-toplevel"]).decode().strip()
+    except subprocess.CalledProcessError:
+        print("BLOCKED: not inside a git repository.", file=sys.stderr)
+        return 1
     os.chdir(repo_root)
     files = staged_files()
     if not files:
