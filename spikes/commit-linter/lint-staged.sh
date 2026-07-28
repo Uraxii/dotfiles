@@ -108,9 +108,10 @@ SECRETVAR_RE="${SECRETVAR_RE}[[:space:]]*[\"']?[A-Za-z0-9+/_=-]{20,}"
 # stays blocked. ERE has no negative lookbehind, so a post-filter on
 # the matched lines is simpler than one regex doing both jobs. Pass 5
 # (trufflehog) is the entropy-based backstop for anything this
-# prefilter now lets through.
-KEYNAME_EXEMPT_RE='(_STORAGE_KEY|_CACHE_KEY|_COOKIE_NAME)[[:space:]]*[:=]'
-KEYNAME_EXEMPT_RE="${KEYNAME_EXEMPT_RE}[[:space:]]*[\"']?[a-z0-9_-]{20,}[\"']?[[:space:]]*\$"
+# prefilter now lets through. A trailing `;` (JS/TS) is tolerated after
+# the value; the entropy constraint on the value itself is unchanged.
+KEYNAME_EXEMPT_RE='(_STORAGE_KEY|_CACHE_KEY|_COOKIE_NAME|_PREFS_KEY)[[:space:]]*[:=]'
+KEYNAME_EXEMPT_RE="${KEYNAME_EXEMPT_RE}[[:space:]]*[\"']?[a-z0-9_-]{20,}[\"']?[[:space:]]*;?[[:space:]]*\$"
 
 for f in "${STAGED_FILES[@]}"; do
   is_binary "$f" && continue
