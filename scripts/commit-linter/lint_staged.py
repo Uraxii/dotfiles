@@ -45,12 +45,20 @@ __all__ = ["main"]
 
 USER_FORM = "$USER"
 USER_NAME = Path.home().name
+_HOME_PATHS = (str(Path.home()), str(Path.home().resolve()))
 HOME_FORMS = tuple(
-    dict.fromkeys(
-        (
-            str(Path.home()),
-            str(Path.home()).replace("/var/home/", "/home/", 1),
-        )
+    sorted(
+        dict.fromkeys(
+            form
+            for path in _HOME_PATHS
+            for form in (
+                path,
+                path.replace("/home/", "/var/home/", 1),
+                path.replace("/var/home/", "/home/", 1),
+            )
+        ),
+        key=len,
+        reverse=True,
     )
 )
 IDENTITY_LOCAL = Path(__file__).resolve().parent / "identity.local"
