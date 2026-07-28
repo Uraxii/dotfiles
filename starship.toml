@@ -7,11 +7,11 @@
 
 add_newline = false
 
-# Minimal prompt: directory + char only. All status info (git branch, user,
-# battery, clock) lives in the tmux top status bar — see ~/.config/tmux/tmux.conf.
-# right_format intentionally empty.
-format = """$directory$character"""
-right_format = ""
+# The tmux top status bar (~/.config/tmux/tmux.conf) also shows git/battery/clock,
+# so inside tmux these modules render twice. Kept anyway: most shells here are
+# opened outside tmux, where an empty prompt carried no context at all.
+format = """$directory$git_branch$git_status$python$character"""
+right_format = "$battery$time"
 
 # Palette selected by sway theme via set-theme.sh template substitution.
 palette = "gruvbox"
@@ -23,7 +23,7 @@ vicmd_symbol = "[N] >>>"
 success_symbol = '[➜](bold green)'
 
 [git_branch]
-format = '[$symbol$branch(:$remote_branch)]($style)'
+format = '[$symbol$branch(:$remote_branch)]($style) '
 
 [aws]
 format = '[$symbol(profile: "$profile" )(\(region: $region\) )]($style)'
