@@ -40,6 +40,16 @@ del _p, _os
 # Prompt + nav (starship, zoxide)
 # ---------------------------------------------------------------------------
 
+# Bazzite/ostree: /home is a symlink to /var/home, so the login $PWD inherited
+# from the terminal is the physical path and starship cannot collapse it to ~.
+# Rewrite the resolved-home prefix back to the logical $HOME; relative cd keeps
+# the logical path afterward (xonsh cd uses abspath, not realpath).
+import os as _os
+_realhome = _os.path.realpath($HOME)
+if _realhome != $HOME and $PWD.startswith(_realhome):
+    $PWD = $HOME + $PWD[len(_realhome):]
+del _os, _realhome
+
 import shutil as _shutil
 from pathlib import Path as _Path
 
@@ -53,11 +63,16 @@ if not _runtime.exists() and _source.exists():
     _shutil.copy(_source, _runtime)
 del _runtime, _source, _Path
 
-if _shutil.which('starship'):
+# os.environ['PATH'] isn't synced with in-place $PATH mutation (the loop
+# above), so a clean login shell's shutil.which misses linuxbrew; pass the
+# live xonsh $PATH explicitly.
+import os as _os
+_path = _os.pathsep.join(map(str, $PATH))
+if _shutil.which('starship', path=_path):
     execx($(starship init xonsh))
-if _shutil.which('zoxide'):
+if _shutil.which('zoxide', path=_path):
     execx($(zoxide init --cmd cd xonsh))
-del _shutil
+del _shutil, _os, _path
 
 # ---------------------------------------------------------------------------
 # Suffix-style alias: `foo.py` → `python3 foo.py`. Xonsh has no native suffix
