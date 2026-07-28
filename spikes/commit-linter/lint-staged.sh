@@ -99,11 +99,25 @@ SECRET_RE="${SECRET_RE}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"
 SECRETVAR_RE='[A-Za-z_]*(_KEY|_TOKEN|_SECRET)[[:space:]]*[:=]'
 SECRETVAR_RE="${SECRETVAR_RE}[[:space:]]*[\"']?[A-Za-z0-9+/_=-]{20,}"
 
+# Storage/cache/cookie key NAME constants (e.g. `_THEME_STORAGE_KEY =
+# "artifact-serve-theme"`) aren't secrets, but a 20+ char kebab/snake
+# name trips SECRETVAR_RE's length check. Post-filter those specific
+# suffixes out, but only when the assigned value itself has no
+# entropy (plain lowercase, no uppercase/+//=): a real secret assigned
+# to an oddly-named *_STORAGE_KEY var still fails this filter and
+# stays blocked. ERE has no negative lookbehind, so a post-filter on
+# the matched lines is simpler than one regex doing both jobs. Pass 5
+# (trufflehog) is the entropy-based backstop for anything this
+# prefilter now lets through. A trailing `;` (JS/TS) is tolerated after
+# the value; the entropy constraint on the value itself is unchanged.
+KEYNAME_EXEMPT_RE='(_STORAGE_KEY|_CACHE_KEY|_COOKIE_NAME|_PREFS_KEY)[[:space:]]*[:=]'
+KEYNAME_EXEMPT_RE="${KEYNAME_EXEMPT_RE}[[:space:]]*[\"']?[a-z0-9_-]{20,}[\"']?[[:space:]]*;?[[:space:]]*\$"
+
 for f in "${STAGED_FILES[@]}"; do
   is_binary "$f" && continue
   is_self_file "$f" && continue
   hits="$(git show ":$f" | grep -nE "$SECRET_RE" || true)"
-  more="$(git show ":$f" | grep -nE "$SECRETVAR_RE" || true)"
+  more="$(git show ":$f" | grep -nE "$SECRETVAR_RE" | grep -vE "$KEYNAME_EXEMPT_RE" || true)"
   if [ -n "$more" ]; then
     if [ -n "$hits" ]; then hits="$hits"$'\n'"$more"; else hits="$more"; fi
   fi

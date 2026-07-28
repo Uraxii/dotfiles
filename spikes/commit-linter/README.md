@@ -42,7 +42,10 @@ touched.
    prefixes (`sk-ant-`, `sk-proj-`, `ghp_`, `github_pat_`, `gho_`,
    `xoxb-`, `xoxp-`, AWS `AKIA...`), private key headers, and any
    `*_KEY` / `*_TOKEN` / `*_SECRET` assignment to a long base64-ish
-   value.
+   value. Exempt: `*_STORAGE_KEY` / `*_CACHE_KEY` / `*_COOKIE_NAME`
+   constants assigned a plain lowercase kebab/snake value (no
+   uppercase, no `+`/`/`/`=`) -- these are storage/cookie key names,
+   not secrets. TruffleHog (check 6) still scans them.
 5. **Partial staging.** If a staged file also has unstaged changes on
    disk (the index and working tree disagree), the hook refuses to
    rewrite it silently. It blocks the commit and asks you to stage the

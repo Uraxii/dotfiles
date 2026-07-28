@@ -51,7 +51,7 @@ ln -s ~/.config/.hermes ~/.hermes
 `copilot` (GitHub Copilot CLI) reads `~/.copilot/` (hardcoded, non-XDG). Its dir is full of runtime state (sessions, cache, logs), so only the config subdirs are symlinked into the repo, not the whole dir. Agents point at the parallel `copilot/agents/` tree:
 ```bash
 ln -s ../dotfiles/copilot/agents ~/.copilot/agents   # relative target → ~/dotfiles/copilot/agents
-ln -s ../dotfiles/copilot/skills ~/.copilot/skills   # curated skill set (5 symlinks → .claude/skills)
+ln -s ../dotfiles/copilot/skills ~/.copilot/skills   # curated skill set (copies of .claude/skills, not symlinks)
 ```
 
 **zsh + ZDOTDIR**: zsh hardcodes `~/.zshenv` as the one always-loaded file. Create a one-line stub on each machine:
@@ -72,7 +72,7 @@ After that, zsh loads `.zshrc`, `.zprofile`, etc from `$ZDOTDIR` instead of `$HO
 `.hermes/profiles/` and `.hermes/skills/` are the parallel Hermes source of truth (omerxx-mirrored).
 `opencode/agent/`, `opencode/skills/`, `opencode/command/` hold the OpenCode-format copies.
 `copilot/agents/*.agent.md` hold the GitHub Copilot CLI copies (symlinked live to `~/.copilot/agents`).
-`copilot/skills/` is a curated Copilot skill set — full **copies** of caveman, tdd, handoff, grill-with-docs, diagnose, improve-codebase-architecture (with their bundled resources). Skills share Claude's `SKILL.md` format (Copilot reads it natively), so no frontmatter rewrite is needed — but they are copied, not symlinked, because the Copilot versions are expected to diverge from the Claude originals over time. Maintain in parallel like the agent trees. Seed a new one from repo root with `cp -rL .claude/skills/<name> copilot/skills/<name>`, then edit the copy.
+`copilot/skills/` is a curated Copilot skill set — full **copies** of caveman, tdd, handoff, diagnose (with their bundled resources). Skills share Claude's `SKILL.md` format (Copilot reads it natively), so no frontmatter rewrite is needed — but they are copied, not symlinked, because the Copilot versions are expected to diverge from the Claude originals over time. Maintain in parallel like the agent trees. Seed a new one from repo root with `cp -rL .claude/skills/<name> copilot/skills/<name>`, then edit the copy.
 
 `copilot/skills/poc/` is a Copilot-native skill with no Claude original — a thin **launcher** that hands the user's request to the `tech-lead` agent, which orchestrates the specialist fleet. Entry point for the whole multi-agent system: a user types `poc <task>` (or "use the team" / "spin up the tech-lead") and tech-lead triages → phases → delegates → runs the skeptic-gate check. Delegation nests one extra level here (skill → tech-lead → specialist), which Copilot supports.
 
@@ -80,16 +80,23 @@ Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`
 
 **Copilot specifics**: filenames are `<name>.agent.md`. Frontmatter drops `model:` — the available model catalog (`claude-haiku-4.5`, `gpt-5-mini`) can't honor the Claude tier intent (opus/sonnet/haiku), so agents inherit the session model; re-pin per-agent once a richer catalog appears. `tools:` uses Copilot's canonical names (`read`, `search`, `edit`, `execute`, `agent`, `web`, `todo` — `Skill` has no equivalent, dropped). Delegation uses the `agent`/`task` tool, not Claude's Agent tool. Tech-lead omits `tools:` so it retains `agent` to spawn specialists.
 
+**Copilot fleet delta**: `codex-implementer`, `codex-skeptic`, and `zakia` are deliberately NOT ported — the codex agents drive a Claude-side Codex bridge, and zakia is the Claude main-thread persona. Copilot's `tech-lead` therefore defaults to `implementation-specialist` and gates on `skeptic-gate` alone. Agent bodies are otherwise byte-for-byte the Claude source below the frontmatter; when a body names a Claude-only affordance (`rotate-agent`, `SendMessage`), the Copilot copy states the behavior in plain prose instead.
+
 ## Agent Architecture
 
-- Hub and spoke. `zakia` (main thread) is the sole human-facing orchestrator; it spawns background sub-orchestrators: `tech-lead` (one per software workstream) and `art-director` (one per art workstream). `comfyui-runner` is art-director's mechanical ComfyUI driver, no vision. `knowledge-scout` (haiku, read-only) is the dedicated cross-source retrieval sweeper: fans out over the per-project KB, the `bd` board, and the code for "find everything about X" and returns conclusions only.
+- Hub and spoke. `zakia` (main thread) is the sole human-facing orchestrator; it spawns background sub-orchestrators: `tech-lead` (one per software workstream) and `art-director` (one per art workstream). art-director drives ComfyUI over HTTP itself via the `comfyui` skill (`.claude/skills/comfyui/comfyui.py`); there is no separate runner agent, because the poll loop lives in the script and produces no transcript worth isolating.
+- Frontend/UI design is its own workstream, run through the `impeccable` skill (invoked by `tech-lead` or `zakia`), which SELF-orchestrates its own specialist fleet: `impeccable-finish-reviewer` (design-internal quality gate, runs outside the build thread), `impeccable-documenter` (records DESIGN.md from the shipped artifact), `impeccable-asset-producer` (raster assets from approved mocks), `impeccable-manual-edit-applier` (live copy-edit batches). zakia/tech-lead never spawn these directly; the skill delegates. See `.claude/refs/orchestration.md` ("Frontend design workstream (impeccable)").
 - Agent definitions live in `.claude/agents/`; each file carries only its role-specific delta.
-- Shared orchestration doctrine lives at `.claude/rules/orchestration.md`. Agent bodies load it via a tilde-path MANDATORY FIRST ACTION Read directive (`~/.claude/rules/orchestration.md`); `@`-imports do NOT expand inside agent definition bodies, so never rely on them there.
+- Two context tiers, and the directory decides which:
+  - `.claude/rules/` **auto-loads** into every custom subagent at startup (verified on Claude Code 2.1.220). Files with `paths:` frontmatter load on demand when a matching file is touched; files without it load every session. `output.md` is global by design; the language rules are `paths:`-scoped.
+  - `.claude/refs/` **never auto-loads**. Agents pull these with an explicit Read. `orchestration.md` (agent roster) and `code-quality.md` live here so they reach only the agents that need them, instead of every agent regardless of role.
+- Agent bodies reference `~/.claude/refs/<file>.md` by tilde path and expand `~` themselves; the Read tool needs an absolute path. `@`-imports do NOT expand inside agent definition bodies, so never rely on them there.
+- `codex-implementer`'s heredoc must keep a real on-disk path: Codex is a different vendor's model and receives none of Claude Code's auto-loaded context.
 - Deployment: stow creates per-file symlinks. A NEW file under `.claude/` needs a restow (`stow .` from repo root) or a matching manual symlink before `~/.claude` sees it.
 
 ## Per-project agent workspace (board + knowledge base)
 
-Every project an agent works in gets the same scaffold, so a fresh or compacted orchestrator can rebuild its state from disk instead of from conversation history. Doctrine lives in `.claude/rules/orchestration.md` ("Per-project standard shape", "Board substrate", "KB distillation rule"); this section is the pointer + the tooling that implements it.
+Every project an agent works in gets the same scaffold, so a fresh or compacted orchestrator can rebuild its state from disk instead of from conversation history. Doctrine lives in `.claude/refs/orchestration.md` ("Per-project standard shape", "Board substrate", "KB distillation rule"); this section is the pointer + the tooling that implements it.
 
 ```
 docs/kb/        distilled markdown KB entries: tracked, durable, human-readable.
@@ -97,18 +104,18 @@ workstreams/    per-workstream status.md + artifacts.
 kb.db           SQLite FTS5 index over docs/kb/. Local/regenerable, gitignored.
 ```
 
-Boards live centrally under `~/.beads-hub`, never in the repo (root is `~/.beads-hub`, not `~/.beads`: bd 1.1.0 refuses `bd init` under any `.beads`-named ancestor). Layout: `~/.beads-hub/hub/.beads` is the bd multi-repo aggregator; `~/.beads-hub/<name>/.beads` is one board per project (prefix `<name>`). `scripts/beads-hub.sh {init,add,sync,list,path,status}` (root override `BEADS_HUB_DIR`) manages them: `add <name>` creates + registers a project board, `sync` (`bd repo sync`) hydrates all into the aggregator, `list` shows them, `path <name>` prints a board's `BEADS_DIR`. Agents write to a project board via `BEADS_DIR=$(beads-hub.sh path <name>) bd ...`; the aggregator is the cross-project READ view. Doctrine: `.claude/rules/orchestration.md` ("Board substrate").
+Boards live centrally under `~/.beads-hub`, never in the repo (root is `~/.beads-hub`, not `~/.beads`: bd 1.1.0 refuses `bd init` under any `.beads`-named ancestor). Layout: `~/.beads-hub/hub/.beads` is the bd multi-repo aggregator; `~/.beads-hub/<name>/.beads` is one board per project (prefix `<name>`). the `agent-workbench` skill's `hub` subcommand (`agent-workbench hub {init,add,sync,list,path,status}`, invoked at `.claude/skills/agent-workbench/agent-workbench`, root override `BEADS_HUB_DIR`) manages them: `hub add <name>` creates + registers a project board, `hub sync` (`bd repo sync`) hydrates all into the aggregator, `hub list` shows them, `hub path <name>` prints a board's `BEADS_DIR`. Agents write to a project board via `BEADS_DIR=$(agent-workbench hub path <name>) bd ...`; the aggregator is the cross-project READ view. Doctrine: `.claude/refs/orchestration.md` ("Board substrate").
 
-- `scripts/init-agent-workspace.sh [TARGET_DIR]` scaffolds the shape idempotently: creates + registers the project's board under `~/.beads-hub` (via `beads-hub.sh add`, using `bd init --stealth --skip-agents --skip-hooks` under the hood, no CLAUDE.md/AGENTS.md/hooksPath side effects), plus `docs/kb/`, `workstreams/`, a first `kb.db` build, and a git `post-commit` hook.
+- `agent-workbench init-workspace [TARGET_DIR]` scaffolds the shape idempotently: creates + registers the project's board under `~/.beads-hub` (via `agent-workbench hub add`, using `bd init --stealth --skip-agents --skip-hooks` under the hood, no CLAUDE.md/AGENTS.md/hooksPath side effects), plus `docs/kb/`, `workstreams/`, a first `kb.db` build, and a git `post-commit` hook.
 - `scripts/build-kb-index.py [--root DIR] [--db PATH]` is the no-LLM FTS5 indexer (stdlib `sqlite3` only). Full rebuild from `docs/kb/*.md` on every run; safe to call standalone or from the post-commit hook.
 - The post-commit hook (installed into the target repo's `.git/hooks/post-commit`, untracked) reindexes `kb.db` only when the commit touched `docs/kb/`; a no-op otherwise. If a post-commit hook already exists there, the installer warns instead of overwriting it.
 - Distillation is in-context: the agent that owns a ticket or workstream writes its own KB entry right before it terminates or rotates. No dedicated distiller agent; retrieval sweeps use `knowledge-scout` instead.
 
 ## Knowledgebase (`~/.knowledgebase`)
 
-Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any repo, NOT git-tracked), superseding per-repo `docs/kb/` as the home for lasting knowledge. Mirrors the `~/.beads-hub` split: source under `~/.knowledgebase/<project>/{decisions,notes,research,sources}/`, one global index at `~/.knowledgebase/index/kb.db`. Note types: `decision | resolution | research | domain | architecture | gotcha | source`; all share one frontmatter schema (`type,title,source,author,site,published,fetched,description,tags,project,status,question,summary` + body + `## Refs`). Web sources are STORED (content + metadata), captured DETERMINISTICALLY with zero model spend; classifiers/embeddings run afterward. Full doctrine: `.claude/rules/orchestration.md` ("Knowledgebase").
+Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any repo, NOT git-tracked), superseding per-repo `docs/kb/` as the home for lasting knowledge. Mirrors the `~/.beads-hub` split: source under `~/.knowledgebase/<project>/{decisions,notes,research,sources}/`, one global index at `~/.knowledgebase/index/kb.db`. Note types: `decision | resolution | research | domain | architecture | gotcha | source`; all share one frontmatter schema (`type,title,source,author,site,published,fetched,description,tags,project,status,question,summary` + body + `## Refs`). Web sources are STORED (content + metadata), captured DETERMINISTICALLY with zero model spend; classifiers/embeddings run afterward. Full doctrine: `.claude/refs/orchestration.md` ("Knowledgebase").
 
-- `scripts/kb.sh {init,add,path,index,clip,status}` (root override `KB_HOME`): `init` makes the vault + `index/`; `add <project>` makes the 4 subdirs; `clip <url> [--project P]` deterministically fetches + extracts a `type: source` note; `index` rebuilds the global FTS5 index.
+- `agent-workbench kb {init,add,path,index,clip,status}` (root override `KB_HOME`): `init` makes the vault + `index/`; `add <project>` makes the 4 subdirs; `clip <url> [--project P]` deterministically fetches + extracts a `type: source` note; `index` rebuilds the global FTS5 index.
 - `scripts/kb-index.py` is the no-LLM global FTS5 indexer (stdlib `sqlite3`) over `~/.knowledgebase/<project>/**`, uniform row schema, `query "<terms>" [--project P] [--type T] [--all]`.
 - `scripts/kb-clip.py` is the deterministic web capture: `urllib` fetch -> Open Graph / Schema.org JSON-LD / meta / `readability-lxml` -> `type: source` note (`question`/`summary` left empty for a later classifier). Dep: `readability-lxml` (user-site); stdlib densest-block fallback on any readability error.
 - `docs/kb-clipper-template.json` is the importable Obsidian Web Clipper template (same schema; `tags` fed by `{{meta:name:keywords}}`), for the human browse-and-clip path into `<project>/sources/`.
@@ -127,7 +134,7 @@ Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any r
 
 ## Spikes
 
-- `spikes/<name>/` are durable, committed prototype workspaces with their own READMEs. Current: `comfyui-driver`, `advisor-vision`, `beads-board`, `commit-linter`.
+- `spikes/<name>/` are durable, committed prototype workspaces with their own READMEs. Current: `advisor-vision`, `commit-linter`. (bdui moved out to `scripts/bdui-container/`; comfyui-driver promoted to `.claude/skills/comfyui/`.)
 - Runtime junk (node_modules, testbeds) is gitignored.
 - Agents use spikes as scratch/spike workspaces, never `/tmp`.
 

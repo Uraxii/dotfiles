@@ -47,7 +47,7 @@ only, never file dumps.
 
 ## Resolution
 
-- `scripts/init-agent-workspace.sh` scaffolds the standard shape
+- `.claude/skills/agent-workbench/agent-workbench init-workspace` scaffolds the standard shape
   idempotently: `bd init` (stealth mode, so `.beads/` stays local and
   never auto-commits itself into the repo), `docs/kb/`, `workstreams/`,
   and a first `kb.db` build, plus a git post-commit hook that reindexes
@@ -69,7 +69,7 @@ only, never file dumps.
 - `.claude/agents/tech-lead.md`
 - `.claude/agents/art-director.md`
 - `.claude/agents/knowledge-scout.md`
-- `scripts/init-agent-workspace.sh`
+- `.claude/skills/agent-workbench/agent-workbench init-workspace`
 - `scripts/build-kb-index.py`
 
 ## Date

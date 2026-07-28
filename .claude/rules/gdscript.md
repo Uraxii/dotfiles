@@ -17,6 +17,6 @@ paths:
 - Signals over direct method calls for decoupled communication.
 - `class_name` on reusable scripts. Skip for one-off scene scripts.
 - `StringName(&"...")` for frequent lookups (input actions, anims).
-- No `get_tree().get_nodes_in_group()` in `_process` — cache result.
+- No `get_tree().get_nodes_in_group()` in `_process`. Cache result.
 - `@export` over `_ready()` param injection for inspector-configurable values.
 - `is_instance_valid()` before accessing refs that may be freed.

@@ -16,14 +16,19 @@ Defaults: --project inbox, --kb-home = KB_HOME env, else ~/.knowledgebase.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import os
 import re
+import socket
 import sys
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from datetime import date
+from email.message import Message
 from pathlib import Path
+from typing import IO
 
 import lxml.html
 from readability import Document
@@ -33,6 +38,11 @@ USER_AGENT = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 FETCH_TIMEOUT_SEC = 20
+ALLOWED_URL_SCHEMES = {"http", "https"}
+
+# CGNAT / Tailscale range. Some Python ipaddress versions still mark this
+# is_global=True, so it needs its own explicit reject on top of is_global.
+TAILSCALE_CGNAT_RANGE = ipaddress.ip_network("100.64.0.0/10")
 
 # schema.org fields that mark a JSON-LD block as article-like enough to
 # pull author/date/description from.
@@ -62,16 +72,83 @@ class SourceMeta:
     tags: list[str]
 
 
-def fetch_html(url: str) -> str:
-    """Plain GET via stdlib urllib. Static pages only.
+def check_url_scheme(url: str) -> None:
+    """Reject any URL whose scheme is not http/https (blocks file://,
+    ftp://, and other local/unintended-protocol reads via urlopen)."""
+    scheme = urllib.parse.urlparse(url).scheme
+    if scheme not in ALLOWED_URL_SCHEMES:
+        raise ValueError(
+            f"unsupported URL scheme: {scheme!r} (only http/https allowed)"
+        )
 
+
+def check_destination_is_public(url: str) -> None:
+    """Resolve url's hostname via DNS (A + AAAA) and reject the URL if any
+    resolved IP is not a public/global address. Blocks SSRF against
+    loopback, private LAN, link-local incl. cloud metadata
+    (169.254.169.254), CGNAT/Tailscale (100.64.0.0/10), unspecified,
+    reserved, and multicast addresses -- even when reached through a
+    public-looking hostname that merely resolves to one of these."""
+    hostname = urllib.parse.urlparse(url).hostname
+    if not hostname:
+        raise ValueError(f"URL has no hostname: {url!r}")
+    try:
+        addr_info = socket.getaddrinfo(hostname, None)
+    except socket.gaierror as exc:
+        raise ValueError(f"could not resolve host {hostname!r}: {exc}") from exc
+    for _family, _type, _proto, _canon, sockaddr in addr_info:
+        ip = ipaddress.ip_address(sockaddr[0])
+        is_cgnat = ip.version == 4 and ip in TAILSCALE_CGNAT_RANGE
+        if not ip.is_global or is_cgnat:
+            raise ValueError(
+                f"destination host {hostname!r} resolves to a "
+                "non-public address"
+            )
+
+
+class _DestinationCheckingRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Re-runs the scheme + destination guard on every redirect hop.
+
+    urllib's default handler auto-follows redirects, so without this a
+    302 from an allowed URL to an internal target would bypass the
+    pre-fetch check entirely.
+    """
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: IO[bytes],
+        code: int,
+        msg: str,
+        headers: Message,
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        check_url_scheme(newurl)
+        check_destination_is_public(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def fetch_html(url: str) -> str:
+    """Plain GET via stdlib urllib. Static pages only. Sole choke point
+    for both /clip and /atomize (kb-serve.py routes both through
+    kb_clip.clip -> fetch_html), so the SSRF guard here covers both.
+
+    # ponytail: DNS-rebinding TOCTOU remains -- the guard resolves and
+    # validates the hostname, then urlopen resolves it again to connect.
+    # An attacker controlling DNS could flip the record between the two
+    # lookups. Full mitigation would resolve once and connect to the
+    # pinned IP directly. Accepted gap for a personal loopback/Tailscale
+    # service with no auth boundary to defend beyond this.
     # ponytail: JS-render escalation goes here. Playwright browsers are
     # already cached at ~/.cache/ms-playwright (chromium/firefox) for a
     # future headless-render path; not built now since a plain fetch
     # already covers this tool's static-page targets.
     """
+    check_url_scheme(url)
+    check_destination_is_public(url)
+    opener = urllib.request.build_opener(_DestinationCheckingRedirectHandler)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SEC) as response:
+    with opener.open(request, timeout=FETCH_TIMEOUT_SEC) as response:
         raw = response.read()
         charset = response.headers.get_content_charset() or "utf-8"
     return raw.decode(charset, errors="replace")
@@ -225,14 +302,25 @@ def slugify(text: str) -> str:
 
 
 def build_note_path(sources_dir: Path, slug: str) -> Path:
-    """Pick the destination filename, suffixing on a slug collision."""
-    base = sources_dir / f"{slug}.md"
-    if not base.exists():
-        return base
-    n = 2
-    while (candidate := sources_dir / f"{slug}-{n}.md").exists():
-        n += 1
-    return candidate
+    """Pick the destination filename, suffixing on a slug collision.
+
+    Atomically reserves the returned path with O_CREAT|O_EXCL so two
+    concurrent callers racing on the same slug can never both win the same
+    filename (the existence check and the reservation are one syscall,
+    closing the TOCTOU window a separate ``.exists()`` check would leave
+    open). Leaves the reserved file empty; callers write its real content
+    with their own ``write_text()`` right after.
+    """
+    n = 1
+    while True:
+        candidate = sources_dir / (f"{slug}.md" if n == 1 else f"{slug}-{n}.md")
+        try:
+            fd = os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            n += 1
+            continue
+        os.close(fd)
+        return candidate
 
 
 def yaml_quote(value: str) -> str:

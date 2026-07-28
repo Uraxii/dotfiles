@@ -1,0 +1,593 @@
+{
+  "name": "image-approval-pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Image approval pipeline (starter)\n\nApprove a prompt once, then render on ComfyUI, downscale, and prove review-serve reachability.\n\nPorts the retired workflow-runner spec (branch eb198d5) to n8n built-in nodes only.\n\n**Runtime variables** live in the `Runtime variables` (Edit Fields) node: comfy_server, review_server, max_height, project, artifact_id, variant_prompt. Change them there, everything downstream reads them by expression.\n\nProven-working vs stubbed: see workflows/README.md.",
+        "height": 320,
+        "width": 460,
+        "color": 4
+      },
+      "id": "sticky-overview",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### ComfyUI poll loop\n`Render done?` false branch loops back to `Poll wait 2s`.\nMinimal by design (no max-tries cap yet).\nTODO: add an iteration counter + timeout to fail loudly instead of looping forever.",
+        "height": 200,
+        "width": 320,
+        "color": 3
+      },
+      "id": "sticky-loop",
+      "name": "Poll loop",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Downscale is a wired STUB\n`Downscale (PIL)` is **disabled** (passes input through).\nStock n8n image has no python3/Pillow, so `scripts/n8n-container/downscale.py` cannot run in-container as-is.\nEnable after mounting the script + providing python3+Pillow, OR run downscale on the host.",
+        "height": 220,
+        "width": 320,
+        "color": 2
+      },
+      "id": "sticky-downscale",
+      "name": "Downscale gap",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Publish = reachability probe only\nreview-serve has NO HTTP publish endpoint; `push` is CLI-only.\n`Publish reachability probe` GETs `/_/api/settings` to prove 2xx connectivity.\nReal publish needs a new HTTP push endpoint on review-serve (follow-up) or an Execute Command node with review-serve.py + staging dir mounted in.",
+        "height": 220,
+        "width": 340,
+        "color": 2
+      },
+      "id": "sticky-publish",
+      "name": "Publish gap",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### A/B compare (optional, disabled)\nMirrors the retired `ab_compare`: it COMPOSES comfy_render + publish for a second prompt.\nThese nodes are duplicated-but-labeled copies (kept in one importable file rather than a sub-workflow for starter clarity).\nEnable + wire seeds to compare variant_prompt against the approved prompt.",
+        "height": 260,
+        "width": 360,
+        "color": 4
+      },
+      "id": "sticky-ab",
+      "name": "A/B compare",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2620,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Approve render prompt",
+        "formDescription": "Approve the prompt as-is, or edit it before rendering. This is the only interactive step.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "prompt",
+              "fieldType": "textarea",
+              "placeholder": "a red fox sitting in snow, photograph, golden hour",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "approve",
+      "name": "Approve prompt",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "approve-prompt-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "v1",
+              "name": "comfy_server",
+              "value": "http://host.containers.internal:8188",
+              "type": "string"
+            },
+            {
+              "id": "v2",
+              "name": "review_server",
+              "value": "http://host.containers.internal:9099",
+              "type": "string"
+            },
+            {
+              "id": "v3",
+              "name": "max_height",
+              "value": 1080,
+              "type": "number"
+            },
+            {
+              "id": "v4",
+              "name": "project",
+              "value": "image-approval",
+              "type": "string"
+            },
+            {
+              "id": "v5",
+              "name": "artifact_id",
+              "value": "image-approval-latest",
+              "type": "string"
+            },
+            {
+              "id": "v6",
+              "name": "variant_prompt",
+              "value": "a red fox in snow, oil painting, dramatic light",
+              "type": "string"
+            },
+            {
+              "id": "v7",
+              "name": "approved_prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "vars",
+      "name": "Runtime variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the ComfyUI API-format graph from the approved prompt + a fresh seed.\n// Template mirrors spikes/comfyui-driver/workflow.json. Node ids match the\n// retired steps.py: COMFY_PROMPT_NODE=\"6\" (CLIPTextEncode positive),\n// COMFY_SEED_NODE=\"3\" (KSampler). A fresh seed every call avoids a silent\n// ComfyUI cache hit (identical graph -> empty outputs = failure).\nconst approvedPrompt = $('Runtime variables').first().json.approved_prompt;\nconst seed = Math.floor(Math.random() * 2147483647);\n\nconst graph = {\n  \"4\": { \"class_type\": \"CheckpointLoaderSimple\", \"inputs\": { \"ckpt_name\": \"sd_xl_base_1.0.safetensors\" } },\n  \"5\": { \"class_type\": \"EmptyLatentImage\", \"inputs\": { \"width\": 1024, \"height\": 1024, \"batch_size\": 1 } },\n  \"6\": { \"class_type\": \"CLIPTextEncode\", \"inputs\": { \"text\": approvedPrompt, \"clip\": [\"4\", 1] } },\n  \"7\": { \"class_type\": \"CLIPTextEncode\", \"inputs\": { \"text\": \"blurry, low quality, watermark\", \"clip\": [\"4\", 1] } },\n  \"3\": { \"class_type\": \"KSampler\", \"inputs\": { \"seed\": seed, \"steps\": 12, \"cfg\": 7, \"sampler_name\": \"euler\", \"scheduler\": \"normal\", \"denoise\": 1, \"model\": [\"4\", 0], \"positive\": [\"6\", 0], \"negative\": [\"7\", 0], \"latent_image\": [\"5\", 0] } },\n  \"8\": { \"class_type\": \"VAEDecode\", \"inputs\": { \"samples\": [\"3\", 0], \"vae\": [\"4\", 2] } },\n  \"9\": { \"class_type\": \"SaveImage\", \"inputs\": { \"filename_prefix\": \"image-approval\", \"images\": [\"8\", 0] } }\n};\n\nreturn [{ json: { prompt: graph } }];\n",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "buildgraph",
+      "name": "Build ComfyUI graph",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Runtime variables').first().json.comfy_server }}/prompt",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "submit",
+      "name": "Submit render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "wait",
+      "name": "Poll wait 2s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Runtime variables').first().json.comfy_server }}/history/{{ $('Submit render').first().json.prompt_id }}",
+        "options": {}
+      },
+      "id": "pollhist",
+      "name": "Poll history",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ Object.values($json)[0] ? Object.keys(Object.values($json)[0].outputs || {}).length : 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "done",
+      "name": "Render done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pull the first rendered image's filename/subfolder/type out of ComfyUI's\n// /history response so the next node can GET /view for it.\nconst history = $json;\nconst entry = Object.values(history)[0] || {};\nconst outputs = entry.outputs || {};\nfor (const out of Object.values(outputs)) {\n  for (const img of (out.images || [])) {\n    return [{ json: { filename: img.filename, subfolder: img.subfolder, type: img.type } }];\n  }\n}\nthrow new Error('no image in ComfyUI history output (cache hit or still rendering)');\n",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "extract",
+      "name": "Extract image ref",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Runtime variables').first().json.comfy_server }}/view",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filename",
+              "value": "={{ $json.filename }}"
+            },
+            {
+              "name": "subfolder",
+              "value": "={{ $json.subfolder }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.type }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "fetch",
+      "name": "Fetch image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "command": "=python3 /data/scripts/downscale.py --src /data/render.png --max-height {{ $('Runtime variables').first().json.max_height }} --out /data/preview.png"
+      },
+      "id": "downscale",
+      "name": "Downscale (PIL)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        200
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Runtime variables').first().json.review_server }}/_/api/settings",
+        "options": {}
+      },
+      "id": "publish",
+      "name": "Publish reachability probe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "review_url",
+              "value": "={{ $('Runtime variables').first().json.review_server }}/_/review?artifact={{ $('Runtime variables').first().json.artifact_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "reviewurl",
+      "name": "Compose review URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2640,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the ComfyUI API-format graph from the approved prompt + a fresh seed.\n// Template mirrors spikes/comfyui-driver/workflow.json. Node ids match the\n// retired steps.py: COMFY_PROMPT_NODE=\"6\" (CLIPTextEncode positive),\n// COMFY_SEED_NODE=\"3\" (KSampler). A fresh seed every call avoids a silent\n// ComfyUI cache hit (identical graph -> empty outputs = failure).\nconst approvedPrompt = $('Runtime variables').first().json.variant_prompt;\nconst seed = Math.floor(Math.random() * 2147483647);\n\nconst graph = {\n  \"4\": { \"class_type\": \"CheckpointLoaderSimple\", \"inputs\": { \"ckpt_name\": \"sd_xl_base_1.0.safetensors\" } },\n  \"5\": { \"class_type\": \"EmptyLatentImage\", \"inputs\": { \"width\": 1024, \"height\": 1024, \"batch_size\": 1 } },\n  \"6\": { \"class_type\": \"CLIPTextEncode\", \"inputs\": { \"text\": approvedPrompt, \"clip\": [\"4\", 1] } },\n  \"7\": { \"class_type\": \"CLIPTextEncode\", \"inputs\": { \"text\": \"blurry, low quality, watermark\", \"clip\": [\"4\", 1] } },\n  \"3\": { \"class_type\": \"KSampler\", \"inputs\": { \"seed\": seed, \"steps\": 12, \"cfg\": 7, \"sampler_name\": \"euler\", \"scheduler\": \"normal\", \"denoise\": 1, \"model\": [\"4\", 0], \"positive\": [\"6\", 0], \"negative\": [\"7\", 0], \"latent_image\": [\"5\", 0] } },\n  \"8\": { \"class_type\": \"VAEDecode\", \"inputs\": { \"samples\": [\"3\", 0], \"vae\": [\"4\", 2] } },\n  \"9\": { \"class_type\": \"SaveImage\", \"inputs\": { \"filename_prefix\": \"image-approval\", \"images\": [\"8\", 0] } }\n};\n\nreturn [{ json: { prompt: graph } }];\n",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "abbuild",
+      "name": "Build variant graph (B)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        200
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Runtime variables').first().json.comfy_server }}/prompt",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "absubmit",
+      "name": "Submit variant render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        200
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Runtime variables').first().json.review_server }}/_/api/settings",
+        "options": {}
+      },
+      "id": "abpublish",
+      "name": "A/B publish probe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3360,
+        200
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Approve prompt": {
+      "main": [
+        [
+          {
+            "node": "Runtime variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Runtime variables": {
+      "main": [
+        [
+          {
+            "node": "Build ComfyUI graph",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build ComfyUI graph": {
+      "main": [
+        [
+          {
+            "node": "Submit render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit render": {
+      "main": [
+        [
+          {
+            "node": "Poll wait 2s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll wait 2s": {
+      "main": [
+        [
+          {
+            "node": "Poll history",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll history": {
+      "main": [
+        [
+          {
+            "node": "Render done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render done?": {
+      "main": [
+        [
+          {
+            "node": "Extract image ref",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Poll wait 2s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract image ref": {
+      "main": [
+        [
+          {
+            "node": "Fetch image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch image": {
+      "main": [
+        [
+          {
+            "node": "Downscale (PIL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Downscale (PIL)": {
+      "main": [
+        [
+          {
+            "node": "Publish reachability probe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish reachability probe": {
+      "main": [
+        [
+          {
+            "node": "Compose review URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose review URL": {
+      "main": [
+        [
+          {
+            "node": "Build variant graph (B)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build variant graph (B)": {
+      "main": [
+        [
+          {
+            "node": "Submit variant render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit variant render": {
+      "main": [
+        [
+          {
+            "node": "A/B publish probe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

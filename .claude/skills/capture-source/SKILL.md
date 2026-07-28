@@ -15,20 +15,20 @@ read or summarize it into the note.
 ## Capture a web source
 
 ```bash
-~/dotfiles/scripts/kb.sh clip "<url>" --project <project>
+agent-workbench kb clip "<url>" --project <project>
 ```
 
 - Writes `~/.knowledgebase/<project>/sources/<slug>.md` with frontmatter
   (`type: source`, title, source url, author, site, published, fetched,
   description, tags) and the cleaned content body, plus the url in `## Refs`.
 - `<project>` is the repo/workstream name (e.g. `gvn`). Creates the folder if
-  needed.
+  needed. `clip` also atomizes and reindexes automatically -- no separate
+  index step needed.
 
-## Then index + find it
+## Then find it
 
 ```bash
-~/dotfiles/scripts/kb.sh index
-~/dotfiles/scripts/kb-index.py query "<terms>" --project <project> --type source
+agent-workbench kb query "<terms>" --project <project> --type source
 ```
 
 ## Rules
@@ -41,5 +41,4 @@ read or summarize it into the note.
 - JS-heavy or auth-gated pages may not extract cleanly; note that and fall back
   to citing the url in `## Refs` if the body comes back empty.
 
-Full knowledgebase doctrine: `~/.claude/rules/orchestration.md`
-("Knowledgebase"). Decisions use the separate `record-decision` skill.
+Full knowledgebase doctrine: `~/dotfiles/CLAUDE.md` ("Knowledgebase").

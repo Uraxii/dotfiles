@@ -27,26 +27,26 @@ cd ~/Projects/<project>
 bd export --output /tmp/<project>-issues.jsonl      # or: bd list --json > ...
 
 # 2. create + register the project's board under the hub
-~/dotfiles/scripts/beads-hub.sh add <project>
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench hub add <project>
 
 # 3. import the old issues into the new board
-BEADS_DIR="$(~/dotfiles/scripts/beads-hub.sh path <project>)" \
+BEADS_DIR="$(~/dotfiles/.claude/skills/agent-workbench/agent-workbench hub path <project>)" \
   bd import /tmp/<project>-issues.jsonl
 
 # 4. verify, then delete the old in-repo board
-BEADS_DIR="$(~/dotfiles/scripts/beads-hub.sh path <project>)" bd list
+BEADS_DIR="$(~/dotfiles/.claude/skills/agent-workbench/agent-workbench hub path <project>)" bd list
 rm -rf ~/Projects/<project>/.beads
 ```
 
 Aggregate all registered boards into the unified read view:
 
 ```bash
-~/dotfiles/scripts/beads-hub.sh sync
-~/dotfiles/scripts/beads-hub.sh list
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench hub sync
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench hub list
 ```
 
 From now on, **do not** run `bd init` inside a repo. Agents write to a project
-board with `BEADS_DIR="$(beads-hub.sh path <project>)" bd ...`.
+board with `BEADS_DIR="$(agent-workbench hub path <project>)" bd ...`.
 
 ---
 
@@ -54,7 +54,7 @@ board with `BEADS_DIR="$(beads-hub.sh path <project>)" bd ...`.
 
 ```bash
 # create the vault + this project's folders
-~/dotfiles/scripts/kb.sh add <project>      # -> decisions notes research sources
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench kb add <project>      # -> decisions notes research sources
 
 # move existing distilled notes and decisions in
 mv ~/Projects/<project>/docs/kb/*.md        ~/.knowledgebase/<project>/notes/
@@ -62,8 +62,8 @@ mv "~/Projects/<project>/vault/20 Permanent/decisions/"*.md \
                                             ~/.knowledgebase/<project>/decisions/
 
 # rebuild the global index
-~/dotfiles/scripts/kb.sh index
-~/dotfiles/scripts/kb-index.py query "<a term>" --project <project>
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench kb index
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench kb query "<a term>" --project <project>
 ```
 
 Point `record-decision` at the vault so new decisions land in the right place:
@@ -86,7 +86,7 @@ Two capture paths, both deterministic (no model spend), both writing the same
 
 ```bash
 # agent / CLI path
-~/dotfiles/scripts/kb.sh clip "https://example.com/article" --project <project>
+~/dotfiles/.claude/skills/agent-workbench/agent-workbench kb clip "https://example.com/article" --project <project>
 ```
 
 ```
@@ -102,9 +102,9 @@ Graph + Schema.org + meta tags, and store the cleaned article body. The
 
 ## Known follow-ups
 
-- `scripts/init-agent-workspace.sh` still scaffolds `docs/kb/` and the old
-  per-repo `build-kb-index.py` still exists; both are legacy until retired in
-  favour of `~/.knowledgebase`.
+- `.claude/skills/agent-workbench/agent-workbench init-workspace` still
+  scaffolds `docs/kb/` and the old per-repo `build-kb-index.py` still exists;
+  both are legacy until retired in favour of `~/.knowledgebase`.
 - `kb-clip.py`'s HTML-to-markdown keeps headings / paragraphs / lists but drops
   inline formatting (bold, inline links); the source URL is preserved in
   `## Refs`.
