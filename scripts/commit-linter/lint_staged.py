@@ -31,7 +31,6 @@ Usage:
 """
 from __future__ import annotations
 
-import difflib
 import json
 import os
 import re
@@ -55,6 +54,7 @@ HOME_FORMS = tuple(
     )
 )
 IDENTITY_LOCAL = Path(__file__).resolve().parent / "identity.local"
+IDENTITY_LOCAL_HINT = "scripts/commit-linter/identity.local"
 DMG_SCAN = Path.home() / ".local/share/stepsecurity-dmg/dmg-scan.sh"
 TRUFFLEHOG_HINT = "install: see scripts/commit-linter/README.md"
 
@@ -127,21 +127,21 @@ def staged_text(path: str) -> str:
     return git(["show", f":{path}"]).decode(errors="replace").rstrip("\n")
 
 
-def numbered_hits(content: str, pattern: re.Pattern[str] | str) -> list[str]:
-    """Return grep -n style "<lineno>:<line>" hits for a regex or substring."""
-    hits: list[str] = []
+def numbered_hits(content: str, pattern: re.Pattern[str] | str) -> list[int]:
+    """Return line numbers matching a regex or substring."""
+    hits: list[int] = []
     for number, line in enumerate(content.splitlines(), start=1):
         found = pattern in line if isinstance(pattern, str) else pattern.search(line)
         if found:
-            hits.append(f"{number}:{line}")
+            hits.append(number)
     return hits
 
 
-def report(path: str, header: str, hits: list[str]) -> None:
-    """Print a BLOCKED header plus its file-prefixed hit lines to stderr."""
+def report(path: str, header: str, lines: list[int]) -> None:
+    """Print a report with file locations only, never matched content."""
     print(header, file=sys.stderr)
-    for hit in hits:
-        print(f"  {path}:{hit}", file=sys.stderr)
+    for number in lines:
+        print(f"  {path}:{number}", file=sys.stderr)
 
 
 def fail_partial(files: list[str]) -> bool:
@@ -160,16 +160,16 @@ def fail_partial(files: list[str]) -> bool:
     return failed
 
 
-def secret_hits(content: str) -> list[str]:
+def secret_hits(content: str) -> list[int]:
     """Return secret-shaped hits, minus the key-name-constant exemptions."""
     hits = numbered_hits(content, SECRET_RE)
     hits += [
-        hit
-        for hit in numbered_hits(content, SECRETVAR_RE)
-        if not KEYNAME_EXEMPT_RE.search(hit.split(":", 1)[1])
+        number
+        for number, line in enumerate(content.splitlines(), 1)
+        if SECRETVAR_RE.search(line) and not KEYNAME_EXEMPT_RE.search(line)
     ]
     deduped = list(dict.fromkeys(hits))
-    return sorted(deduped, key=lambda hit: int(hit.split(":", 1)[0]))
+    return sorted(deduped)
 
 
 def fail_secrets(files: list[str]) -> bool:
@@ -198,7 +198,7 @@ def identity_needles() -> list[str]:
                 line = line[7:].strip()
             if "=" not in line or "$" in line:
                 print(
-                    f"BLOCKED: unparseable {IDENTITY_LOCAL} line {number}.",
+                    f"BLOCKED: unparseable {IDENTITY_LOCAL_HINT} line {number}.",
                     file=sys.stderr,
                 )
                 raise ValueError
@@ -207,7 +207,7 @@ def identity_needles() -> list[str]:
                 values[key.strip()] = value.strip().strip("\"'")
     else:
         print(
-            f"NOTE: no {IDENTITY_LOCAL}; skipping email/tailnet checks "
+            f"NOTE: no {IDENTITY_LOCAL_HINT}; skipping email/tailnet checks "
             "(hostname check still runs).",
             file=sys.stderr,
         )
@@ -259,6 +259,17 @@ def fixed_text(path: str, content: str) -> str:
     return fixed.replace(f"{USER_NAME}@", f"{USER_FORM}@")
 
 
+def changed_lines(original: str, fixed: str) -> list[int]:
+    """Return line numbers changed by auto-fix."""
+    return [
+        number
+        for number, (before, after) in enumerate(
+            zip(original.splitlines(), fixed.splitlines()), 1
+        )
+        if before != after
+    ]
+
+
 def autofix(files: list[str]) -> None:
     """Pass 4: rewrite expanded $HOME / bare username on disk, then re-stage."""
     for path in files:
@@ -268,18 +279,9 @@ def autofix(files: list[str]) -> None:
         fixed = fixed_text(path, original)
         if fixed == original:
             continue
-        print(f"FIXED: {path}")
         print(
-            "".join(
-                difflib.unified_diff(
-                    original.splitlines(keepends=True),
-                    fixed.splitlines(keepends=True),
-                    fromfile=f"a/{path}",
-                    tofile=f"b/{path}",
-                    lineterm="\n",
-                )
-            ),
-            end="",
+            f"FIXED: {path} on line(s) "
+            f"{', '.join(str(number) for number in changed_lines(original, fixed))}"
         )
         Path(path).write_text(fixed + "\n")
         git(["add", "--", path])
