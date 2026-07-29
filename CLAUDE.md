@@ -122,21 +122,21 @@ Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any r
 
 ## Path Standard (enforced by pre-commit hook)
 
-- Never commit expanded home paths or usernames. Use `$HOME` in shell scripts, `~` in markdown/JSON.
+- Never commit expanded home paths or usernames. Use `$HOME` in shell scripts/JSON, `~` in markdown.
 - Machine-specific or identity-bearing config (tailnet hosts, emails) goes in `.claude/settings.local.json` (gitignored), never in tracked files.
 
 ## Commit Gate
 
-- Local pre-commit hook: thin wrapper in `.git/hooks`, logic at `spikes/commit-linter/lint-staged.sh`.
+- Local pre-commit hook: thin wrapper in `.git/hooks`, logic at `scripts/commit-linter/lint_staged.py`.
 - Runs an identity-leak lint (with auto-fix) plus a fail-closed TruffleHog scan of staged content. `trufflehog` binary required at `~/.local/bin`.
 - Hooks not firing: check `git config core.hooksPath` (bd init once hijacked it).
 - Emergency bypass: `git commit --no-verify`. Never for secret findings.
 
 ## Spikes
 
-- `spikes/<name>/` are durable, committed prototype workspaces with their own READMEs. Current: `advisor-vision`, `commit-linter`. (bdui moved out to `scripts/bdui-container/`; comfyui-driver promoted to `.claude/skills/comfyui/`.)
-- Runtime junk (node_modules, testbeds) is gitignored.
-- Agents use spikes as scratch/spike workspaces, never `/tmp`.
+- `spikes/<name>/` are local, untracked scratch/prototype workspaces.
+- `spikes/` is gitignored wholesale; nothing under it is committed.
+- Agents use spikes for repo-adjacent scratch work instead of `/tmp`.
 
 # Theming System
 
