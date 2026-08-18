@@ -135,11 +135,39 @@ def test_issue_prioritization_projection() -> None:
             "package_vulnerability",
             "CVE-2026-1234",
             891,
+            "-",
             "deployed,loaded_package",
             "function,package",
             True,
+            "-",
         )
     ]
+
+
+def test_risk_score_model_projected() -> None:
+    payload = _issue_payload()
+    payload["data"][0]["attributes"]["risk"]["score"]["model"] = "riskScore"
+    assert snyk._issue_rows(payload)[0][6] == "riskScore"
+
+
+def test_scan_item_id_projected_from_relationship() -> None:
+    payload = _issue_payload()
+    payload["data"][0]["relationships"] = {
+        "scan_item": {"data": {"id": "proj-1", "type": "project"}}
+    }
+    assert snyk._issue_rows(payload)[0][-1] == "proj-1"
+
+
+def test_risk_factors_absent_vs_empty() -> None:
+    # key wholly absent -> unentitled tenant, not "no risk found"
+    assert snyk._risk_factors({}) == "n/a"
+    # key present but empty -> genuinely no factors
+    assert snyk._risk_factors({"risk": {"factors": []}}) == "-"
+
+
+def test_reachability_absent_vs_empty() -> None:
+    assert snyk._reachability({}) == "n/a"
+    assert snyk._reachability({"coordinates": []}) == "-"
 
 
 def test_snyk_problem_fallback() -> None:
@@ -148,11 +176,38 @@ def test_snyk_problem_fallback() -> None:
     assert snyk._issue_rows(payload)[0][4] == "SNYK-JS-THING-1"
 
 
-def test_limit_clamping() -> None:
-    assert snyk._clamp_limit("orgs", 1) == 10
-    assert snyk._clamp_limit("issues", 500) == 100
-    assert snyk._clamp_limit("targets", 0) == 10
-    assert snyk._clamp_limit("targets", 20) == 20
+def test_limit_valid_values_pass_through_unclamped() -> None:
+    assert snyk._check_limit("orgs", 20) == 20
+    assert snyk._check_limit("targets", 1) == 1
+    assert snyk._check_limit("findings", 100) == 100
+
+
+def test_limit_out_of_range_rejected_not_clamped() -> None:
+    for command, value in (
+        ("orgs", 1),      # below 10, not a multiple of 10
+        ("issues", 500),  # above 100
+        ("targets", 0),   # below 1
+        ("targets", 101),  # above 100
+    ):
+        try:
+            snyk._check_limit(command, value)
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"expected rejection for {command}={value}")
+
+
+def test_limit_multiple_of_ten_enforced_for_step_endpoints() -> None:
+    for command in ("orgs", "projects", "issues"):
+        try:
+            snyk._check_limit(command, 25)
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"expected rejection for {command}=25")
+    # targets/findings have no step, 25 is fine
+    assert snyk._check_limit("targets", 25) == 25
+    assert snyk._check_limit("findings", 25) == 25
 
 
 def test_token_missing_exits() -> None:
@@ -270,7 +325,7 @@ def test_request_params() -> None:
             "--group",
             "g",
             "--limit",
-            "1",
+            "20",
             "--severity",
             "high",
             "--severity",
@@ -291,9 +346,7 @@ def test_request_params() -> None:
     )
     path, params = snyk._request(args)
     assert path == "/groups/g/issues"
-    assert params["limit"] == 10
-    assert params["effective_severity_level[]"] == ["high", "critical"]
-    assert params["status[]"] == ["open"]
+    assert params["limit"] == 20
     assert params["type"] == "package_vulnerability"
     assert params["ignored"] == "false"
     assert params["scan_item.id"] == "p1"
@@ -301,13 +354,143 @@ def test_request_params() -> None:
     assert params["updated_after"] == "2026-01-01T00:00:00Z"
 
 
-def test_url_uses_array_params() -> None:
-    url = snyk._url(
-        "/orgs/o/issues",
-        {"version": "2026-03-25", "effective_severity_level[]": ["high"]},
+def test_severity_wire_form_is_one_comma_joined_param() -> None:
+    # style: form, explode: false -> effective_severity_level=high,critical
+    args = snyk.build_parser().parse_args(
+        ["issues", "--group", "g", "--severity", "high", "--severity",
+         "critical"]
     )
-    query = urllib.parse.urlparse(url).query
-    assert "effective_severity_level%5B%5D=high" in query
+    _, params = snyk._request(args)
+    assert params["effective_severity_level"] == "high,critical"
+    assert "effective_severity_level[]" not in params
+    query = urllib.parse.urlparse(
+        snyk._url("/groups/g/issues", params)
+    ).query
+    assert "effective_severity_level=high%2Ccritical" in query
+
+
+def test_status_wire_form_is_one_comma_joined_param() -> None:
+    args = snyk.build_parser().parse_args(
+        ["issues", "--group", "g", "--status", "open", "--status",
+         "resolved"]
+    )
+    _, params = snyk._request(args)
+    assert params["status"] == "open,resolved"
+    assert "status[]" not in params
+
+
+def test_target_id_repeated_key() -> None:
+    # target_id declares neither style nor explode -> explode: true (default)
+    org = "11111111-1111-1111-1111-111111111111"
+    args = snyk.build_parser().parse_args(
+        ["projects", "--org", org, "--target-id", "uuid1", "--target-id",
+         "uuid2"]
+    )
+    _, params = snyk._request(args)
+    assert params["target_id"] == ["uuid1", "uuid2"]
+    query = urllib.parse.urlparse(
+        snyk._url(f"/orgs/{org}/projects", params)
+    ).query
+    assert "target_id=uuid1&target_id=uuid2" in query
+
+
+def test_origins_wire_form_is_one_comma_joined_param() -> None:
+    org = "11111111-1111-1111-1111-111111111111"
+    args = snyk.build_parser().parse_args(
+        ["projects", "--org", org, "--origin", "github", "--origin", "cli"]
+    )
+    _, params = snyk._request(args)
+    assert params["origins"] == "github,cli"
+    assert "origins[]" not in params
+
+
+def test_targets_always_sends_exclude_empty_false_by_default() -> None:
+    org = "11111111-1111-1111-1111-111111111111"
+    args = snyk.build_parser().parse_args(["targets", "--org", org])
+    _, params = snyk._request(args)
+    assert params["exclude_empty"] == "false"
+
+
+def test_targets_exclude_empty_overridable() -> None:
+    org = "11111111-1111-1111-1111-111111111111"
+    args = snyk.build_parser().parse_args(
+        ["targets", "--org", org, "--exclude-empty", "true"]
+    )
+    _, params = snyk._request(args)
+    assert params["exclude_empty"] == "true"
+
+
+def test_next_cursor_unwraps_dict_form_href() -> None:
+    # links.next is oneOf [string, {href, meta}]; object form must not
+    # print as a raw Python dict, and must be usable as a --next value.
+    payload = {"links": {"next": {"href": "/orgs/o/issues?limit=20",
+                                   "meta": {}}}}
+    assert snyk._next_cursor(payload) == "/orgs/o/issues?limit=20"
+
+
+def test_next_cursor_bare_string_form() -> None:
+    payload = {"links": {"next": "/orgs/o/issues?limit=20"}}
+    assert snyk._next_cursor(payload) == "/orgs/o/issues?limit=20"
+
+
+def test_next_cursor_absent() -> None:
+    assert snyk._next_cursor({"links": {}}) is None
+    assert snyk._next_cursor({}) is None
+
+
+def test_api_host_strips_trailing_rest_suffix() -> None:
+    old_host = os.environ.get("SNYK_API_HOST")
+    os.environ["SNYK_API_HOST"] = "https://api.eu.snyk.io/rest"
+    try:
+        assert snyk._api() == "https://api.eu.snyk.io/rest"
+    finally:
+        if old_host is None:
+            os.environ.pop("SNYK_API_HOST", None)
+        else:
+            os.environ["SNYK_API_HOST"] = old_host
+
+
+def test_org_slug_rejected_not_uuid() -> None:
+    args = snyk.build_parser().parse_args(
+        ["projects", "--org", "not-a-uuid-slug"]
+    )
+    try:
+        snyk._validate_scope(args)
+    except SystemExit as err:
+        assert "orgs --slug" in str(err)
+    else:
+        raise AssertionError("expected SystemExit")
+
+
+def test_scan_item_id_and_type_must_be_paired() -> None:
+    args = snyk.build_parser().parse_args(
+        ["issues", "--group", "g", "--scan-item-id", "p1"]
+    )
+    try:
+        snyk._validate_scope(args)
+    except SystemExit as err:
+        assert "--scan-item-id and --scan-item-type" in str(err)
+    else:
+        raise AssertionError("expected SystemExit")
+
+
+def test_next_alone_needs_no_scope_args() -> None:
+    old_token = os.environ.get("SNYK_TOKEN")
+    os.environ["SNYK_TOKEN"] = "token-for-test"
+    next_url = (
+        "https://api.snyk.io/rest/orgs/o/issues?"
+        "version=2026-03-25&starting_after=abc&limit=20"
+    )
+    try:
+        seen = _with_urlopen(
+            lambda: snyk.main(["issues", "--next", next_url])
+        )
+    finally:
+        if old_token is None:
+            os.environ.pop("SNYK_TOKEN", None)
+        else:
+            os.environ["SNYK_TOKEN"] = old_token
+    assert seen == [next_url]
 
 
 def test_http_error_does_not_echo_raw_body() -> None:
@@ -347,15 +530,33 @@ def test_non_json_200_exits_cleanly() -> None:
 if __name__ == "__main__":
     tests = [
         test_issue_prioritization_projection,
+        test_risk_score_model_projected,
+        test_scan_item_id_projected_from_relationship,
+        test_risk_factors_absent_vs_empty,
+        test_reachability_absent_vs_empty,
         test_snyk_problem_fallback,
-        test_limit_clamping,
+        test_limit_valid_values_pass_through_unclamped,
+        test_limit_out_of_range_rejected_not_clamped,
+        test_limit_multiple_of_ten_enforced_for_step_endpoints,
         test_token_missing_exits,
         test_next_url_fetched_verbatim,
         test_next_relative_cursor_fetched_verbatim,
         test_get_relative_path_with_params_still_encodes,
         test_projects_expand_target_mapping,
         test_request_params,
-        test_url_uses_array_params,
+        test_severity_wire_form_is_one_comma_joined_param,
+        test_status_wire_form_is_one_comma_joined_param,
+        test_target_id_repeated_key,
+        test_origins_wire_form_is_one_comma_joined_param,
+        test_targets_always_sends_exclude_empty_false_by_default,
+        test_targets_exclude_empty_overridable,
+        test_next_cursor_unwraps_dict_form_href,
+        test_next_cursor_bare_string_form,
+        test_next_cursor_absent,
+        test_api_host_strips_trailing_rest_suffix,
+        test_org_slug_rejected_not_uuid,
+        test_scan_item_id_and_type_must_be_paired,
+        test_next_alone_needs_no_scope_args,
         test_http_error_does_not_echo_raw_body,
         test_non_json_200_exits_cleanly,
     ]
