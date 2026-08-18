@@ -30,6 +30,7 @@ query GetIssues($getIssuesInput: IssuesInput) {
       issueId
       sourceTools
       connector
+      severity
       originalToolSeverity
       issueStatus
       name
@@ -162,21 +163,32 @@ def _raise_graphql_errors(payload: Mapping[str, object]) -> None:
         raise SystemExit(1)
 
 
-def _autocomplete(field_name: str, value: str | None) -> dict[str, object] | None:
-    if not value:
-        return None
-    return {"fieldName": field_name, "value": [value]}
+# Live-verified against a real OX tenant; IssuesInput.filters is undocumented
+# in OX's published SDL but is the mechanism that actually filters issues.
+CRITICALITY_CHOICES = (
+    "Appoxalypse", "Critical", "High", "Medium", "Low", "Info",
+)
+VALID_FILTER_FIELDS = frozenset({
+    "apps", "criticality", "categories", "policies", "issueOwners",
+    "issueNames", "sourceTools", "cwe", "severityChange",
+    "severityChangeReasons", "issueStatus", "issueActions",
+    "originalSeverity", "uniqueLibs", "filePaths", "languages", "cve",
+    "oscar", "issuesWithout", "tags",
+})
 
 
-def _filter_search(values: Sequence[str] | None) -> list[dict[str, object]] | None:
-    if not values:
-        return None
-    filters = []
-    for item in values:
-        field_name, sep, value = item.partition("=")
+def _parse_filters(items: Sequence[str] | None) -> dict[str, list[str]]:
+    filters: dict[str, list[str]] = {}
+    for item in items or []:
+        field, sep, value = item.partition("=")
         if not sep:
-            raise SystemExit("--filterSearch must be FIELD=VALUE")
-        filters.append({"fieldName": field_name, "value": [value]})
+            raise SystemExit("--filter must be FIELD=VALUE")
+        if field not in VALID_FILTER_FIELDS:
+            raise SystemExit(
+                f"unknown --filter field {field!r}; valid fields: "
+                f"{', '.join(sorted(VALID_FILTER_FIELDS))}"
+            )
+        filters.setdefault(field, []).append(value)
     return filters
 
 
@@ -187,6 +199,8 @@ def _field(value: object) -> str:
         return "yes" if value else "no"
     if isinstance(value, list):
         return ",".join(str(item) for item in value) or "-"
+    if isinstance(value, float):
+        return f"{value:.1f}"
     text = str(value)
     return text if len(text) <= 80 else text[:77] + "..."
 
@@ -224,10 +238,12 @@ def _issue_rows(payload: Mapping[str, object]) -> list[tuple[object, ...]]:
         app = item.get("app") if isinstance(item.get("app"), dict) else {}
         sca = _first_sca(item)
         rows.append((
+            item.get("name"),
             item.get("appName"),
-            app.get("businessPriority"),
+            item.get("severity"),
             item.get("originalToolSeverity"),
             item.get("sourceTools"),
+            app.get("businessPriority"),
             sca.get("epss"),
             sca.get("percentile"),
             sca.get("exploitInTheWild"),
@@ -284,18 +300,17 @@ def _flow_rows(payload: Mapping[str, object]) -> list[tuple[object, ...]]:
 
 def _issue_input(args: argparse.Namespace) -> dict[str, object]:
     data: dict[str, object] = {"limit": args.limit}
-    for key in ("page", "offset", "cursorValue"):
+    for key in ("offset", "cursorValue"):
         value = getattr(args, key, None)
         if value is not None:
             data[key] = value
-    searches = [
-        item for item in (
-            _autocomplete("severity", args.severity),
-            _autocomplete("app", args.app),
-        ) if item
-    ]
-    if searches:
-        data["search"] = searches
+    filters = _parse_filters(args.filter)
+    if args.severity:
+        filters.setdefault("criticality", []).append(args.severity)
+    if args.app:
+        filters.setdefault("apps", []).append(args.app)
+    if filters:
+        data["filters"] = filters
     if args.search:
         data["topLevelSearch"] = args.search
     return data
@@ -304,20 +319,15 @@ def _issue_input(args: argparse.Namespace) -> dict[str, object]:
 def _add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
     parser.add_argument("--search", default=None)
-    parser.add_argument("--page", type=int, default=None)
     parser.add_argument("--offset", type=int, default=None)
     parser.add_argument("--raw", action="store_true")
 
 
 def _app_input(args: argparse.Namespace) -> dict[str, object]:
     data: dict[str, object] = {"limit": args.limit}
-    for key in ("page", "offset"):
-        value = getattr(args, key, None)
-        if value is not None:
-            data[key] = value
-    filters = _filter_search(getattr(args, "filterSearch", None))
-    if filters:
-        data["filterSearch"] = filters
+    offset = getattr(args, "offset", None)
+    if offset is not None:
+        data["offset"] = offset
     if args.search:
         data["search"] = args.search
     app_id = getattr(args, "appId", None)
@@ -331,12 +341,25 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     issues = sub.add_parser("issues")
     _add_common(issues)
-    issues.add_argument("--severity", default=None)
-    issues.add_argument("--app", default=None)
-    issues.add_argument("--cursorValue", default=None)
+    issues.add_argument(
+        "--severity", choices=CRITICALITY_CHOICES, default=None,
+        help="maps to filters.criticality",
+    )
+    issues.add_argument(
+        "--app", default=None,
+        help="qualified Org/repo app name; maps to filters.apps",
+    )
+    issues.add_argument(
+        "--filter", action="append", default=None, metavar="FIELD=VALUE",
+        help="repeatable; sets filters[FIELD] (list). FIELD one of: "
+             + ", ".join(sorted(VALID_FILTER_FIELDS)),
+    )
+    issues.add_argument(
+        "--cursorValue", default=None,
+        help="must match the sort used to obtain it, or the server rejects it",
+    )
     apps = sub.add_parser("apps")
     _add_common(apps)
-    apps.add_argument("--filterSearch", action="append", default=None)
     flows = sub.add_parser("app-flows")
     flows.add_argument("appId")
     flows.add_argument("--raw", action="store_true")
@@ -347,8 +370,8 @@ def _show(payload: Mapping[str, object], args: argparse.Namespace) -> None:
     if args.raw:
         print(json.dumps(payload, separators=(",", ":")))
     elif args.command == "issues":
-        header = ("app", "priority", "severity", "tools",
-                  "epss", "pct", "wild", "fix")
+        header = ("name", "app", "severity", "tool_severity", "tools",
+                  "priority", "epss", "pct", "wild", "fix")
         _print_table(header, _issue_rows(payload))
     elif args.command == "apps":
         _print_table(("appId", "repo", "branch", "prod", "priority", "matched"),

@@ -83,6 +83,16 @@ id	name	paranoia	sensitivity	threshold	enabled
 4814384a9e5d4991b9815dcfc25d2f1f	OWASP Core Ruleset	PL2	Medium	40	True
 ```
 
+If a zone has no custom entrypoint ruleset deployed in this phase, the API
+returns a 404. That means no custom deployment, not no protection: default
+managed rulesets (e.g. Cloudflare Managed Free Ruleset) can still be active.
+The tool exits 0 and still writes an answer to stdout: plain text
+`no entrypoint ruleset is deployed for this phase` by default, or with
+`--raw` a small JSON object (`{"result":null,"no_entrypoint_ruleset":true,
+"phase":"http_request_firewall_managed"}`). A longer explanation goes to
+stderr. Run `rulesets --zone ZONE_ID` on the same zone to see what is
+deployed.
+
 ```bash
 python3 ~/.claude/skills/cloudflare/cloudflare.py routes --zone z1
 # illustrative output:
@@ -115,3 +125,8 @@ documented 5,000,000.
 Cloudflare's rate limit is 1,200 calls per 5 minutes per user, plus 200 per
 second per IP. The tool self-throttles to a 0.25 second call floor and honors
 `Retry-After` on 429.
+
+Confirmed against a live account: `accounts`, `zones`, `dns` (filters and
+page paging), `rulesets` (cursor paging), `ruleset`, and `routes`. The OWASP
+paranoia/threshold projection in `waf` remains unverified live; it needs a
+plan with the OWASP Core Ruleset deployed.

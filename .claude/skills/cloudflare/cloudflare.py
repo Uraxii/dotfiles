@@ -21,6 +21,7 @@ MAX_ERROR_MESSAGE_CHARS = 200
 MIN_REQUEST_INTERVAL_SEC = 0.25
 OWASP_CORE_RULESET_ID = "4814384a9e5d4991b9815dcfc25d2f1f"
 SCORE_THRESHOLD_RULE_ID = "6179ae15870a4bb7b2d480d4843b323c"
+MISSING_ENTRYPOINT_ERROR_CODE = 10003
 MAX_RETRY_AFTER_SEC = 60
 DNS_MAX_PER_PAGE = 5000
 RULESET_PHASES = (
@@ -81,8 +82,28 @@ def _error_message(body: bytes) -> str | None:
     return "; ".join(messages) if messages else None
 
 
+def _is_missing_entrypoint(body: bytes) -> bool:
+    try:
+        payload = json.loads(body.decode("utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        return False
+    errors = payload.get("errors") if isinstance(payload, dict) else None
+    if not isinstance(errors, list):
+        return False
+    for error in errors:
+        if not isinstance(error, dict):
+            continue
+        if error.get("code") == MISSING_ENTRYPOINT_ERROR_CODE:
+            return True
+        message = error.get("message")
+        if isinstance(message, str) and "could not find entrypoint ruleset" in message:
+            return True
+    return False
+
+
 def _get(
-    path: str, params: dict[str, object], token: str, _retried: bool = False
+    path: str, params: dict[str, object], token: str, _retried: bool = False,
+    raw: bool = False,
 ) -> dict:
     _throttle()
     query = urllib.parse.urlencode(_clean(params))
@@ -108,9 +129,29 @@ def _get(
             retry = err.headers.get("Retry-After")
             if retry and retry.isdigit():
                 time.sleep(min(int(retry), MAX_RETRY_AFTER_SEC))
-            return _get(path, params, token, _retried=True)
+            return _get(path, params, token, _retried=True, raw=raw)
+        body = err.read()
+        if err.code == 404 and _is_missing_entrypoint(body):
+            phase = path.split("/phases/")[1].split("/")[0] \
+                if "/phases/" in path else None
+            if raw:
+                print(json.dumps(
+                    {"result": None, "no_entrypoint_ruleset": True,
+                     "phase": phase}, separators=(",", ":"),
+                ))
+            else:
+                print("no entrypoint ruleset is deployed for this phase")
+            print(
+                "no custom entrypoint ruleset is deployed in this phase "
+                "for this zone\n"
+                "Cloudflare's default managed rulesets may still be active\n"
+                "run the rulesets command on the same zone to see what is "
+                "deployed",
+                file=sys.stderr,
+            )
+            sys.exit(0)
         status = f"HTTP {err.code} {err.reason}"
-        message = _error_message(err.read())
+        message = _error_message(body)
         print(f"{status}\n{message}" if message else status, file=sys.stderr)
         sys.exit(1)
 
@@ -373,7 +414,7 @@ def _request(args: argparse.Namespace) -> tuple[str, dict[str, object], tuple, o
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     path, params, header, rows = _request(args)
-    payload = _get(path, params, _token())
+    payload = _get(path, params, _token(), raw=args.raw)
     if args.raw:
         print(json.dumps(payload, separators=(",", ":")))
     else:

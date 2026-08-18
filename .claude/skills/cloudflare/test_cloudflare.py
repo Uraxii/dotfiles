@@ -251,6 +251,111 @@ def test_http_error_does_not_echo_raw_body() -> None:
     assert "vendor message" in text
 
 
+def test_waf_missing_entrypoint_gives_explanation() -> None:
+    body = json.dumps({"errors": [{"code": 10003, "message":
+        "could not find entrypoint ruleset in the "
+        "http_request_firewall_managed phase"}]}).encode()
+    old_urlopen = cloudflare.urllib.request.urlopen
+
+    def fake_urlopen(_request: object, timeout: int) -> object:
+        del timeout
+        raise urllib.error.HTTPError(
+            "https://example.invalid", 404, "Not Found", {}, io.BytesIO(body)
+        )
+
+    cloudflare.urllib.request.urlopen = fake_urlopen
+    stderr = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(stderr):
+            try:
+                cloudflare._get(
+                    "/zones/ZONE_ID/rulesets/phases/"
+                    "http_request_firewall_managed/entrypoint", {}, "token",
+                )
+            except SystemExit as err:
+                assert err.code == 0
+            else:
+                raise AssertionError("expected SystemExit")
+    finally:
+        cloudflare.urllib.request.urlopen = old_urlopen
+    text = stderr.getvalue()
+    assert "rulesets" in text
+    assert "could not find entrypoint ruleset" not in text
+    assert "10003" not in text
+
+
+def test_waf_missing_entrypoint_raw_stdout_is_json() -> None:
+    body = json.dumps({"errors": [{"code": 10003, "message":
+        "could not find entrypoint ruleset in the "
+        "http_request_firewall_managed phase"}]}).encode()
+    old_urlopen = cloudflare.urllib.request.urlopen
+
+    def fake_urlopen(_request: object, timeout: int) -> object:
+        del timeout
+        raise urllib.error.HTTPError(
+            "https://example.invalid", 404, "Not Found", {}, io.BytesIO(body)
+        )
+
+    cloudflare.urllib.request.urlopen = fake_urlopen
+    stdout = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(stdout):
+            try:
+                cloudflare._get(
+                    "/zones/ZONE_ID/rulesets/phases/"
+                    "http_request_firewall_managed/entrypoint", {}, "token",
+                    raw=True,
+                )
+            except SystemExit as err:
+                assert err.code == 0
+            else:
+                raise AssertionError("expected SystemExit")
+    finally:
+        cloudflare.urllib.request.urlopen = old_urlopen
+    text = stdout.getvalue()
+    assert text.strip() != ""
+    payload = json.loads(text)
+    assert payload["result"] is None
+    assert payload["no_entrypoint_ruleset"] is True
+    assert payload["phase"] == "http_request_firewall_managed"
+    assert "could not find entrypoint ruleset" not in text
+    assert "10003" not in text
+
+
+def test_waf_missing_entrypoint_default_stdout_states_situation() -> None:
+    body = json.dumps({"errors": [{"code": 10003, "message":
+        "could not find entrypoint ruleset in the "
+        "http_request_firewall_managed phase"}]}).encode()
+    old_urlopen = cloudflare.urllib.request.urlopen
+
+    def fake_urlopen(_request: object, timeout: int) -> object:
+        del timeout
+        raise urllib.error.HTTPError(
+            "https://example.invalid", 404, "Not Found", {}, io.BytesIO(body)
+        )
+
+    cloudflare.urllib.request.urlopen = fake_urlopen
+    stdout = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(stdout):
+            try:
+                cloudflare._get(
+                    "/zones/ZONE_ID/rulesets/phases/"
+                    "http_request_firewall_managed/entrypoint", {}, "token",
+                )
+            except SystemExit as err:
+                assert err.code == 0
+            else:
+                raise AssertionError("expected SystemExit")
+    finally:
+        cloudflare.urllib.request.urlopen = old_urlopen
+    text = stdout.getvalue()
+    assert text.strip() != ""
+    assert "no entrypoint ruleset" in text
+    assert "could not find entrypoint ruleset" not in text
+    assert "10003" not in text
+
+
 def test_429_retry_capped_sleep() -> None:
     calls = []
 
@@ -277,6 +382,50 @@ def test_429_retry_capped_sleep() -> None:
     assert len(calls) == 2
     assert sleeps[0] == cloudflare.MAX_RETRY_AFTER_SEC
     assert payload["success"] is True
+
+
+def test_429_retry_preserves_raw_through_missing_entrypoint_404() -> None:
+    body = json.dumps({"errors": [{"code": 10003, "message":
+        "could not find entrypoint ruleset in the "
+        "http_request_firewall_managed phase"}]}).encode()
+    calls = []
+
+    def fake_urlopen(_request: object, timeout: int) -> object:
+        del timeout
+        calls.append(1)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError(
+                "https://example.invalid", 429, "Too Many Requests",
+                {"Retry-After": "1"}, io.BytesIO(b"{}"),
+            )
+        raise urllib.error.HTTPError(
+            "https://example.invalid", 404, "Not Found", {}, io.BytesIO(body)
+        )
+
+    old_urlopen = cloudflare.urllib.request.urlopen
+    old_sleep = cloudflare.time.sleep
+    cloudflare.urllib.request.urlopen = fake_urlopen
+    cloudflare.time.sleep = lambda secs: None
+    stdout = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(stdout):
+            try:
+                cloudflare._get(
+                    "/zones/ZONE_ID/rulesets/phases/"
+                    "http_request_firewall_managed/entrypoint", {}, "token",
+                    raw=True,
+                )
+            except SystemExit as err:
+                assert err.code == 0
+            else:
+                raise AssertionError("expected SystemExit")
+    finally:
+        cloudflare.urllib.request.urlopen = old_urlopen
+        cloudflare.time.sleep = old_sleep
+    assert len(calls) == 2
+    text = stdout.getvalue()
+    payload = json.loads(text)
+    assert payload["no_entrypoint_ruleset"] is True
 
 
 def test_non_json_200_exits_cleanly() -> None:
@@ -314,5 +463,9 @@ if __name__ == "__main__":
     test_throttle_sleep_computation()
     test_missing_token_exits()
     test_http_error_does_not_echo_raw_body()
+    test_waf_missing_entrypoint_gives_explanation()
+    test_waf_missing_entrypoint_raw_stdout_is_json()
+    test_waf_missing_entrypoint_default_stdout_states_situation()
+    test_429_retry_preserves_raw_through_missing_entrypoint_404()
     test_non_json_200_exits_cleanly()
     print("ok")

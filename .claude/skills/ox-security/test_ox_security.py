@@ -72,6 +72,7 @@ def test_query_documents_use_verified_names() -> None:
     assert " riskStatus" not in ox_security.ISSUES_QUERY
     assert " title" not in ox_security.ISSUES_QUERY
     assert "      issueId" in ox_security.ISSUES_QUERY
+    assert "      severity" in ox_security.ISSUES_QUERY
     assert "      id" not in ox_security.ISSUES_QUERY
     assert "      cve" not in ox_security.ISSUES_QUERY
     assert "scaVulnerabilities { cve epss percentile exploitInTheWild }" in (
@@ -87,17 +88,62 @@ def test_issues_input_limit_is_always_sent_and_required() -> None:
     assert "GetApplicationsInput.limit is Int" in ox_security.APPLICATIONS_QUERY
 
 
-def test_issue_autocomplete_entries_have_field_name_and_list_value() -> None:
+def test_severity_maps_to_filters_criticality_and_sends_no_search() -> None:
     args = ox_security.build_parser().parse_args([
-        "issues", "--severity", "Critical", "--app", "api",
+        "issues", "--severity", "Critical", "--app", "Org/repo",
     ])
     data = ox_security._issue_input(args)
-    assert data["search"] == [
-        {"fieldName": "severity", "value": ["Critical"]},
-        {"fieldName": "app", "value": ["api"]},
-    ]
-    assert "severity" not in data
-    assert "app" not in data
+    assert data["filters"] == {
+        "criticality": ["Critical"],
+        "apps": ["Org/repo"],
+    }
+    assert "search" not in data
+
+
+def test_invalid_severity_exits_nonzero_and_names_legal_members() -> None:
+    stderr = io.StringIO()
+    with contextlib.redirect_stderr(stderr):
+        try:
+            ox_security.build_parser().parse_args([
+                "issues", "--severity", "critical",
+            ])
+        except SystemExit as error:
+            assert error.code != 0
+        else:
+            raise AssertionError("expected SystemExit")
+    for member in ox_security.CRITICALITY_CHOICES:
+        assert member in stderr.getvalue()
+
+
+def test_app_maps_to_filters_apps() -> None:
+    args = ox_security.build_parser().parse_args(["issues", "--app", "Org/repo"])
+    data = ox_security._issue_input(args)
+    assert data["filters"] == {"apps": ["Org/repo"]}
+
+
+def test_repeated_filter_flag_appends_into_one_list() -> None:
+    args = ox_security.build_parser().parse_args([
+        "issues", "--filter", "tags=a", "--filter", "tags=b",
+    ])
+    data = ox_security._issue_input(args)
+    assert data["filters"] == {"tags": ["a", "b"]}
+
+
+def test_unknown_filter_field_exits_nonzero() -> None:
+    message = _exit_text(
+        ox_security._parse_filters, ["fixedIssues=true"],
+    )
+    assert "fixedIssues" in message
+
+
+def test_no_variables_payload_contains_page_or_filter_search() -> None:
+    issue_args = ox_security.build_parser().parse_args([
+        "issues", "--severity", "Critical", "--app", "Org/repo",
+    ])
+    app_args = ox_security.build_parser().parse_args(["apps", "--search", "api"])
+    for data in (ox_security._issue_input(issue_args), ox_security._app_input(app_args)):
+        assert "page" not in data
+        assert "filterSearch" not in data
 
 
 def test_issue_search_uses_top_level_search_not_autocomplete() -> None:
@@ -107,15 +153,11 @@ def test_issue_search_uses_top_level_search_not_autocomplete() -> None:
     assert "search" not in data
 
 
-def test_apps_search_asymmetry() -> None:
-    args = ox_security.build_parser().parse_args([
-        "apps", "--search", "api", "--filterSearch", "owner=example",
-    ])
+def test_apps_search_is_a_plain_string() -> None:
+    args = ox_security.build_parser().parse_args(["apps", "--search", "api"])
     data = ox_security._app_input(args)
     assert data["search"] == "api"
-    assert data["filterSearch"] == [
-        {"fieldName": "owner", "value": ["example"]},
-    ]
+    assert "filterSearch" not in data
 
 
 def test_app_flows_target_one_app_id() -> None:
@@ -173,8 +215,10 @@ def test_operation_allowlist_rejects_unknown_name() -> None:
 def test_issue_priority_projection() -> None:
     payload = {"data": {"getIssues": {"issues": [{
         "issueId": "i1",
+        "name": "Secret in code",
         "appName": "api",
-        "originalToolSeverity": "critical",
+        "severity": "Critical",
+        "originalToolSeverity": "High",
         "sourceTools": ["Snyk"],
         "isFixAvailable": True,
         "isFixApplied": False,
@@ -187,8 +231,21 @@ def test_issue_priority_projection() -> None:
         }],
     }]}}}
     assert ox_security._issue_rows(payload) == [
-        ("api", "high", "critical", ["Snyk"], 0.91, 99, True, True),
+        ("Secret in code", "api", "Critical", "High", ["Snyk"], "high",
+         0.91, 99, True, True),
     ]
+
+
+def test_field_rounds_float_to_one_decimal() -> None:
+    assert ox_security._field(74.77083333333333) == "74.8"
+
+
+def test_field_leaves_int_untouched() -> None:
+    assert ox_security._field(74) == "74"
+
+
+def test_field_bool_is_not_treated_as_float() -> None:
+    assert ox_security._field(True) == "yes"
 
 
 def test_app_flows_reads_singular_application_flow() -> None:
@@ -273,9 +330,14 @@ def test_non_json_200_exits_cleanly() -> None:
 if __name__ == "__main__":
     test_query_documents_use_verified_names()
     test_issues_input_limit_is_always_sent_and_required()
-    test_issue_autocomplete_entries_have_field_name_and_list_value()
+    test_severity_maps_to_filters_criticality_and_sends_no_search()
+    test_invalid_severity_exits_nonzero_and_names_legal_members()
+    test_app_maps_to_filters_apps()
+    test_repeated_filter_flag_appends_into_one_list()
+    test_unknown_filter_field_exits_nonzero()
+    test_no_variables_payload_contains_page_or_filter_search()
     test_issue_search_uses_top_level_search_not_autocomplete()
-    test_apps_search_asymmetry()
+    test_apps_search_is_a_plain_string()
     test_app_flows_target_one_app_id()
     test_application_rows_read_applications_not_apps()
     test_vendor_pr_typo_is_projected()
@@ -283,6 +345,9 @@ if __name__ == "__main__":
     test_bearer_authorization_header_is_opt_in()
     test_operation_allowlist_rejects_unknown_name()
     test_issue_priority_projection()
+    test_field_rounds_float_to_one_decimal()
+    test_field_leaves_int_untouched()
+    test_field_bool_is_not_treated_as_float()
     test_app_flows_reads_singular_application_flow()
     test_graphql_errors_exit()
     test_token_missing_exits()
