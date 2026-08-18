@@ -33,6 +33,8 @@
 | `codex-skeptic` | The default pre-ship challenge check. Read-only, different vendor's model on the same diff, does not spend the Claude budget. |
 | `skeptic-gate` | Escalation when `codex-skeptic` returns anything but PASS, when the change hits architecture or a trust boundary, or when Codex is unavailable. |
 
+Every skeptic gate is SERIAL, whether `codex-skeptic` or `skeptic-gate`: spawn one gate, wait for its verdict, fix, then spawn one fresh gate. Never batch or run gates in parallel; gate calls are a dependency chain, not independent tool calls.
+
 ## Never spawned directly
 
 The `impeccable` skill spawns its own fleet from inside its own workflow:
