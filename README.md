@@ -68,11 +68,11 @@ rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.clau
 | opencode | AI agent stack (legacy) | [docs/tooling.md](docs/tooling.md) |
 | Claude Code | AI agent stack — `.claude/` agents + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
 | Hermes Agent | AI agent stack — `.hermes/` profiles + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
-| GitHub Copilot CLI | AI agent stack: `copilot/` agents + skills + instructions (Copilot-native, manual symlink via `copilot/install.sh`) | [CLAUDE.md](CLAUDE.md) |
+| GitHub Copilot CLI | AI agent stack: `copilot/` agents + skills + instructions (Copilot-native, manual symlink via `copilot/install.sh`) | [docs/agents.md](docs/agents.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
 
-For the theming architecture, agent rules, and the `docs/` contract itself, see [CLAUDE.md](CLAUDE.md).
+For the theming architecture, agent rules, and the `docs/` contract itself, see [docs/theming.md](docs/theming.md), [docs/agents.md](docs/agents.md), and [docs/conventions.md](docs/conventions.md).
 
 ## Useful packages
 
