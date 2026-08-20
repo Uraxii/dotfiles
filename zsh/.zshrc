@@ -139,3 +139,7 @@ eval "$(zoxide init --cmd cd zsh)"
 
 export PATH="$HOME/dev/flutter/bin:$PATH"
 export PATH="$HOME/Android/Sdk/platform-tools:$HOME/Android/Sdk/emulator:$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH"
+
+## Local overrides (untracked, machine-specific)
+
+[[ -r ${ZDOTDIR:-$HOME}/.zshrc.local ]] && source ${ZDOTDIR:-$HOME}/.zshrc.local
