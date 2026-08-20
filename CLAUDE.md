@@ -48,7 +48,7 @@ ln -s ~/.config/.claude ~/.claude
 ln -s ~/.config/.hermes ~/.hermes
 ```
 
-`copilot` (GitHub Copilot CLI) reads `~/.copilot/` (hardcoded, non-XDG). Its dir is full of runtime state (sessions, cache, logs), so only the config subdirs are symlinked into the repo, not the whole dir. Run `copilot/install.sh` once per machine: it symlinks `agents`, `skills`, `instructions`, `refs`, and `copilot-instructions.md` into `~/.copilot/`, verifying each source exists first and refusing to clobber or silently relink an existing path (see the "Agent & Skill Files" section below for the full contract).
+`copilot` (GitHub Copilot CLI) reads `~/.copilot/` (hardcoded, non-XDG). Its dir is full of runtime state (sessions, cache, logs), so only the config subdirs are symlinked into the repo, not the whole dir. Run `copilot/install.sh` once per machine: it symlinks `agents`, `skills`, `instructions`, `refs`, and `copilot-instructions.md` into `~/.copilot/`, verifying each source exists first and refusing to clobber or silently relink an existing path (see [`docs/agents.md`](docs/agents.md) "Agent & Skill Files" for the full contract).
 
 **zsh + ZDOTDIR**: zsh hardcodes `~/.zshenv` as the one always-loaded file. Create a one-line stub on each machine:
 ```sh
@@ -62,86 +62,14 @@ After that, zsh loads `.zshrc`, `.zprofile`, etc from `$ZDOTDIR` instead of `$HO
 `.stow-local-ignore` controls what stow skips (regex). Ignores: repo meta (`README`, `LICENSE`, `docs`, `CLAUDE.md`, `CONTEXT.md`, `AGENTS.md`, `deps.toml`, `install.py`, `pytest.ini`, `scripts`, `tests`, `home.nix`), VCS files, caches (`__pycache__`, `.ruff_cache`), `.claude/*local*`, `.pipeline`, hermes secrets/runtime, opencode runtime (`memory`, `inbox`, `plans`, `projects`, `models.local`), `tmux/plugins`, `starship.toml` + `.tmpl` (managed by set-theme.sh).
 
 `.stowrc` defines `--target=~/.config` + ignores `.stowrc` itself + `DS_Store`. Stow regex overrides defaults — must re-add defaults manually.
-## Agent & Skill Files
+## Agent & Skill Stack
 
-`.claude/agents/` and `.claude/skills/` are the Claude Code source of truth.
-`.hermes/profiles/` and `.hermes/skills/` are the parallel Hermes source of truth (omerxx-mirrored).
-`opencode/agent/`, `opencode/skills/`, `opencode/command/` hold the OpenCode-format copies.
-`copilot/agents/*.agent.md` hold the GitHub Copilot CLI copies. `copilot/skills/`, `copilot/instructions/`, `copilot/refs/`, and `copilot/copilot-instructions.md` round out the Copilot tree; `copilot/install.sh` symlinks all five into `~/.copilot/` (`agents`, `skills`, `instructions`, `refs`, `copilot-instructions.md`) since `~/.copilot/` holds live runtime state (session db, logs, machine-managed `config.json`) and cannot be stowed wholesale. The script is idempotent (a correctly-linked target is skipped); it exits nonzero with an error instead of overwriting a target that is a real file/dir, or a symlink pointing somewhere else.
+- `.claude/rules/` auto-loads into every subagent; `.claude/refs/` never auto-loads (agents pull it with an explicit Read).
+- `.claude/agents/` and `.claude/skills/` are the Claude Code source of truth; `.hermes/`, `opencode/`, and `copilot/` are separate, deliberately-diverging manual copies (no generator, no symlink).
+- Boards live under `~/.beads-hub`; the personal knowledgebase lives under `~/.knowledgebase`. Both are driven only through `$HOME/.claude/skills/agent-workbench/agent-workbench`, never written to directly.
+- A new file under `.claude/` needs a restow (`stow .` from repo root) before `~/.claude` sees it.
 
-`copilot/copilot-instructions.md` is the always-loaded global instructions file (Copilot auto-loads `~/.copilot/copilot-instructions.md`), copied from `.claude/rules/output.md` verbatim: no frontmatter, no Claude-only references to fix.
-
-`copilot/instructions/*.instructions.md` are the path-scoped rules, one per `.claude/rules/<lang>.md`. Copilot's modular instructions use `applyTo: "<glob>,<glob>"` (comma-separated globs in one quoted string) instead of Claude's `paths:` list, plus a one-line `description:`; bodies are verbatim. This is NOT a near-exact port of Claude's `paths:` auto-load: Copilot injects a POINTER into the system prompt (Pattern / File Path / Description, plus "if you have not already read the file, use the view tool to acquire it"), not the rule content itself. A matching file only gets the rule applied if the model chooses to read it. Session logs confirmed all five instruction files show up as pointers in the system prompt; whether the model actually reads and follows one is not guaranteed the way Claude's inlined `paths:` content is.
-
-`copilot/refs/` mirrors `.claude/refs/` for pull-on-demand doctrine (never auto-loaded; agents `Read` it explicitly). `code-quality.md` is verbatim. `orchestration.md` is adapted, not copied: no `codex-implementer`/`codex-skeptic` (model requests do not route to OpenAI here), no `zakia`/`art-director`/impeccable-* (main-thread persona and art workstream are not shipped), no `Plan` (no Copilot equivalent, use `search`/`read` directly instead); `Explore` is kept, mapped to Copilot's built-in `explore` agent. `skeptic-gate` is the sole pre-ship gate (no `codex-skeptic` default to escalate from), still SERIAL. `~/.claude/refs/` paths become `~/.copilot/refs/`.
-
-`copilot/skills/` is a curated 24-skill subset of `.claude/skills/`, plus the pre-existing Copilot-only `poc` and the 6-skill `ponytail` port documented below (31 dirs total). Skills share Claude's `SKILL.md` format (Copilot reads it natively). Every skill is a real **copy**, never a symlink — the two trees are deliberately independent, no shared inodes. Seed a new one with `cp -rL .claude/skills/<name> copilot/skills/<name>` (strip `__pycache__`/`.ruff_cache`/`*.pyc` if present), then edit the copy for anything Claude-only: a `~/.claude/skills/...` path (including a bundled script invocation like `python3 ~/.claude/skills/<name>/foo.py`, not just SKILL.md prose) rewrites to `~/.copilot/skills/<name>/...`, `~/.claude/refs/...` rewrites to `~/.copilot/refs/...`, `~/.claude/rules/output.md` rewrites to `~/.copilot/copilot-instructions.md`, `~/.claude/rules/<lang>.md` rewrites to `~/.copilot/instructions/<lang>.instructions.md`, an agent not in the shipped Copilot fleet (`architect-designer`, `big-pickle-simple-tasks`, `implementation-specialist`, `requirements-clarifier`, `skeptic-gate`, `tech-lead`, `test-automation-engineer`, `poc-agent`) gets restated for Copilot's built-ins (`explore`, `task`, `general-purpose`, `rubber-duck`, `code-review`, `research`, `security-review`) or dropped, and a Claude-only affordance (the `Skill` tool, `SendMessage`, `rotate-agent`, `Artifact`, `Workflow`) gets restated in plain prose or dropped if it has no Copilot meaning. Plain tool-name differences (`Read`, `Bash`, `Grep`, `Glob`, `Task`, `WebFetch`, `TodoWrite`) do not require an edit, Copilot's aliases (`read`, `execute`, `search`, `agent`) are case-insensitive and cover them. The cost of this is drift by design: a fix landed in `.claude/skills/` does not reach `copilot/skills/`, and vice versa — each copy is maintained on its own after seeding, the same way `copilot/agents/` already is.
-
-**`ponytail` port**: `copilot/skills/ponytail*` (6 dirs: `ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`) port the third-party ponytail Claude plugin, v4.8.4, source `~/.claude/plugins/cache/ponytail/ponytail/4.8.4/`. No `.claude/skills/` original exists for these; they are copied from the plugin's `.openclaw/skills/` variant, not its `skills/` tree, since the two are byte-identical below the frontmatter but `.openclaw/` already carries generic frontmatter (quoted one-line `description`, no Claude-only `argument-hint` field), a better fit for a non-Claude harness. Only `ponytail-help/SKILL.md` needed edits: it named `/plugin` marketplace auto-update, `npm install -g @anthropic-ai/claude-code`, and per-host slash-command tables that do not apply on Copilot, rewritten to plain Copilot invocation (name the skill or say the mode word) and a note that the file is a manually-refreshed copy, not a live plugin install. What was dropped: the plugin's `hooks/*.js` (`sessionStart` force-injects the ruleset every session regardless of topic, `userPromptSubmitted` tracks the active mode and re-injects it every turn, a subagent hook propagates it into Task-spawned agents) and the bundled `ponytail-mcp` stdio server (an MCP prompt plus a read-only tool serving the same static ruleset text, meant for hosts with no other injection point, not an activation mechanism itself) are NOT ported, consistent with "Copilot hooks: investigated, not shipped" above. Consequence: this is a manual-invocation subset, not full always-on ponytail. Nothing here force-activates ponytail at session start, persists an active mode across turns, or reaches a spawned subagent; the skill only fires when Copilot's own description-matching decides a prompt is ponytail-shaped, or the user names it directly.
-
-**Vendor connector skills**: `azure-devops`, `cloudflare`, `ox-security`, `snyk`, `sysdig` are pure stdlib Python HTTP clients. Each is a real copy, not a symlink (see `copilot/skills/` above): each bundles its own `.py` client invoked by an absolute path, so the copy rewrites that path to `~/.copilot/skills/<name>/`. Each reads its credential from process env only and hard-exits with a `missing <VAR>` message if absent (no keyring, no `proton-pass-cli`, no dotfile, no `~/.<vendor>/` lookup). Each has a test asserting `Authorization` never reaches error output, so header redaction on proxy-echo errors is a tested invariant. None make model calls.
-
-| Skill | Env var(s) |
-|---|---|
-| `azure-devops` | `AZURE_DEVOPS_BEARER_TOKEN` (preferred) or `AZURE_DEVOPS_PAT`, plus `AZURE_DEVOPS_ORG` |
-| `cloudflare` | `CLOUDFLARE_API_TOKEN` |
-| `ox-security` | `OX_API_KEY` (`OX_AUTH_BEARER` toggles bare-key vs Bearer, `OX_API_URL` overrides endpoint) |
-| `snyk` | `SNYK_TOKEN` (`SNYK_API_HOST` optional host override) |
-| `sysdig` | `SYSDIG_API_TOKEN` plus `SYSDIG_HOST` |
-
-Machine-specific values for these go in gitignored local config, never in a tracked file.
-
-`copilot/skills/poc/` is a Copilot-native skill with no Claude original, a thin **launcher** that hands the user's request to the `tech-lead` agent, which orchestrates the specialist fleet. Entry point for the whole multi-agent system: a user types `poc <task>` (or "use the team" / "spin up the tech-lead") and tech-lead triages → phases → delegates → runs the skeptic-gate check. Delegation nests one extra level here (skill → tech-lead → specialist), which Copilot supports.
-
-Frontmatter differs between platforms (Claude Code: `name`/`description`/`model`/`tools`; OpenCode/Hermes: `mode`/`tools: {bash: false}`), so the trees are maintained in parallel rather than symlinked. Edit files directly — no generator.
-
-**Copilot specifics**: filenames are `<name>.agent.md`. Frontmatter pins `model:`: Copilot CLI honors it (`copilot help config` lists the live catalog; `mcp-servers`, `metadata`, `disable-model-invocation` are the cloud-agent-only keys it ignores, not `model:`). The whole shipped fleet pins `gpt-5.4` (`architect-designer`, `big-pickle-simple-tasks`, `implementation-specialist`, `requirements-clarifier`, `skeptic-gate`, `tech-lead`, `test-automation-engineer`); there is no longer a per-Claude-tier split. `poc-agent` carries no `model:` and inherits the session model. A narrower work seat may not carry `gpt-5.4`: `copilot help config` lists what a seat actually offers; if the id 404s, either swap in whatever the catalog offers or drop that agent's `model:` line rather than guessing a substitute. `tools:` uses Copilot's canonical names (`read`, `search`, `edit`, `execute`, `agent`, `web`, `todo`; `Skill` has no equivalent, dropped). Delegation uses the `agent`/`task` tool, not Claude's Agent tool. `tech-lead` carries `tools: [read, search, agent]` (no `edit`/`execute`, it delegates, never implements); `poc-agent` carries `tools: [read, search, edit]` (no `execute`/`agent`, it enforces its own "cannot run code, never delegates" rule).
-
-**Subagent context isolation**: a canary experiment confirmed Copilot CLI subagents do NOT inherit auto-loaded instruction files: `~/.copilot/copilot-instructions.md` reaches the main thread only. Every shipped agent body therefore carries the house output rules inline, wrapped in `<!-- BEGIN SHARED OUTPUT RULES (synced from copilot/copilot-instructions.md, do not edit here) -->` / `<!-- END SHARED OUTPUT RULES -->` markers (identical strings across all 8 files, so a script can re-sync them later if `copilot-instructions.md` changes). Do not replace this with a "Read `~/.copilot/copilot-instructions.md`" directive: inlining needs no tool call and cannot fail on a missing file.
-
-The block lives at the very END of the body, not the top. A live-session test found role bodies placed after a top-of-file rules block still ignored the rules (long, non-caveman output, no terseness) even though the file demonstrably loaded and the `model:` pin was live; several role templates prescribe their own output structure, and that beat a generic rule sitting hundreds of lines earlier on both specificity and recency. Moving the block to the end and adding a precedence line right after the BEGIN marker ("These output rules override any output format described earlier in this agent body; where a role template and these rules conflict, the rules win on voice and length, but the template's required content still ships.") fixes the ordering: last-and-most-specific wins, and the template's required content is still explicitly preserved. Keep any future edit to this block at the end, with the precedence line first inside it.
-
-**Copilot fleet delta**: the shipped Copilot agent fleet is exactly `architect-designer`, `big-pickle-simple-tasks`, `implementation-specialist`, `requirements-clarifier`, `skeptic-gate`, `tech-lead`, `test-automation-engineer`, plus the Copilot-only `poc-agent`. `codex-implementer`, `codex-skeptic`, `zakia`, `art-director`, and the `impeccable-*` fleet are deliberately NOT ported: the codex agents drive a Claude-side Codex bridge and would route off-platform, zakia is the Claude main-thread persona, and art-director/impeccable-* are the image/frontend-design workstreams, not shipped here. Copilot's `tech-lead` therefore defaults to `implementation-specialist` and gates on `skeptic-gate` alone. Agent bodies are otherwise byte-for-byte the Claude source below the frontmatter; when a body names a Claude-only affordance (`rotate-agent`, `SendMessage`), the Copilot copy states the behavior in plain prose instead.
-
-**Copilot hooks: investigated, not shipped.** A `preToolUse` bash-timeout-cap hook was prototyped and rejected: the config pointed at a script `install.sh` never links in, so shipping it as-is would deny every Bash tool call, and the cap's unit math was wrong besides. Two facts worth keeping from that investigation: Copilot's `preToolUse` hook blocks purely on a nonzero exit code from the hook command (no stdout decision-key protocol like Claude's), and `userPromptSubmitted` carries no token-usage data. No `copilot/hooks/` tree ships.
-
-## Agent Architecture
-
-- Hub and spoke. `zakia` (main thread) is the sole human-facing orchestrator; it spawns background sub-orchestrators: `tech-lead` (one per software workstream) and `art-director` (one per art workstream). art-director drives ComfyUI over HTTP itself via the `comfyui` skill (`.claude/skills/comfyui/comfyui.py`); there is no separate runner agent, because the poll loop lives in the script and produces no transcript worth isolating.
-- Frontend/UI design is its own workstream, run through the `impeccable` skill (invoked by `tech-lead` or `zakia`), which SELF-orchestrates its own specialist fleet: `impeccable-finish-reviewer` (design-internal quality gate, runs outside the build thread), `impeccable-documenter` (records DESIGN.md from the shipped artifact), `impeccable-asset-producer` (raster assets from approved mocks), `impeccable-manual-edit-applier` (live copy-edit batches). zakia/tech-lead never spawn these directly; the skill delegates. See `.claude/refs/orchestration.md` ("Frontend design workstream (impeccable)").
-- Agent definitions live in `.claude/agents/`; each file carries only its role-specific delta.
-- Two context tiers, and the directory decides which:
-  - `.claude/rules/` **auto-loads** into every custom subagent at startup (verified on Claude Code 2.1.220). Files with `paths:` frontmatter load on demand when a matching file is touched; files without it load every session. `output.md` is global by design; the language rules are `paths:`-scoped.
-  - `.claude/refs/` **never auto-loads**. Agents pull these with an explicit Read. `orchestration.md` (agent roster) and `code-quality.md` live here so they reach only the agents that need them, instead of every agent regardless of role.
-- Agent bodies reference `~/.claude/refs/<file>.md` by tilde path and expand `~` themselves; the Read tool needs an absolute path. `@`-imports do NOT expand inside agent definition bodies, so never rely on them there.
-- `codex-implementer`'s heredoc must keep a real on-disk path: Codex is a different vendor's model and receives none of Claude Code's auto-loaded context.
-- Deployment: stow creates per-file symlinks. A NEW file under `.claude/` needs a restow (`stow .` from repo root) or a matching manual symlink before `~/.claude` sees it.
-
-## Per-project agent workspace (board + knowledge base)
-
-Every project an agent works in gets the same scaffold, so a fresh or compacted orchestrator can rebuild its state from disk instead of from conversation history. Doctrine lives in `.claude/refs/orchestration.md` ("Per-project standard shape", "Board substrate", "KB distillation rule"); this section is the pointer + the tooling that implements it.
-
-```
-docs/kb/        distilled markdown KB entries: tracked, durable, human-readable.
-workstreams/    per-workstream status.md + artifacts.
-kb.db           SQLite FTS5 index over docs/kb/. Local/regenerable, gitignored.
-```
-
-Boards live centrally under `~/.beads-hub`, never in the repo (root is `~/.beads-hub`, not `~/.beads`: bd 1.1.0 refuses `bd init` under any `.beads`-named ancestor). Layout: `~/.beads-hub/hub/.beads` is the bd multi-repo aggregator; `~/.beads-hub/<name>/.beads` is one board per project (prefix `<name>`). the `agent-workbench` skill's `hub` subcommand (`agent-workbench hub {init,add,sync,list,path,status}`, invoked at `.claude/skills/agent-workbench/agent-workbench`, root override `BEADS_HUB_DIR`) manages them: `hub add <name>` creates + registers a project board, `hub sync` (`bd repo sync`) hydrates all into the aggregator, `hub list` shows them, `hub path <name>` prints a board's `BEADS_DIR`. Agents write to a project board via `BEADS_DIR=$(agent-workbench hub path <name>) bd ...`; the aggregator is the cross-project READ view. Doctrine: `.claude/refs/orchestration.md` ("Board substrate").
-
-- `agent-workbench init-workspace [TARGET_DIR]` scaffolds the shape idempotently: creates + registers the project's board under `~/.beads-hub` (via `agent-workbench hub add`, using `bd init --stealth --skip-agents --skip-hooks` under the hood, no CLAUDE.md/AGENTS.md/hooksPath side effects), plus `docs/kb/`, `workstreams/`, a first `kb.db` build, and a git `post-commit` hook.
-- `scripts/build-kb-index.py [--root DIR] [--db PATH]` is the no-LLM FTS5 indexer (stdlib `sqlite3` only). Full rebuild from `docs/kb/*.md` on every run; safe to call standalone or from the post-commit hook.
-- The post-commit hook (installed into the target repo's `.git/hooks/post-commit`, untracked) reindexes `kb.db` only when the commit touched `docs/kb/`; a no-op otherwise. If a post-commit hook already exists there, the installer warns instead of overwriting it.
-- Distillation is in-context: the agent that owns a ticket or workstream writes its own KB entry right before it terminates or rotates. No dedicated distiller agent; retrieval sweeps use `knowledge-scout` instead.
-
-## Knowledgebase (`~/.knowledgebase`)
-
-Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any repo, NOT git-tracked), superseding per-repo `docs/kb/` as the home for lasting knowledge. Mirrors the `~/.beads-hub` split: source under `~/.knowledgebase/<project>/{decisions,notes,research,sources}/`, one global index at `~/.knowledgebase/index/kb.db`. Note types: `decision | resolution | research | domain | architecture | gotcha | source`; all share one frontmatter schema (`type,title,source,author,site,published,fetched,description,tags,project,status,question,summary` + body + `## Refs`). Web sources are STORED (content + metadata), captured DETERMINISTICALLY with zero model spend; classifiers/embeddings run afterward. Full doctrine: `.claude/refs/orchestration.md` ("Knowledgebase").
-
-- `agent-workbench kb {init,add,path,index,clip,status}` (root override `KB_HOME`): `init` makes the vault + `index/`; `add <project>` makes the 4 subdirs; `clip <url> [--project P]` deterministically fetches + extracts a `type: source` note; `index` rebuilds the global FTS5 index.
-- `scripts/kb-index.py` is the no-LLM global FTS5 indexer (stdlib `sqlite3`) over `~/.knowledgebase/<project>/**`, uniform row schema, `query "<terms>" [--project P] [--type T] [--all]`.
-- `scripts/kb-clip.py` is the deterministic web capture: `urllib` fetch -> Open Graph / Schema.org JSON-LD / meta / `readability-lxml` -> `type: source` note (`question`/`summary` left empty for a later classifier). Dep: `readability-lxml` (user-site); stdlib densest-block fallback on any readability error.
-- `docs/kb-clipper-template.json` is the importable Obsidian Web Clipper template (same schema; `tags` fed by `{{meta:name:keywords}}`), for the human browse-and-clip path into `<project>/sources/`.
+Full doctrine (platform-porting rules, hub-and-spoke orchestration, per-project workspace scaffold, knowledgebase schema): [`docs/agents.md`](docs/agents.md).
 
 ## Path Standard (enforced by pre-commit hook)
 
@@ -163,101 +91,15 @@ Durable distilled memory, personal + machine-local (Obsidian vault, NOT in any r
 
 # Theming System
 
-Changing `set $theme <name>` in `sway/prefs` + sway reload switches sway, GTK, Qt, Waybar, and Wofi together.
+Changing `set $theme <name>` in `sway/prefs` + sway reload switches sway, GTK, Qt, Waybar, and Wofi together. Configurable values MUST use the `.tmpl` + `sed` template system. Runtime outputs (`~/.config/waybar/*`, `~/.config/starship.toml`, etc) are generated and NOT tracked.
 
-## Architecture
-
-`sway/prefs` → defines `$theme`, `$font_family`
-`sway/config` → includes `themes/$theme/*`, runs `set-theme.sh`
-`set-theme.sh` → copies/generates runtime configs from theme data
-
-Non-sway files (CSS, INI) live under `themes/<name>/data/` to avoid sway's include glob parsing them.
-
-## Templates
-
-Configurable values MUST use template system. `.tmpl` extension, `set-theme.sh` does `sed` substitution.
-
-Two placeholder syntaxes (to avoid Go template conflicts in TOML):
-- `{{PLACEHOLDER}}` — CSS templates (waybar, wofi)
-- `##PLACEHOLDER##` — TOML templates (oh-my-posh, starship)
-
-| Variable | Defined in | Placeholder | Used by |
-|----------|-----------|-------------|---------|
-| `$font_family` | `sway/prefs` | `{{FONT}}` | `themes/*/data/wofi.css` |
-| `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
-| `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<name>/` (currently `minimal`) |
-| OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
-| Starship palette | `themes/*/data/starship-palette` | `##PALETTE##` | `starship.toml.tmpl` → `~/.config/starship.toml` |
-
-Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
-
-## Theme Directory Structure
-
-```
-themes/<name>/
-├── colors              # Sway color vars
-├── window              # Wallpaper, borders (sway syntax)
-├── images/             # Wallpapers
-└── data/               # Non-sway configs (NOT included by sway)
-    ├── gtk-colors.css      # GTK @define-color overrides
-    ├── qt-colors.colors    # Qt6ct INI color scheme (⚠️ KDE Plasma footgun — see docs/theming.md)
-    ├── waybar-colors.css   # Waybar @define-color block
-    ├── wofi.css            # Wofi CSS with {{FONT}} placeholder
-    ├── omp-colors          # Shell vars for oh-my-posh ##PLACEHOLDER## substitution
-    ├── starship-palette    # Shell var STARSHIP_PALETTE for starship ##PALETTE## sub
-    ├── tmux-theme.conf     # Full tmux style overlay (status, window list, panes)
-    └── icon-theme          # Icon theme name (e.g. Papirus-Dark)
-```
-
-## Runtime Files (generated, NOT tracked)
-
-`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config,scripts/}`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`, `~/.config/starship.toml`.
-
-> ⚠️ **KDE Plasma 6 note**: Under Plasma, qt6ct colors are ignored in favor of `~/.config/kdeglobals`. If `QT_QPA_PLATFORMTHEME=qt6ct` leaks into a Plasma session, Qt app colors break. See [`docs/theming.md`](docs/theming.md) for the full footgun write-up.
-
-### Starship cross-system bootstrap
-
-Starship is the active prompt (`.zshrc:24`). Runtime config `~/.config/starship.toml` is owned by two paths:
-
-- **Sway systems**: `set-theme.sh:79-83` regenerates it from `starship.toml.tmpl` + `themes/<name>/starship-palette` on every sway theme switch.
-- **Non-sway systems** (or first shell before sway runs): `.zshrc` bootstrap stanza copies the committed `dotfiles/starship.toml` to `~/.config/starship.toml` if missing.
-
-The committed `starship.toml` is a frozen snapshot — a portable default. It is explicitly stow-ignored (`^/starship\.toml$` in `.stow-local-ignore`) so set-theme.sh never writes through a symlink back into the repo. Refresh the snapshot manually when the desired default changes:
-```bash
-cp ~/.config/starship.toml ~/dotfiles/starship.toml
-```
+Full architecture, placeholder tables, theme directory layout, and howto recipes: [`docs/theming.md`](docs/theming.md).
 
 # Docs
 
-Human-facing per-component docs live in `docs/`. Repo-only — the dir is in `.stow-local-ignore`, never symlinked into `$HOME`.
+Component added/removed/materially changed => update its `docs/*.md` file AND the README inventory table in the same change.
 
-## Doc inventory
-
-| Component | Doc file |
-|-----------|----------|
-| sway, waybar, wofi, swaylock, networkmanager-dmenu | `docs/desktop.md` |
-| zsh, starship, ghostty | `docs/shell.md` |
-| nvim, opencode, systemd/user | `docs/tooling.md` |
-| theming pipeline (companion to "Theming System" above) | `docs/theming.md` |
-
-## Doc template
-
-Every component section in `docs/*.md` MUST use these sub-headings (in this order):
-
-1. **Purpose** — one paragraph, what it is and why it's here.
-2. **Key files** — bullet list of repo paths the component owns.
-3. **Keybindings & UX** — omit if N/A.
-4. **Theming integration** — omit if N/A.
-5. **External dependencies** — packages required outside this repo.
-
-## Update rule
-
-When a component is added, removed, or materially changed (new module, new keybind, new dependency, new theming hook), update its `docs/*.md` file AND the README inventory table in the same change. Stale docs are worse than missing docs.
-
-## No duplication
-
-- Theming pipeline lives in this file's "Theming System" section. `docs/theming.md` links here, then adds howto recipes only.
-- Neovim internals live in `.config/nvim/CLAUDE.md` and `.config/nvim/README.md`. `docs/tooling.md` links — never copies.
+Full doc contract (inventory, template, no-duplication rule): [`docs/conventions.md`](docs/conventions.md).
 
 # NerdFont Glyphs
 

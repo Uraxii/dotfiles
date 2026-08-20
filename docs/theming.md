@@ -4,10 +4,67 @@ One-line: changing `set $theme <name>` in `.config/sway/prefs` and
 reloading sway re-skins sway, GTK, Qt6, waybar, wofi, and the starship
 prompt in lock-step.
 
-For the full architecture, placeholder-syntax table, theme directory
-layout, and the list of generated runtime files, see the root
-[`CLAUDE.md`](../CLAUDE.md) "Theming System" section. This file is a
-companion howto — it does not duplicate that content.
+## Architecture
+
+`sway/prefs` → defines `$theme`, `$font_family`
+`sway/config` → includes `themes/$theme/*`, runs `set-theme.sh`
+`set-theme.sh` → copies/generates runtime configs from theme data
+
+Non-sway files (CSS, INI) live under `themes/<name>/data/` to avoid sway's include glob parsing them.
+
+## Templates
+
+Configurable values MUST use template system. `.tmpl` extension, `set-theme.sh` does `sed` substitution.
+
+Two placeholder syntaxes (to avoid Go template conflicts in TOML):
+- `{{PLACEHOLDER}}` — CSS templates (waybar, wofi)
+- `##PLACEHOLDER##` — TOML templates (oh-my-posh, starship)
+
+| Variable | Defined in | Placeholder | Used by |
+|----------|-----------|-------------|---------|
+| `$font_family` | `sway/prefs` | `{{FONT}}` | `themes/*/data/wofi.css` |
+| `$theme` | `sway/prefs` | N/A | `sway/config` include path + `set-theme.sh` arg |
+| `$waybar_theme` | `sway/prefs` | N/A | `set-theme.sh` picks layout from `waybar/themes/<name>/` (currently `minimal`) |
+| OMP colors | `themes/*/data/omp-colors` | `##PRIMARY##`, `##PATH_BG##`, etc. | `omp/uraxii_atomic.omp.toml.tmpl` |
+| Starship palette | `themes/*/data/starship-palette` | `##PALETTE##` | `starship.toml.tmpl` → `~/.config/starship.toml` |
+
+Adding new variable: define in `sway/prefs` → pass to `set-theme.sh` in `sway/config` → receive as positional arg → add `sed` substitution → use placeholder in templates.
+
+## Theme Directory Structure
+
+```
+themes/<name>/
+├── colors              # Sway color vars
+├── window              # Wallpaper, borders (sway syntax)
+├── images/             # Wallpapers
+└── data/               # Non-sway configs (NOT included by sway)
+    ├── gtk-colors.css      # GTK @define-color overrides
+    ├── qt-colors.colors    # Qt6ct INI color scheme (⚠️ KDE Plasma footgun — see "KDE Plasma footgun" below)
+    ├── waybar-colors.css   # Waybar @define-color block
+    ├── wofi.css            # Wofi CSS with {{FONT}} placeholder
+    ├── omp-colors          # Shell vars for oh-my-posh ##PLACEHOLDER## substitution
+    ├── starship-palette    # Shell var STARSHIP_PALETTE for starship ##PALETTE## sub
+    ├── tmux-theme.conf     # Full tmux style overlay (status, window list, panes)
+    └── icon-theme          # Icon theme name (e.g. Papirus-Dark)
+```
+
+## Runtime Files (generated, NOT tracked)
+
+`set-theme.sh` writes to: `~/.config/gtk-{3,4}.0/colors.css`, `~/.config/waybar/{colors.css,style.css,config,scripts/}`, `~/.config/wofi/style.css`, `~/.config/qt6ct/colors/theme.colors`, `~/.config/omp/uraxii_atomic.omp.toml`, `~/.local/share/tmux/theme.conf`, `~/.config/starship.toml`.
+
+> ⚠️ **KDE Plasma 6 note**: Under Plasma, qt6ct colors are ignored in favor of `~/.config/kdeglobals`. If `QT_QPA_PLATFORMTHEME=qt6ct` leaks into a Plasma session, Qt app colors break. See "KDE Plasma footgun" below for the full footgun write-up.
+
+### Starship cross-system bootstrap
+
+Starship is the active prompt (`.zshrc:24`). Runtime config `~/.config/starship.toml` is owned by two paths:
+
+- **Sway systems**: `set-theme.sh:79-83` regenerates it from `starship.toml.tmpl` + `themes/<name>/starship-palette` on every sway theme switch.
+- **Non-sway systems** (or first shell before sway runs): `.zshrc` bootstrap stanza copies the committed `dotfiles/starship.toml` to `~/.config/starship.toml` if missing.
+
+The committed `starship.toml` is a frozen snapshot — a portable default. It is explicitly stow-ignored (`^/starship\.toml$` in `.stow-local-ignore`) so set-theme.sh never writes through a symlink back into the repo. Refresh the snapshot manually when the desired default changes:
+```bash
+cp ~/.config/starship.toml ~/dotfiles/starship.toml
+```
 
 ## Purpose
 
@@ -60,12 +117,11 @@ Practical recipes for extending the theming pipeline.
    `s/##NAME##/$VAR/g` (TOML) substitution in the relevant template
    block.
 5. Add the placeholder to the consuming `.tmpl` file.
-6. Update the variable table in the root `CLAUDE.md`.
+6. Update the variable table in the "Templates" section above.
 
 ## Generated runtime files
 
-Listed in the root [`CLAUDE.md`](../CLAUDE.md) "Runtime Files"
-sub-section. Not duplicated here.
+Listed in the "Runtime Files" section above. Not duplicated here.
 
 ## External dependencies
 

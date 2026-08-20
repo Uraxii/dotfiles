@@ -41,4 +41,4 @@ agent-workbench kb query "<terms>" --project <project> --type source
 - JS-heavy or auth-gated pages may not extract cleanly; note that and fall back
   to citing the url in `## Refs` if the body comes back empty.
 
-Full knowledgebase doctrine: `~/dotfiles/CLAUDE.md` ("Knowledgebase").
+Full knowledgebase doctrine: `~/dotfiles/docs/agents.md` ("Knowledgebase").

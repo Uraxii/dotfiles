@@ -7,6 +7,9 @@ __pycache__/
 .venv/
 # zsh completion cache — regenerated on shell startup, machine-specific
 zsh/.zcompdump*
+# xonsh built-in drop-in dir, ~/.config/xonsh is a folded stow symlink into
+# this repo, so rc.d files land physically inside xonsh/rc.d/, keep untracked.
+xonsh/rc.d/
 .claude/*local*
 .claude/**/*local*
 .claude/settings.json
