@@ -1,6 +1,6 @@
 ---
 name: implementation-specialist
-description: Disciplined developer who executes precise, well-scoped implementation tasks with zero architectural drift. Writes clean, idiomatic code matching existing project style. Strict scope adherence, never refactors adjacent code unless instructed. Use after planning/design is complete and the task is well defined, and when the work must stay inside the Claude context (deep in-flight state, live orchestration, Claude-only tooling). For isolated, bounded, testable subtasks prefer codex-runner (ROLE: implementer), which bills the ChatGPT subscription instead.
+description: Disciplined developer who executes precise, well-scoped implementation tasks with zero architectural drift. Writes clean, idiomatic code matching existing project style. Strict scope adherence, never refactors adjacent code unless instructed. Use after planning/design is complete and the task is well defined.
 model: sonnet
 tools: Read, Write, Edit, Grep, Glob, Bash, Skill
 ---

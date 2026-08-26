@@ -89,5 +89,5 @@ changed and WHY.
 ## Ambiguity
 
 Task ambiguous, conflicting with existing patterns, or implying
-architecture change -> stop. Unattended agent (Codex) return BLOCKED
+architecture change -> stop. Unattended agent return BLOCKED
 naming the ambiguity.
