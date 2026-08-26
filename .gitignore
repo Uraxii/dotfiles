@@ -15,22 +15,8 @@ xonsh/rc.d/
 .claude/settings.json
 # .stow-local-ignore is stow's package-level ignore file — DO track it.
 !.claude/.stow-local-ignore
-!.hermes/.stow-local-ignore
-opencode/projects/*
-!opencode/projects/.gitkeep
 configstore
 uv
-opencode/plans/*
-!opencode/plans/.gitkeep
-opencode/memory/*
-!opencode/memory/.gitkeep
-opencode/agents/memory/*
-!opencode/agents/memory/.gitkeep
-opencode/agents/shared/agent-models.local.json
-opencode/agents/shared/model-map.local.md
-opencode/inbox/
-opencode/opencode.json
-opencode/models.local
 messages.md
 
 # tpm-installed tmux plugins — runtime install, never tracked
@@ -60,38 +46,6 @@ tmux/plugins/
 .pipeline/*
 !/.pipeline/_shared/
 !/.pipeline/_shared/**
-# OpenCode pipeline-aware config tracked; runtime overrides still in .local variants
-!/opencode/opencode.json
-
-# Slack listener: per-run runtime state never tracked.
-# State, pid, and log files live under <run-dir>, which is already covered by
-# .pipeline/runs/ above. Tokens at ~/.claude/pipeline/slack.env.local are
-# handled by the .claude/**/*local* rule above.
-
-# Hermes runtime + secrets — never tracked
-.hermes/.env
-.hermes/.env.local
-.hermes/state.db
-.hermes/sessions/
-.hermes/memory/
-.hermes/pipeline-registry.json
-.hermes/*local*
-# .stow-local-ignore is stow's package-level ignore file — DO track it.
-!.hermes/.stow-local-ignore
-.hermes/channel_directory.json
-.hermes/cron/
-.hermes/kanban.db
-.hermes/kanban.db-shm
-.hermes/kanban.db-wal
-# Local-only live config; SOUL.md identity files are static and tracked.
-.hermes/config.yaml
-.hermes/profiles/*/config.yaml
-.hermes/profiles/*/.env
-.hermes/profiles/*/state.db
-.hermes/profiles/*/sessions/
-.hermes/profiles/*/memory/
-.hermes/profiles/*/logs/
-.hermes/profiles/*/auth.json
 
 # graphify generated knowledge-graph output (not source)
 graphify-out/

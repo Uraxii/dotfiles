@@ -14,9 +14,8 @@
 #                              #   force-replace foreign symlinks.
 #   ./setup.sh --force-repo -n # PREVIEW: list the live files that would be
 #                              #   removed and simulate the stow, touching nothing.
-#   WARNING: --force-repo also overrides the SOUL.md persona-protection guard
-#   below, so a locally-EDITED SOUL.md gets deleted too (repo wins). Run
-#   --force-repo -n FIRST and read the victim list before running for real.
+#   WARNING: --force-repo deletes any blocking plain live file, repo wins.
+#   Run --force-repo -n FIRST and read the victim list before running for real.
 set -eu
 cd "$(dirname "$(readlink -f "$0")")"
 
@@ -65,23 +64,8 @@ deploy() {
 }
 
 deploy "$HOME/.config" "${stow_args[@]}" .
-mkdir -p "$HOME/.claude" "$HOME/.hermes"
-
-# SOUL.md files are static identity files tracked by dotfiles now. If a
-# pre-existing live copy matches the tracked copy, remove it so stow can
-# replace it with a symlink. If it differs, leave it in place so stow reports
-# the conflict instead of overwriting local persona edits.
-while IFS= read -r src; do
-  rel="${src#"$PWD/.hermes/"}"
-  dst="$HOME/.hermes/$rel"
-  if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
-    rm "$dst"
-  fi
-done <<EOF
-$(find "$PWD/.hermes" -path '*/SOUL.md' -type f | sort)
-EOF
+mkdir -p "$HOME/.claude"
 
 deploy "$HOME/.claude" --no-folding "${stow_args[@]}" .claude
-deploy "$HOME/.hermes" --no-folding "${stow_args[@]}" .hermes
 mkdir -p "$HOME/.config/autostart"
 deploy "$HOME/.config/autostart" --no-folding "${stow_args[@]}" autostart

@@ -29,28 +29,18 @@ uv run pytest                   # test suite
 
 ## First-time setup (per machine)
 
-Three one-time manual steps for tools that don't honor XDG:
+One-time manual step for tools that don't honor XDG:
 
 ```bash
 # 1. zsh: redirect to $ZDOTDIR (zsh always reads ~/.zshenv, can't be relocated)
 cat > ~/.zshenv <<'EOF'
 export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 EOF
-
-# 2. claude-code: hardcodes ~/.claude
-ln -s ~/.config/.claude ~/.claude
-
-# 3. hermes: hardcodes ~/.hermes
-ln -s ~/.config/.hermes ~/.hermes
 ```
 
-If `~/.claude/` or `~/.hermes/` already exists as a real directory (e.g. you ran claude/hermes before installing dotfiles), merge first then symlink:
-```bash
-rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.claude.bak && ln -s ~/.config/.claude ~/.claude
-# same pattern for ~/.hermes
-```
+`docs/`, `README*`, `LICENSE*`, and a few editor noise patterns are filtered by `.stow-local-ignore` and never linked.
 
-`docs/`, `README*`, `LICENSE*`, runtime opencode/pipeline state, and a few editor noise patterns are filtered by `.stow-local-ignore` and never linked.
+AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) is deployed separately by `~/dotai`; see that repo's setup for its own first-time steps.
 
 ## Component inventory
 
@@ -65,12 +55,11 @@ rsync -a --ignore-existing ~/.claude/ ~/.config/.claude/ && mv ~/.claude ~/.clau
 | oh-my-posh | Prompt | [docs/shell.md](docs/shell.md) |
 | ghostty | Terminal emulator | [docs/shell.md](docs/shell.md) |
 | nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`nvim/`](nvim/) |
-| opencode | AI agent stack (legacy) | [docs/tooling.md](docs/tooling.md) |
-| Claude Code | AI agent stack — `.claude/` agents + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
-| Hermes Agent | AI agent stack — `.hermes/` profiles + skills (omerxx-mirrored) | [docs/tooling.md](docs/tooling.md) |
-| GitHub Copilot CLI | AI agent stack: `copilot/` agents + skills + instructions (Copilot-native, manual symlink via `copilot/install.sh`) | [docs/agents.md](docs/agents.md) |
+| Claude Code | `.claude/` hooks, themes, statusline.sh only — agents/skills/rules live in `~/dotai` | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
+
+AI-harness config (agents, skills, rules for Claude Code, Codex, Hermes, opencode, Copilot) lives in `~/dotai`, a separate stow-managed repo.
 
 For the theming architecture, agent rules, and the `docs/` contract itself, see [docs/theming.md](docs/theming.md), [docs/agents.md](docs/agents.md), and [docs/conventions.md](docs/conventions.md).
 
