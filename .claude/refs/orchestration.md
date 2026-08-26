@@ -22,7 +22,7 @@
 
 | Agent | Use it for |
 |---|---|
-| `codex-implementer` | Scoped work that is isolated, file-bounded, and testably done. Bills the ChatGPT subscription instead of the Claude limit. Give concurrent implementers a worktree each. |
+| `codex-runner` | Scoped work that is isolated, file-bounded, and testably done. Set ROLE: implementer, MODE: workspace-write. Bills the ChatGPT subscription instead of the Claude limit. Give concurrent runners a worktree each. |
 | `implementation-specialist` | Scoped work that must stay inside the Claude context: deep in-flight state, live orchestration, Claude-only tooling. |
 | `test-automation-engineer` | Writing tests, running the suite, diagnosing failures, verifying fixes. |
 
@@ -30,10 +30,10 @@
 
 | Agent | Use it for |
 |---|---|
-| `codex-skeptic` | The default pre-ship challenge check. Read-only, different vendor's model on the same diff, does not spend the Claude budget. |
-| `skeptic-gate` | Escalation when `codex-skeptic` returns anything but PASS, when the change hits architecture or a trust boundary, or when Codex is unavailable. |
+| `codex-runner` | The default pre-ship challenge check. Set ROLE: skeptic, MODE: read-only (default). Different vendor's model on the same diff, does not spend the Claude budget. |
+| `skeptic-gate` | Escalation when `codex-runner` (skeptic role) returns anything but PASS, when the change hits architecture or a trust boundary, or when Codex is unavailable. |
 
-Every skeptic gate is SERIAL, whether `codex-skeptic` or `skeptic-gate`: spawn one gate, wait for its verdict, fix, then spawn one fresh gate. Never batch or run gates in parallel; gate calls are a dependency chain, not independent tool calls.
+Every skeptic gate is SERIAL, whether `codex-runner` (skeptic role) or `skeptic-gate`: spawn one gate, wait for its verdict, fix, then spawn one fresh gate. Never batch or run gates in parallel; gate calls are a dependency chain, not independent tool calls.
 
 ## Never spawned directly
 
@@ -44,14 +44,17 @@ skill and let it delegate.
 
 ## Codex-backed agents
 
-`codex-implementer` and `codex-skeptic` are forwarders. They launch a detached
-Codex job (`codex-companion.mjs task --background`), poll it, and relay the
-result verbatim. They never do the work themselves.
+`codex-runner` is the one generic forwarder for any Codex-backed role
+(implementer, skeptic, diagnoser, or free-form). Caller passes ROLE, the
+task prompt, working directory, MODE (default READ-ONLY, write access only
+if explicitly requested), and optional timeout. It runs exactly one
+foreground `codex exec` call under `timeout` (default 900s) and relays the
+result verbatim. No polling, no background job, no job-id store.
 
 Every return opens with two lines:
 
 ```
-JOB: <job id> | NONE
+JOB: <pid or "direct"> | NONE
 DELEGATION: DELEGATED | NOT_DELEGATED - <what it did instead>
 ```
 
@@ -60,7 +63,8 @@ not rerun it, and pass the flag up verbatim: it is how forwarder drift gets
 diagnosed. A `NOT_DELEGATED` skeptic verdict is not an independent vendor
 check, and must not be reported as one.
 
-Job ids live in a per-workspace store. They survive turns, not sessions.
+Non-zero exit (including 124, timeout) is a FAILURE, reported verbatim with
+the tail of output. Never retried silently.
 
 ## Anything else
 

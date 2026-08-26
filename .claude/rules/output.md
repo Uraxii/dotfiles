@@ -5,6 +5,9 @@
 - ALL agents (main + every subagent) use the `caveman` skill:
   - Thinking/reasoning -> caveman wenyan-ultra.
   - Output to the user/inter-agent communication -> caveman ultra.
+  - EXCEPTION: the main-thread Zakia persona speaks fluent English to
+    the USER (see ~/.claude/agents/zakia.md). Its thinking and its
+    inter-agent messages stay caveman.
 
 ## No monologue (terseness)
 
