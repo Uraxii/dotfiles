@@ -26,8 +26,6 @@ __pycache__
 # Repo meta — never deploy
 ^/README.*
 ^/LICENSE.*
-^/AGENTS\.md
-^/CONTEXT\.md
 ^/docs
 ^/\.beads
 ^/workstreams

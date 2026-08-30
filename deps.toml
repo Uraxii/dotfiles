@@ -648,9 +648,9 @@ fedora.source = "script"
 fedora.install_cmd = "if [ -x \"$HOME/.local/bin/godots\" ]; then echo 'already installed'; else mkdir -p \"$HOME/.local/share/godots\" \"$HOME/.local/bin\" && curl -fLo /tmp/godots.zip https://github.com/MakovWait/godots/releases/latest/download/LinuxX11.zip && unzip -o /tmp/godots.zip -d \"$HOME/.local/share/godots\" && chmod +x \"$HOME/.local/share/godots/Godots.x86_64\" && ln -sf \"$HOME/.local/share/godots/Godots.x86_64\" \"$HOME/.local/bin/godots\" && rm /tmp/godots.zip; fi"
 nixos.source = "manual"
 nixos.url = "https://github.com/MakovWait/godots/releases (linux binary needs nix-ld or FHS env on nixos)"
-# Bazzite: flathub flatpak (matches the CLAUDE.md Godots flatpak layout). The
-# flatpak isn't the PATH `godots` symlink, so presence is resolved by
-# `flatpak info` (the inherited `bin` just never matches — harmless).
+# Bazzite: flathub flatpak. The flatpak isn't the PATH `godots` symlink, so
+# presence is resolved by `flatpak info` (the inherited `bin` just never
+# matches — harmless).
 bazzite.source = "flatpak"
 bazzite.pkg = "io.github.MakovWait.Godots"
 termux.source = "unsupported"
