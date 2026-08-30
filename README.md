@@ -46,9 +46,51 @@ export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 EOF
 ```
 
-`docs/`, `README*`, `LICENSE*`, and a few editor noise patterns are filtered by `.stow-local-ignore` and never linked.
+With the stub in place, zsh reads `.zshrc`, `.zprofile`, and the rest from
+`$ZDOTDIR` instead of `$HOME`.
 
 AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) is deployed separately by `~/dotai`; see that repo's setup for its own first-time steps.
+
+## Repo layout
+
+```
+~/dotfiles/
+├── .stowrc                       # --target=~/.config (omerxx model)
+├── .stow-local-ignore            # Stow ignore patterns (regex)
+├── setup.sh                      # IGNORED. Two stow passes, plus --force-repo mode
+├── ghostty/                      # → ~/.config/ghostty/
+├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
+├── nvim/                         # → ~/.config/nvim/   (Kickstart-based)
+├── omp/                          # → ~/.config/omp/    (inactive, kept for reference)
+├── qt6ct/                        # → ~/.config/qt6ct/
+├── sway/                         # → ~/.config/sway/
+├── swaylock/                     # → ~/.config/swaylock/   (XDG-native)
+├── systemd/                      # → ~/.config/systemd/
+├── tmux/                         # → ~/.config/tmux/
+├── waybar/                       # → ~/.config/waybar/
+├── wofi/                         # → ~/.config/wofi/
+├── xonsh/rc.xsh                  # → ~/.config/xonsh/rc.xsh   (xonsh native XDG path)
+├── zsh/.zshrc                    # → ~/.config/zsh/.zshrc     (loaded via $ZDOTDIR; see ~/.zshenv stub)
+├── zsh/.zprofile                 # → ~/.config/zsh/.zprofile
+├── starship.toml                 # IGNORED — managed at runtime by set-theme.sh
+├── starship.toml.tmpl            # IGNORED — template, set-theme.sh substitutes ##PALETTE##
+├── home.nix                      # IGNORED (repo meta)
+```
+
+Every shell config is XDG-native (`zsh/`, `xonsh/`).
+
+### What stow skips
+
+`.stow-local-ignore` holds the skip patterns, as regexes. It skips repo meta
+(`README`, `LICENSE`, `docs`, `deps.toml`, `install.py`, `setup.py`,
+`setup.sh`, `pytest.ini`, `scripts`, `tests`, `home.nix`), VCS files, caches
+(`__pycache__`, `.ruff_cache`), `.claude/` (untracked local files only),
+`.pipeline`, `tmux/plugins`, and `starship.toml` with its `.tmpl` (both
+managed by `set-theme.sh`).
+
+`.stowrc` sets `--target=~/.config` and skips `.stowrc` itself plus
+`DS_Store`. A stow regex replaces the built-in defaults instead of adding to
+them, so re-add by hand any default you still want.
 
 ## Component inventory
 
@@ -68,7 +110,7 @@ AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) 
 
 AI-harness config (agents, skills, rules for Claude Code, Codex, Hermes, opencode, Copilot) lives in `~/dotai`, a separate stow-managed repo.
 
-For the theming architecture, agent rules, and the `docs/` contract itself, see [docs/theming.md](docs/theming.md), [docs/agents.md](docs/agents.md), and [docs/conventions.md](docs/conventions.md).
+For the theming architecture and the repo conventions (docs contract, path standard, commit gate), see [docs/theming.md](docs/theming.md) and [docs/conventions.md](docs/conventions.md).
 
 ## Useful packages
 

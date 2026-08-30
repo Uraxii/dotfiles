@@ -27,7 +27,6 @@ __pycache__
 ^/README.*
 ^/LICENSE.*
 ^/AGENTS\.md
-^/CLAUDE\.md
 ^/CONTEXT\.md
 ^/docs
 ^/\.beads
