@@ -2,8 +2,8 @@
 """Downscale a still image to a maximum height with PIL lanczos resampling.
 
 Standalone CLI port of the retired workflow-runner ``image_downscale`` step
-(branch eb198d5, .claude/skills/workflow-runner/steps.py). The n8n starter
-pipeline's "Downscale (PIL)" Execute Command node shells out to this.
+(branch eb198d5, ``steps.py``). The n8n starter pipeline's "Downscale (PIL)"
+Execute Command node shells out to this.
 
 Contract mirrors the retired step body exactly:
   - open the source, convert to RGB

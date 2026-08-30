@@ -2,9 +2,6 @@
 
 Rootless-podman packaging of `kb-serve.py` (the personal knowledgebase HTTP
 facade) for durable, boot-surviving deployment via a systemd user quadlet.
-Mirrors the pattern already established in
-`.claude/skills/artifact-serve/container/` (see that README for the
-`Network=host` background this one improves on).
 
 ## Files
 
@@ -50,12 +47,15 @@ Keys (all optional, see `kb.env.example` for full comments):
 2. **Vault command** (preferred) — `KB_LLM_API_KEY_CMD="<command>"`. kb-serve
    runs this exact shell command and uses its stdout as the key. Works
    with any vault CLI, provider-agnostic: `pass show ...`, `op read
-   op://...`, `gopass show ...`, or Proton Pass's `pass-cli` (see
-   `~/.claude/skills/proton-pass-cli/SKILL.md` for the exact invocation
-   and its `PROTON_PASS_SESSION_DIR`/`PROTON_PASS_AGENT_REASON`
-   requirements). Example:
+   op://...`, `gopass show ...`. The command inherits kb-serve's process
+   environment, so name your vault through an environment variable you
+   export instead of hardcoding it — export that variable where kb-serve
+   runs (the quadlet's `Environment=`, or your shell); setting it in
+   `kb.env` alone does NOT reach the command, it expands to empty and
+   silently yields no key.
+   Example:
    ```
-   KB_LLM_API_KEY_CMD="pass-cli item view --vault-name MachineSecrets --item-title openrouter --field api-key"
+   KB_LLM_API_KEY_CMD="pass show $VAULT/<item>"
    ```
 
 **Either way, the raw key never touches the container image or a tracked

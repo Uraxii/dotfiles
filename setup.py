@@ -206,40 +206,10 @@ class SetupApp(App):
         def run_stow() -> int:
             log("[yellow]→ Stowing dotfiles packages...[/]")
 
-            # Match original setup.sh behavior exactly
+            # Match setup.sh: the repo root only. .stowrc sets --target=~/.config.
             cmds = [
                 ["stow", "-d", DOTFILES_DIR, "."],
             ]
-
-            home = os.path.expanduser("~")
-            claude_dir = os.path.join(DOTFILES_DIR, ".claude")
-            hermes_dir = os.path.join(DOTFILES_DIR, ".hermes")
-            if os.path.isdir(claude_dir):
-                os.makedirs(os.path.join(home, ".claude"), exist_ok=True)
-                cmds.append(
-                    [
-                        "stow",
-                        "--no-folding",
-                        "-d",
-                        DOTFILES_DIR,
-                        "-t",
-                        os.path.join(home, ".claude"),
-                        ".claude",
-                    ]
-                )
-            if os.path.isdir(hermes_dir):
-                os.makedirs(os.path.join(home, ".hermes"), exist_ok=True)
-                cmds.append(
-                    [
-                        "stow",
-                        "--no-folding",
-                        "-d",
-                        DOTFILES_DIR,
-                        "-t",
-                        os.path.join(home, ".hermes"),
-                        ".hermes",
-                    ]
-                )
 
             errors = 0
             for cmd in cmds:
@@ -258,7 +228,9 @@ class SetupApp(App):
 
             # Autostart entries — stow individually into existing ~/.config/autostart/
             autostart_src = os.path.join(DOTFILES_DIR, "autostart")
-            autostart_dst = os.path.join(home, ".config", "autostart")
+            autostart_dst = os.path.join(
+                os.path.expanduser("~"), ".config", "autostart"
+            )
             if os.path.isdir(autostart_src):
                 os.makedirs(autostart_dst, exist_ok=True)
                 log("  stow autostart (individual)...")

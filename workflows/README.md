@@ -68,10 +68,8 @@ whatever the human submitted at the Form Trigger.
 
 ## comfy_render
 
-Mirrors the ComfyUI submit/poll/fetch pattern, now implemented in
-`.claude/skills/comfyui/comfyui.py` (node ids below are this n8n workflow's
-own template, not a constraint of that CLI, which takes any node id via
-`--set`):
+Mirrors the ComfyUI submit/poll/fetch pattern. The node ids below are this
+n8n workflow's own template, not a constraint of ComfyUI:
 
 1. **Build ComfyUI graph** (Code node) inlines the template graph and injects
    the approved prompt into node `6` (CLIPTextEncode positive) and a **fresh

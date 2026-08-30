@@ -41,7 +41,7 @@ OpenRouter), KB_LLM_MODEL (default openai/gpt-4o-mini), KB_ATOMIZE_MODEL
 reliable decontextualization; used only by /atomize, override for a
 cheaper tier if desired), and the API key via either KB_LLM_API_KEY (static) or
 KB_LLM_API_KEY_CMD (a vault CLI command whose stdout is the key, e.g.
-Proton Pass's pass-cli -- wins over the static value if both are set).
+`pass show <item>` -- wins over the static value if both are set).
 With KB_ENRICH=0 or no resolvable key, /enrich is a clean no-op (zero
 network calls, zero crashes) and /atomize falls back to the deterministic
 splitter. The put/clip/query path never depends on any of this.
@@ -180,11 +180,10 @@ def load_kb_env(kb_home: Path) -> dict[str, str]:
 
 def resolve_api_key(env: Mapping[str, str]) -> str | None:
     """Resolve the LLM API key: KB_LLM_API_KEY_CMD (a vault CLI command,
-    e.g. Proton Pass's `pass-cli item view ... --field api-key`) wins over
-    a static KB_LLM_API_KEY when it succeeds with a non-empty result. If
-    the command is unset, fails, or yields nothing usable, falls back to
-    the static KB_LLM_API_KEY. Returns None if neither yields one. Never
-    logs the resolved value.
+    e.g. `pass show <item>`) wins over a static KB_LLM_API_KEY when it
+    succeeds with a non-empty result. If the command is unset, fails, or
+    yields nothing usable, falls back to the static KB_LLM_API_KEY.
+    Returns None if neither yields one. Never logs the resolved value.
     """
     static_key = env.get("KB_LLM_API_KEY", "").strip() or None
     cmd = env.get("KB_LLM_API_KEY_CMD", "").strip()

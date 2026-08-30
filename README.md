@@ -10,10 +10,18 @@ Prerequisites: `git`, `stow`.
 sudo pacman -S git stow         # Arch / Manjaro
 git clone <this-repo> ~/dotfiles
 cd ~/dotfiles
-./setup.sh                      # runs `stow .`
+./setup.sh                      # two stow passes: repo root -> ~/.config, then autostart/
+./setup.sh --force-repo -n      # preview which live files --force-repo would delete
+./setup.sh --force-repo         # DESTRUCTIVE: delete blocking live files, then stow
 stow -R .                       # restow after changes
 stow -n -v .                    # dry run
 ```
+
+`setup.sh` is not stock stow. It runs two `deploy` passes: the repo root into
+`~/.config`, then `autostart/` into `~/.config/autostart` with `--no-folding`.
+Extra arguments pass through to stow. `--force-repo` is the script's own mode:
+it dry-runs stow, reads the conflicts, and `rm -f`s every plain live file that
+blocks a link, so the repo wins. Run `--force-repo -n` first and read the list.
 
 ### Helper scripts (uv)
 
@@ -38,9 +46,51 @@ export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 EOF
 ```
 
-`docs/`, `README*`, `LICENSE*`, and a few editor noise patterns are filtered by `.stow-local-ignore` and never linked.
+With the stub in place, zsh reads `.zshrc`, `.zprofile`, and the rest from
+`$ZDOTDIR` instead of `$HOME`.
 
 AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) is deployed separately by `~/dotai`; see that repo's setup for its own first-time steps.
+
+## Repo layout
+
+```
+~/dotfiles/
+├── .stowrc                       # --target=~/.config (omerxx model)
+├── .stow-local-ignore            # Stow ignore patterns (regex)
+├── setup.sh                      # IGNORED. Two stow passes, plus --force-repo mode
+├── ghostty/                      # → ~/.config/ghostty/
+├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
+├── nvim/                         # → ~/.config/nvim/   (Kickstart-based)
+├── omp/                          # → ~/.config/omp/    (inactive, kept for reference)
+├── qt6ct/                        # → ~/.config/qt6ct/
+├── sway/                         # → ~/.config/sway/
+├── swaylock/                     # → ~/.config/swaylock/   (XDG-native)
+├── systemd/                      # → ~/.config/systemd/
+├── tmux/                         # → ~/.config/tmux/
+├── waybar/                       # → ~/.config/waybar/
+├── wofi/                         # → ~/.config/wofi/
+├── xonsh/rc.xsh                  # → ~/.config/xonsh/rc.xsh   (xonsh native XDG path)
+├── zsh/.zshrc                    # → ~/.config/zsh/.zshrc     (loaded via $ZDOTDIR; see ~/.zshenv stub)
+├── zsh/.zprofile                 # → ~/.config/zsh/.zprofile
+├── starship.toml                 # IGNORED — managed at runtime by set-theme.sh
+├── starship.toml.tmpl            # IGNORED — template, set-theme.sh substitutes ##PALETTE##
+├── home.nix                      # IGNORED (repo meta)
+```
+
+Every shell config is XDG-native (`zsh/`, `xonsh/`).
+
+### What stow skips
+
+`.stow-local-ignore` holds the skip patterns, as regexes. It skips repo meta
+(`README`, `LICENSE`, `docs`, `deps.toml`, `install.py`, `setup.py`,
+`setup.sh`, `pytest.ini`, `scripts`, `tests`, `home.nix`), VCS files, caches
+(`__pycache__`, `.ruff_cache`), `.claude/` (untracked local files only),
+`.pipeline`, `tmux/plugins`, and `starship.toml` with its `.tmpl` (both
+managed by `set-theme.sh`).
+
+`.stowrc` sets `--target=~/.config` and skips `.stowrc` itself plus
+`DS_Store`. A stow regex replaces the built-in defaults instead of adding to
+them, so re-add by hand any default you still want.
 
 ## Component inventory
 
@@ -55,13 +105,12 @@ AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) 
 | oh-my-posh | Prompt | [docs/shell.md](docs/shell.md) |
 | ghostty | Terminal emulator | [docs/shell.md](docs/shell.md) |
 | nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`nvim/`](nvim/) |
-| Claude Code | `.claude/` hooks, themes, statusline.sh only — agents/skills/rules live in `~/dotai` | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
 
 AI-harness config (agents, skills, rules for Claude Code, Codex, Hermes, opencode, Copilot) lives in `~/dotai`, a separate stow-managed repo.
 
-For the theming architecture, agent rules, and the `docs/` contract itself, see [docs/theming.md](docs/theming.md), [docs/agents.md](docs/agents.md), and [docs/conventions.md](docs/conventions.md).
+For the theming architecture and the repo conventions (docs contract, path standard, commit gate), see [docs/theming.md](docs/theming.md) and [docs/conventions.md](docs/conventions.md).
 
 ## Useful packages
 

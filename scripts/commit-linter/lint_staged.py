@@ -199,8 +199,15 @@ def fail_secrets(files: list[str]) -> bool:
 
 
 def identity_needles() -> list[str]:
-    """Return the email, tailnet, and live hostname needles for pass 3."""
-    values = {"EMAIL": "", "TAILNET": ""}
+    """Return the email, tailnet, and live hostname needles for pass 3.
+
+    HOSTNAME_CHECK=off in identity.local drops the hostname needle, for a
+    machine whose hostname is also an ordinary word. Only that exact value
+    opts out, so a typo leaves the check ON, and the opt-out announces
+    itself on every run: a silently narrowed gate is worse than one that
+    blocks.
+    """
+    values = {"EMAIL": "", "TAILNET": "", "HOSTNAME_CHECK": ""}
     if IDENTITY_LOCAL.exists():
         for number, raw in enumerate(IDENTITY_LOCAL.read_text().splitlines(), 1):
             line = raw.strip()
@@ -223,7 +230,16 @@ def identity_needles() -> list[str]:
             "(hostname check still runs).",
             file=sys.stderr,
         )
-    return [v for v in (values["EMAIL"], values["TAILNET"], socket.gethostname()) if v]
+    hostname = socket.gethostname()
+    if values["HOSTNAME_CHECK"].lower() == "off":
+        print(
+            f"NOTICE: HOSTNAME_CHECK=off in {IDENTITY_LOCAL_HINT}; the "
+            "hostname identity check is DISABLED. A leaked hostname will "
+            "not be caught.",
+            file=sys.stderr,
+        )
+        hostname = ""
+    return [v for v in (values["EMAIL"], values["TAILNET"], hostname) if v]
 
 
 def fail_identity(files: list[str]) -> bool:

@@ -11,11 +11,10 @@ installer (`install-bd.sh`), used two ways:
 - Containerized as the `bdui` service in the repo root
   `docker-compose.yml` (see `Containerfile` in this dir). This is the
   primary, always-on path.
-- Bare-host, per-repo dev daemon via `agent-workbench board up/down/status`
-  (`.claude/skills/agent-workbench/cli/board.py`), which resolves the
-  `bdui` binary at `node_modules/.bin/bdui` in this directory. Useful for
-  spinning up an isolated UI against one project's board without touching
-  the container.
+- Bare-host, per-repo dev daemon: run `node_modules/.bin/bdui` from this
+  directory (see Install below) against one project's board. Useful for
+  spinning up an isolated UI without touching the container. Nothing wraps
+  it: start and stop it by hand.
 
 ## Install (bare-host use only; the container installs its own copy)
 

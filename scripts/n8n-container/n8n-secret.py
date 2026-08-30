@@ -84,9 +84,9 @@ def load_n8n_env(data_dir: Path) -> dict[str, str]:
 def resolve_encryption_key(env: Mapping[str, str]) -> str | None:
     """Resolve the n8n encryption key from parsed config.
 
-    ``N8N_ENCRYPTION_KEY_CMD`` (a vault CLI command, e.g. Proton Pass's
-    ``pass-cli item view ... --field password``) wins over a static
-    ``N8N_ENCRYPTION_KEY``. Returns None if neither yields a value.
+    ``N8N_ENCRYPTION_KEY_CMD`` (a vault CLI command, e.g. ``pass show
+    <item>``) wins over a static ``N8N_ENCRYPTION_KEY``. Returns None if
+    neither yields a value.
 
     Precondition: ``env`` is the merged mapping (file under process env).
     Postcondition: the resolved value is NEVER written to a log; a failed
