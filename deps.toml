@@ -501,7 +501,7 @@ description = "Multi-modal knowledge-graph builder for AI coding assistants (Tre
 url = "https://graphify.net"
 # PyPI package name is `graphifyy` (double-y); CLI binary is `graphify`.
 # uv-tool isolates the venv from system python (PEP 668-safe across arch/fedora/ubuntu/debian).
-# Requires Python 3.10+. Companion SKILL.md vendored at .claude/skills/graphify/.
+# Requires Python 3.10+.
 source = "uv-tool"
 # Termux: ships Python but lacks build deps for some graphify extras (faster-whisper, leiden);
 # core build works. Leave at default uv-tool; user installs extras manually if needed.

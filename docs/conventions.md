@@ -8,9 +8,9 @@ Human-facing per-component docs live in `docs/`. Repo-only — the dir is in `.s
 |-----------|----------|
 | sway, waybar, wofi, swaylock, networkmanager-dmenu | `docs/desktop.md` |
 | zsh, starship, ghostty | `docs/shell.md` |
-| nvim, opencode, systemd/user | `docs/tooling.md` |
+| nvim, systemd/user | `docs/tooling.md` |
 | theming pipeline | `docs/theming.md` |
-| agent & skill stack (Claude Code, Hermes, OpenCode, Copilot CLI) | `docs/agents.md` |
+| agent & skill stack (lives in `~/dotai`, not here) | `docs/agents.md` |
 | this file's own contract | `docs/conventions.md` |
 
 ## Doc template

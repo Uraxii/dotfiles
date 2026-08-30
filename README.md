@@ -10,10 +10,18 @@ Prerequisites: `git`, `stow`.
 sudo pacman -S git stow         # Arch / Manjaro
 git clone <this-repo> ~/dotfiles
 cd ~/dotfiles
-./setup.sh                      # runs `stow .`
+./setup.sh                      # two stow passes: repo root -> ~/.config, then autostart/
+./setup.sh --force-repo -n      # preview which live files --force-repo would delete
+./setup.sh --force-repo         # DESTRUCTIVE: delete blocking live files, then stow
 stow -R .                       # restow after changes
 stow -n -v .                    # dry run
 ```
+
+`setup.sh` is not stock stow. It runs two `deploy` passes: the repo root into
+`~/.config`, then `autostart/` into `~/.config/autostart` with `--no-folding`.
+Extra arguments pass through to stow. `--force-repo` is the script's own mode:
+it dry-runs stow, reads the conflicts, and `rm -f`s every plain live file that
+blocks a link, so the repo wins. Run `--force-repo -n` first and read the list.
 
 ### Helper scripts (uv)
 
@@ -55,7 +63,6 @@ AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) 
 | oh-my-posh | Prompt | [docs/shell.md](docs/shell.md) |
 | ghostty | Terminal emulator | [docs/shell.md](docs/shell.md) |
 | nvim | Editor (Kickstart-derived) | [docs/tooling.md](docs/tooling.md) -> [`nvim/`](nvim/) |
-| Claude Code | `.claude/` hooks, themes, statusline.sh only — agents/skills/rules live in `~/dotai` | [docs/tooling.md](docs/tooling.md) |
 | systemd/user | Per-user services | [docs/tooling.md](docs/tooling.md) |
 | theming pipeline | Cross-component re-skin | [docs/theming.md](docs/theming.md) |
 

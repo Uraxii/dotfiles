@@ -6,10 +6,12 @@
 GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land in `~/.config/` (target set via `.stowrc`).
 
 ```bash
-./setup.sh      # runs `stow .`
+./setup.sh                  # two stow passes, stops on any conflict
+./setup.sh --force-repo -n  # preview which live files --force-repo would delete
+./setup.sh --force-repo     # DESTRUCTIVE: delete blocking live files, then stow
 ```
 
-`setup.sh` is near-stock — just `stow .`. All shell configs are XDG-native (`zsh/`, `xonsh/`). Two AI tools (claude-code, hermes) hardcode `~/.foo` paths; they get a one-time manual symlink per machine (see README "First-time setup").
+`setup.sh` is not stock stow. It runs two `deploy` passes: the repo root into `~/.config`, then `autostart/` into `~/.config/autostart` with `--no-folding`. Extra arguments pass through to stow. `--force-repo` is the script's own mode. It dry-runs stow, reads the conflicts, and `rm -f`s every plain live file that blocks a link, so the repo wins. Run `--force-repo -n` first and read the list. All shell configs are XDG-native (`zsh/`, `xonsh/`).
 
 ## Repo Structure
 
@@ -17,14 +19,11 @@ GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land i
 ~/dotfiles/
 ├── .stowrc                       # --target=~/.config (omerxx model)
 ├── .stow-local-ignore            # Stow ignore patterns (regex)
-├── setup.sh                      # IGNORED — just runs `stow .`
+├── setup.sh                      # IGNORED. Two stow passes, plus --force-repo mode
 ├── ghostty/                      # → ~/.config/ghostty/
 ├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
 ├── nvim/                         # → ~/.config/nvim/   (Kickstart-based, has own CLAUDE.md)
 ├── omp/                          # → ~/.config/omp/    (inactive, kept for reference)
-├── opencode/                     # → ~/.config/opencode/  (+ Claude Code skills)
-├── copilot/agents/               # GitHub Copilot CLI agents (*.agent.md); symlinked to ~/.copilot/agents
-├── copilot/skills/               # Curated Copilot CLI skill copies (real copies only, no symlinks; diverge from .claude/skills by design); → ~/.copilot/skills
 ├── qt6ct/                        # → ~/.config/qt6ct/
 ├── sway/                         # → ~/.config/sway/
 ├── swaylock/                     # → ~/.config/swaylock/   (XDG-native)
@@ -37,18 +36,8 @@ GNU Stow-managed dotfiles. Omerxx-style XDG layout — repo root contents land i
 ├── zsh/.zprofile                 # → ~/.config/zsh/.zprofile
 ├── starship.toml                 # IGNORED — managed at runtime by set-theme.sh
 ├── starship.toml.tmpl            # IGNORED — template, set-theme.sh substitutes ##PALETTE##
-├── .claude/                      # → ~/.config/.claude/   (hardcoded path; one-time symlink ~/.claude → here)
-├── .hermes/                      # → ~/.config/.hermes/   (hardcoded path; one-time symlink ~/.hermes → here)
 ├── home.nix                      # IGNORED (repo meta)
 ```
-
-**Hardcoded-path tools**: `claude-code` reads `~/.claude/`, `hermes` reads `~/.hermes/`. Neither honors XDG. One-time per-machine symlink:
-```bash
-ln -s ~/.config/.claude ~/.claude
-ln -s ~/.config/.hermes ~/.hermes
-```
-
-`copilot` (GitHub Copilot CLI) reads `~/.copilot/` (hardcoded, non-XDG). Its dir is full of runtime state (sessions, cache, logs), so only the config subdirs are symlinked into the repo, not the whole dir. Run `copilot/install.sh` once per machine: it symlinks `agents`, `skills`, `instructions`, `refs`, and `copilot-instructions.md` into `~/.copilot/`, verifying each source exists first and refusing to clobber or silently relink an existing path (see [`docs/agents.md`](docs/agents.md) "Agent & Skill Files" for the full contract).
 
 **zsh + ZDOTDIR**: zsh hardcodes `~/.zshenv` as the one always-loaded file. Create a one-line stub on each machine:
 ```sh
@@ -59,17 +48,15 @@ After that, zsh loads `.zshrc`, `.zprofile`, etc from `$ZDOTDIR` instead of `$HO
 
 ## Stow Ignore
 
-`.stow-local-ignore` controls what stow skips (regex). Ignores: repo meta (`README`, `LICENSE`, `docs`, `CLAUDE.md`, `CONTEXT.md`, `AGENTS.md`, `deps.toml`, `install.py`, `pytest.ini`, `scripts`, `tests`, `home.nix`), VCS files, caches (`__pycache__`, `.ruff_cache`), `.claude/*local*`, `.pipeline`, hermes secrets/runtime, opencode runtime (`memory`, `inbox`, `plans`, `projects`, `models.local`), `tmux/plugins`, `starship.toml` + `.tmpl` (managed by set-theme.sh).
+`.stow-local-ignore` controls what stow skips (regex). Ignores: repo meta (`README`, `LICENSE`, `docs`, `CLAUDE.md`, `CONTEXT.md`, `AGENTS.md`, `deps.toml`, `install.py`, `pytest.ini`, `scripts`, `tests`, `home.nix`), VCS files, caches (`__pycache__`, `.ruff_cache`), `.claude/` (untracked local files only), `.pipeline`, `tmux/plugins`, `starship.toml` + `.tmpl` (managed by set-theme.sh).
 
 `.stowrc` defines `--target=~/.config` + ignores `.stowrc` itself + `DS_Store`. Stow regex overrides defaults — must re-add defaults manually.
+
 ## Agent & Skill Stack
 
-- `.claude/rules/` auto-loads into every subagent; `.claude/refs/` never auto-loads (agents pull it with an explicit Read).
-- `.claude/agents/` and `.claude/skills/` are the Claude Code source of truth; `.hermes/`, `opencode/`, and `copilot/` are separate, deliberately-diverging manual copies (no generator, no symlink).
-- Boards live under `~/.beads-hub`; the personal knowledgebase lives under `~/.knowledgebase`. Both are driven only through `$HOME/.claude/skills/agent-workbench/agent-workbench`, never written to directly.
-- A new file under `.claude/` needs a restow (`stow .` from repo root) before `~/.claude` sees it.
+This repo contains no agent files. Agents, skills, and the Claude Code hooks, statusline, and themes moved to the `Uraxii/dotai` repo (`~/dotai`) or to unversioned copies under `~/.claude`.
 
-Full doctrine (platform-porting rules, hub-and-spoke orchestration, per-project workspace scaffold, knowledgebase schema): [`docs/agents.md`](docs/agents.md).
+Full detail: [`docs/agents.md`](docs/agents.md).
 
 ## Path Standard (enforced by pre-commit hook)
 

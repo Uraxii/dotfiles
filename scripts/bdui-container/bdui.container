@@ -54,10 +54,11 @@ WorkingDir=%h/.beads-hub/hub
 # absolute path to resolve inside the container too.
 Volume=%h/.beads-hub:%h/.beads-hub:rw
 
-# Host port 3100, not bdui's native 3000: the bare-host
-# `agent-workbench board up` tool (cli/board.py) free-port-scans starting
-# at 3000 on this same host, so publishing this container at 3000 too
-# would risk a same-host bind collision between the two mechanisms.
+# Host port 3100, not bdui's native 3000. The offset originally dodged a
+# bare-host tool that free-port-scanned upward from 3000; that tool is gone
+# and nothing replaced it. Kept anyway: 3000 is a common default for
+# hand-started local dev servers, so leaving it free still avoids
+# collisions. The container side stays 3000.
 PublishPort=127.0.0.1:3100:3000
 
 # Hardening. SELinux (enforcing on this host) would otherwise deny the hub

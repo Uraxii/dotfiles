@@ -35,7 +35,7 @@ Environment=N8N_LISTEN_ADDRESS=0.0.0.0
 # Public REST API is already enabled by upstream default (this env var
 # defaults to false); pinned explicitly so a future upstream default flip
 # cannot silently disable it. Agents authenticate to it via the
-# X-N8N-API-KEY header -- see .claude/skills/agent-workbench/SKILL.md.
+# X-N8N-API-KEY header.
 Environment=N8N_PUBLIC_API_DISABLED=false
 PublishPort=127.0.0.1:5678:5678
 

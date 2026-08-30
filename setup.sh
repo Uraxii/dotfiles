@@ -64,8 +64,5 @@ deploy() {
 }
 
 deploy "$HOME/.config" "${stow_args[@]}" .
-mkdir -p "$HOME/.claude"
-
-deploy "$HOME/.claude" --no-folding "${stow_args[@]}" .claude
 mkdir -p "$HOME/.config/autostart"
 deploy "$HOME/.config/autostart" --no-folding "${stow_args[@]}" autostart

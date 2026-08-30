@@ -46,7 +46,9 @@ touched.
    - `<your-email>`
    - `<your-tailnet-id>` (covers `*.<your-tailnet-id>.ts.net` hosts too)
    - the machine hostname, read live via `socket.gethostname()` at hook
-     run time (never hardcoded, so this still works if the machine is renamed)
+     run time (never hardcoded, so this still works if the machine is
+     renamed). Can be switched off per machine with `HOSTNAME_CHECK=off`
+     (see "Turning the hostname check off" below)
 
    The email and tailnet id are loaded at hook run time from
    `scripts/commit-linter/identity.local` (see "Identity config" below),
@@ -80,13 +82,46 @@ EMAIL='<your-email>'
 TAILNET='<your-tailnet-id>'
 ```
 
-The hook PARSES this file (two `KEY=value` shell assignments, `#`
-comments allowed) if it exists; it never `source`s or execs it. A
-missing file (a fresh clone, another machine, CI) is normal, not an
-error: the hook prints a one-line note and skips those two needles,
-while the hostname check and every other pass still run. Create the
-file once per machine with your real values to get the email/tailnet
-block back.
+The hook PARSES this file (`KEY=value` shell assignments, `#` comments
+allowed) if it exists; it never `source`s or execs it. Unknown keys are
+ignored; a line the parser cannot read blocks the commit. A missing file
+(a fresh clone, another machine, CI) is normal, not an error: the hook
+prints a one-line note and skips those two needles, while the hostname
+check and every other pass still run. Create the file once per machine
+with your real values to get the email/tailnet block back.
+
+### Turning the hostname check off
+
+Some hostnames are also ordinary words. If this machine is named after a
+Linux distribution, a colour, or a project, pass 3 blocks every tracked
+file that legitimately uses that word, and there is no recovery path:
+pass 3 returns before the auto-fix pass, and the word is not a leak, so
+there is nothing to move into `identity.local`.
+
+Add this line to `scripts/commit-linter/identity.local` to drop the
+hostname needle on this machine:
+
+```
+HOSTNAME_CHECK=off
+```
+
+What it costs: pass 3 no longer looks for the hostname at all, in any
+staged file. A real hostname leak (a tailnet host entry, an SSH config
+block, a hardcoded path) gets through pass 3 and reaches the commit.
+TruffleHog does not cover this; it looks for secrets, and a hostname is
+not one. You are trading a whole check for the ability to commit the
+word.
+
+Two properties keep the trade visible:
+
+- Only the exact value `off` (any case) opts out. A typo such as
+  `HOSTNAME_CHECK=of` leaves the check ON, so a mistake fails safe.
+- Every commit prints a `NOTICE:` line on stderr saying the check is
+  disabled, so the hook keeps reminding you.
+
+Do not opt out to silence a genuine hostname in a tracked file. Move
+that value into `identity.local` instead, the same as an email or a
+tailnet id.
 
 ## Self-exemption for the linter itself
 
@@ -169,7 +204,7 @@ required layer.
 | Context | Form | Why |
 |---|---|---|
 | `*.sh`, shebang scripts | `$HOME` | Real env var, expands the same everywhere a shell runs it. |
-| `*.md` | `~` | This repo already standardized on `~` for prose, with an explicit expansion note in `.claude/agents/zakia.md` telling readers to expand it manually. |
+| `*.md` | `~` | This repo already standardized on `~` for prose; readers expand it manually. |
 | `*.json`, everything else | `$HOME` | The existing `.claude/settings.json` already has both forms in the wild (`~/.claude/statusline.sh` in `statusLine.command`, and literal `$HOME/...` in a hook `command`), so both are proven to work once Claude Code hands the string to a shell. `$HOME` is picked as the default because it is a real env var in every context, not dependent on shell-specific tilde-expansion rules. |
 
 Values that have no portable replacement (email, tailnet id, hostname)

@@ -41,38 +41,14 @@ __pycache__
 ^/pyproject\.toml$
 ^/uv\.lock$
 ^/\.venv
-# .claude/.hermes handled by separate `stow --no-folding -t $HOME` pass in setup.sh
+# .claude holds only untracked local files now; never stow it into ~/.config
 ^/\.claude
-^/\.hermes
-# copilot agents reach ~/.copilot/agents via a manual symlink (Copilot CLI is non-XDG); never stow into ~/.config
-^/copilot
 ^/scripts/?$
 ^/tests/?$
 ^/home\.nix
 ^/keyboards
 
-\.claude/.*local.*
-
 \.pipeline
-
-# Hermes runtime + secrets + local-only — never symlink into $HOME
-\.hermes/\.env.*
-\.hermes/state\.db
-\.hermes/sessions
-\.hermes/pipeline-registry\.json
-# Local-only (user copies from .example templates; never overwrite via stow)
-\.hermes/SOUL\.md
-\.hermes/config\.yaml
-\.hermes/memory
-\.hermes/SOUL\.md\.example
-\.hermes/config\.yaml\.example
-
-messages\.md
-opencode/memory
-opencode/inbox
-opencode/plans
-opencode/projects
-opencode/models\.local
 
 # tpm-installed tmux plugins — never symlink into $HOME
 tmux/plugins
@@ -81,6 +57,3 @@ tmux/plugins
 # Tracked in repo as reference snapshot, but stow must not symlink it.
 ^/starship\.toml$
 ^/starship\.toml\.tmpl$
-
-# private global instructions live unstowed at ~/.claude/CLAUDE.md; repo copy is a reference baseline
-\.claude/CLAUDE\.md
