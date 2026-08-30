@@ -47,17 +47,15 @@ Keys (all optional, see `kb.env.example` for full comments):
 2. **Vault command** (preferred) — `KB_LLM_API_KEY_CMD="<command>"`. kb-serve
    runs this exact shell command and uses its stdout as the key. Works
    with any vault CLI, provider-agnostic: `pass show ...`, `op read
-   op://...`, `gopass show ...`, or Proton Pass's `pass-cli`. The command
-   inherits kb-serve's process environment, so name your vault through
-   `PROTON_PASS_VAULT` instead of hardcoding it —
-   export it where kb-serve runs (the quadlet's `Environment=`, or your
-   shell); setting it in `kb.env` alone does NOT reach the command.
-   `pass-cli item view` also requires `PROTON_PASS_AGENT_REASON`, a short
-   string saying why the secret is being read (it is audited); export it
-   the same way.
+   op://...`, `gopass show ...`. The command inherits kb-serve's process
+   environment, so name your vault through an environment variable you
+   export instead of hardcoding it — export that variable where kb-serve
+   runs (the quadlet's `Environment=`, or your shell); setting it in
+   `kb.env` alone does NOT reach the command, it expands to empty and
+   silently yields no key.
    Example:
    ```
-   KB_LLM_API_KEY_CMD="pass-cli item view --vault-name $PROTON_PASS_VAULT --item-title openrouter --field api-key"
+   KB_LLM_API_KEY_CMD="pass show $VAULT/<item>"
    ```
 
 **Either way, the raw key never touches the container image or a tracked
