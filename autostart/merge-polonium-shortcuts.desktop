@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Merge Polonium Shortcuts
+Comment=Restore Polonium's 21 tiling keyboard shortcuts into kglobalshortcutsrc
+Exec=${HOME}/.config/sway/scripts/merge-polonium-shortcuts.py
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2
