@@ -1,4 +1,7 @@
-*.local
+# Anything machine-local, wherever the word sits in the name. Covers plain
+# .local files and also conf.d/50-proton-pass.local.fish, which must keep a
+# .fish suffix because fish only loads conf.d/*.fish.
+*.local*
 __pycache__/
 *.pyc
 *.pyo
@@ -90,3 +93,6 @@ db.sqlite3
 
 # Session handoff docs, never committed.
 .handoffs/
+
+# Agent scratch space (beads, kb, worktrees, decision logs) — never committed
+.nikki-agents/

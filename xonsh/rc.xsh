@@ -180,3 +180,10 @@ def _tr(args, stdin=None):
     else:
         $[tmux attach -t @(name)]
 aliases['tr'] = _tr
+
+# ---------------------------------------------------------------------------
+# Machine-local overrides, kept out of this repo
+# ---------------------------------------------------------------------------
+import os as _os_local
+if _os_local.path.isfile(_os_local.path.expanduser('~/.xonshrc.local')):
+    source -e ~/.xonshrc.local

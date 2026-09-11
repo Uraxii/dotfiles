@@ -13,9 +13,10 @@ scripts/commit-linter/lint_staged.py
 ```
 
 Python 3, standard library only -- no third-party packages, no venv. The
-required external binary is `trufflehog` (pass 6, see below); `git` itself
-is assumed. Pass 7 can also use StepSecurity Dev Machine Guard when
-installed. It was a bash script
+required external binary is `trufflehog` (pass 7, see below); `git` itself
+is assumed. Pass 6 uses `desktop-file-validate` when it is installed and
+degrades to its own checks when it is not, and pass 8 can also use
+StepSecurity Dev Machine Guard when installed. It was a bash script
 (`spikes/commit-linter/lint-staged.sh`) until the repo adopted the rule
 that nothing under `spikes/` is ever committed; the port is
 behaviour-for-behaviour, same passes, same messages, same exit codes.
@@ -39,7 +40,7 @@ touched.
    `*_SECRET` assignment to a long base64-ish value. Exempt:
    `*_STORAGE_KEY` / `*_CACHE_KEY` / `*_COOKIE_NAME` constants assigned a
    plain lowercase kebab/snake value (no uppercase, no `+`/`/`/`=`) --
-   these are storage/cookie key names, not secrets. TruffleHog (pass 5)
+   these are storage/cookie key names, not secrets. TruffleHog (pass 7)
    still scans them.
 3. **Identity values with no portable form** are hard-blocked, not
    rewritten:
@@ -62,10 +63,34 @@ touched.
    path and login contexts, any remaining bare username is hard-blocked,
    never auto-fixed. Replace it with `$USER`, or move the value into
    `scripts/commit-linter/identity.local` if it is identity config.
-6. **Everything TruffleHog's 750+ detectors know about.** Runs after the
-   five checks above, as a second, independent layer. Any finding blocks
+6. **A `.desktop` entry the desktop cannot launch.** For every staged
+   `*.desktop` file, the program named by each `Exec=` line (its argv[0])
+   must exist and be executable, and `desktop-file-validate` must not
+   report an error. Hard blocked, never auto-fixed.
+
+   This pass exists because pass 4 caused the bug it catches. Nothing
+   expands `$HOME` or `~` in an `Exec=` *program* -- not the shell, not
+   `systemd-xdg-autostart-generator` -- so rewriting an absolute path to
+   `$HOME` for portability turns a working login entry into one the
+   desktop skips at every login, silently, with no error anywhere the user
+   looks. Three of this repo's autostart entries were dead that way.
+
+   The portable form that works is a shell wrapper, because the shell does
+   expand `~`:
+
+   ```
+   Exec=/bin/sh -c "exec ~/.config/sway/scripts/example.py"
+   ```
+
+   Pass 4 leaves that line alone (no expanded home path in it), argv[0] is
+   `/bin/sh`, and the generator produces a working unit. A bare `$HOME`
+   prefix is not equivalent and is blocked here. `desktop-file-validate` is
+   optional: when it is missing the pass prints a NOTE and runs the argv[0]
+   reachability check alone, which needs no external binary.
+7. **Everything TruffleHog's 750+ detectors know about.** Runs after the
+   six checks above, as a second, independent layer. Any finding blocks
    the commit; nothing is ever auto-fixed.
-7. **StepSecurity Dev Machine Guard supply-chain scan.** If installed, runs
+8. **StepSecurity Dev Machine Guard supply-chain scan.** If installed, runs
    after TruffleHog and blocks on CRITICAL/HIGH findings. On a clean run it
    prints `dev-machine-guard: clean` to stdout. If absent, this optional
    pass skips silently and never blocks.
@@ -134,7 +159,7 @@ Only that script is exempt from the secret regex (pass 2), auto-fix
 (pass 4), and bare-username block (pass 5). The README is not exempt. Pass 3
 (identity-value block) does not need an exemption for tracked files because
 the email and tailnet id live in `identity.local`. The script is NOT exempt
-from TruffleHog (pass 6): a real secret pasted into it still blocks the
+from TruffleHog (pass 7): a real secret pasted into it still blocks the
 commit.
 
 ## TruffleHog layer
@@ -188,14 +213,14 @@ cost, not file count).
 
 ## StepSecurity Dev Machine Guard layer
 
-Pass 7 is an optional StepSecurity Dev Machine Guard supply-chain scan.
+Pass 8 is an optional StepSecurity Dev Machine Guard supply-chain scan.
 The linter invokes `~/.local/share/stepsecurity-dmg/dmg-scan.sh`, which
 drives `~/.local/share/stepsecurity-dmg/stepsecurity-dev-machine-guard`
 and blocks on CRITICAL/HIGH findings. On a clean run it prints
 `dev-machine-guard: clean` to stdout.
 
 Unlike TruffleHog, this pass skips silently when the wrapper is absent or
-not executable. A machine without DMG installed is never blocked by pass 6;
+not executable. A machine without DMG installed is never blocked by pass 8;
 TruffleHog fails closed on a missing binary because that secret scan is a
 required layer.
 

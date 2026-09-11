@@ -26,6 +26,11 @@ untracked scripts/commit-linter/identity.local instead.
 
 Secret-shaped strings are always a hard block, never auto-fixed.
 
+A staged .desktop entry is also checked for launchability: an Exec= line
+whose program does not exist is BLOCKED, because the portable-home rewrite
+above is exactly what breaks one (nothing expands $HOME or ~ in an Exec=
+program, so the desktop silently skips the entry).
+
 Usage:
     scripts/commit-linter/lint_staged.py     # run from the repo root
 """
@@ -34,6 +39,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import shutil
 import socket
 import subprocess
@@ -64,12 +70,13 @@ HOME_FORMS = tuple(
 IDENTITY_LOCAL = Path(__file__).resolve().parent / "identity.local"
 IDENTITY_LOCAL_HINT = "scripts/commit-linter/identity.local"
 DMG_SCAN = Path.home() / ".local/share/stepsecurity-dmg/dmg-scan.sh"
+DESKTOP_VALIDATE = "desktop-file-validate"
 TRUFFLEHOG_HINT = "install: see scripts/commit-linter/README.md"
 
 # The linter's own script contains the secret prefixes and _KEY/_TOKEN/_SECRET
 # pattern literals, so it legitimately contains the regex's trigger text
 # without containing a real secret. Exempt it from the regex pass (2) and the
-# auto-fix pass (4) only; TruffleHog (pass 5) still scans it.
+# auto-fix pass (4) only; TruffleHog (pass 7) still scans it.
 SELF_FILES = {
     "scripts/commit-linter/lint_staged.py",
 }
@@ -94,7 +101,7 @@ USERNAME_RE = re.compile(
 # (plain lowercase, no uppercase/+//=): a real secret assigned to an
 # oddly-named *_STORAGE_KEY var still fails this filter and stays
 # blocked. A post-filter on the matched lines is simpler than one regex
-# doing both jobs. Pass 5 (trufflehog) is the entropy-based backstop for
+# doing both jobs. Pass 7 (trufflehog) is the entropy-based backstop for
 # anything this prefilter now lets through. A trailing `;` (JS/TS) is
 # tolerated after the value; the entropy constraint on the value itself
 # is unchanged.
@@ -344,6 +351,101 @@ def fail_usernames(files: list[str]) -> bool:
     return failed
 
 
+def exec_program(value: str) -> str:
+    """Return the program a desktop Exec= line runs, i.e. its argv[0].
+
+    Desktop-entry escaping is unwrapped by shlex, which covers the quoting
+    that appears in practice (an optionally quoted path, then arguments).
+    An Exec= value shlex cannot parse falls back to the first whitespace-
+    separated word, so a malformed line is still checked rather than skipped.
+    """
+    try:
+        words = shlex.split(value)
+    except ValueError:
+        words = value.split()
+    return words[0] if words else ""
+
+
+def unreachable_exec(content: str) -> list[tuple[int, str]]:
+    """Return (line number, program) for each Exec= whose program cannot run.
+
+    This is the check systemd-xdg-autostart-generator makes at login: it
+    resolves argv[0] and refuses to generate a unit when that file is not
+    there. Nothing expands `$HOME` or `~` in an Exec= program, so a path
+    written that way is exactly what the generator cannot find -- the bug
+    this pass exists to stop.
+    """
+    bad: list[tuple[int, str]] = []
+    for number, line in enumerate(content.splitlines(), 1):
+        if not line.startswith("Exec="):
+            continue
+        program = exec_program(line[len("Exec="):])
+        if not program:
+            bad.append((number, "(empty)"))
+        elif program.startswith("/"):
+            if not os.access(program, os.X_OK):
+                bad.append((number, program))
+        elif shutil.which(program) is None:
+            bad.append((number, program))
+    return bad
+
+
+def desktop_validate_errors(path: str, content: str) -> list[str]:
+    """Return desktop-file-validate's complaints about staged content.
+
+    Optional tool: a machine without desktop-file-utils prints a NOTE and
+    gets the argv[0] reachability check only, which needs no binary. Unlike
+    the secret scanners, a missing validator cannot hide a working entry.
+    """
+    if shutil.which(DESKTOP_VALIDATE) is None:
+        print(
+            f"NOTE: {DESKTOP_VALIDATE} not found; checking {path} for Exec= "
+            "reachability only.",
+            file=sys.stderr,
+        )
+        return []
+    with tempfile.TemporaryDirectory() as tmp:
+        staged = Path(tmp) / Path(path).name
+        staged.write_text(content + "\n")
+        result = subprocess.run(
+            [DESKTOP_VALIDATE, str(staged)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    if not result.returncode:
+        return []
+    output = result.stdout + result.stderr
+    return [line.split(": ", 1)[-1] for line in output.splitlines() if line.strip()]
+
+
+def fail_desktop(files: list[str]) -> bool:
+    """Pass 6: block a .desktop entry the desktop environment cannot launch.
+
+    Runs after auto-fix on purpose: pass 4 rewrites an expanded home path to
+    `$HOME`, and in an Exec= program that rewrite is itself the breakage, so
+    the check has to see the content as it would be committed.
+    """
+    failed = False
+    for path in files:
+        if is_binary(path) or not path.endswith(".desktop"):
+            continue
+        content = staged_text(path)
+        for message in desktop_validate_errors(path, content):
+            print(f"BLOCKED: {path}: {message}", file=sys.stderr)
+            failed = True
+        for number, program in unreachable_exec(content):
+            print(
+                f"BLOCKED: {path}:{number} Exec= runs {program!r}, which does "
+                "not exist or is not executable. Nothing expands $HOME or ~ in "
+                "an Exec= program; wrap it in a shell, e.g. "
+                '\'/bin/sh -c "exec ~/path/to/script"\'.',
+                file=sys.stderr,
+            )
+            failed = True
+    return failed
+
+
 def copy_staged_blobs(files: list[str], scratch: Path) -> None:
     """Materialize each staged blob under scratch, preserving its path."""
     for path in files:
@@ -402,7 +504,7 @@ def finding_location(finding: dict[str, object], scratch: Path) -> str:
 
 
 def fail_trufflehog(files: list[str]) -> bool:
-    """Pass 6: TruffleHog scan of staged content, fail-closed.
+    """Pass 7: TruffleHog scan of staged content, fail-closed.
 
     A missing trufflehog binary blocks the commit; it never silently
     skips the scan. A missing scanner must not look like a clean scan.
@@ -431,7 +533,7 @@ def fail_trufflehog(files: list[str]) -> bool:
 
 
 def run_dmg_scan() -> int:
-    """Pass 7: StepSecurity Dev Machine Guard supply-chain scan.
+    """Pass 8: StepSecurity Dev Machine Guard supply-chain scan.
 
     Optional: machines without DMG installed skip silently, never blocked.
     """
@@ -468,6 +570,8 @@ def main() -> int:
     # Re-read the staged list: pass 4 may have re-staged fixed files, but
     # the set of files being committed is unchanged.
     if fail_usernames(staged_files()):
+        return 1
+    if fail_desktop(staged_files()):
         return 1
     if fail_trufflehog(staged_files()):
         return 1

@@ -54,3 +54,6 @@ tmux/plugins
 # Tracked in repo as reference snapshot, but stow must not symlink it.
 ^/starship\.toml$
 ^/starship\.toml\.tmpl$
+
+# Machine-local fish snippets — never deploy, never leave the machine
+.+\.local.*
