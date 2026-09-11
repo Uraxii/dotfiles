@@ -148,12 +148,15 @@ def main() -> int:
         merged_groups.setdefault("kwin", {}).update(polonium)
         holder = find_holder(merged_groups, LOCK_RELOCATE_TO, skip=(LOCK_GROUP, LOCK_ACTION))
         if holder is not None:
-            print(f"Lock Session NOT relocated: {LOCK_RELOCATE_TO} is claimed by "
-                  f"[{holder[0]}] {holder[1]!r} (Polonium's own resize chord). "
-                  f"Lock Session stays on {LOCK_CHORD}, alongside PoloniumActivateRight, "
-                  "as Nicole's 2026-09-10 decision already accepts. Pick a different "
-                  "chord for Lock Session if that ambiguity is unwanted.")
-            had_error = True
+            # Not an error. This is the expected, decided outcome: Meta+Ctrl+L is
+            # Polonium's own resize chord, so Lock Session has nowhere to move to and
+            # stays where Nicole chose to leave it. Reporting it as a failure would
+            # make this script look broken at every login and hide a real failure.
+            print(f"Note: Lock Session stays on {LOCK_CHORD}, shared with "
+                  f"PoloniumActivateRight. It was not moved to {LOCK_RELOCATE_TO} "
+                  f"because [{holder[0]}] {holder[1]!r} already holds that chord. "
+                  "This is the 2026-09-10 decision, not a problem. Pick another "
+                  "chord for Lock Session if the sharing ever bothers you.")
         else:
             fields = lock_raw.split(",", 2)
             fields[0] = fields[0].replace(LOCK_CHORD, LOCK_RELOCATE_TO)
