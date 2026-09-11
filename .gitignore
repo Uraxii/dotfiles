@@ -1,4 +1,7 @@
 *.local
+# Machine-local fish snippets. fish only loads conf.d/*.fish, so a local file
+# must keep the .fish suffix and cannot simply end in .local.
+*.local.fish
 __pycache__/
 *.pyc
 *.pyo
