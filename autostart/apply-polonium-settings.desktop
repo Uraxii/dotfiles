@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Apply Polonium Settings
-Comment=Install the Polonium KWin tiling script and its settings (enabled, insert side, ignore list)
-Exec=/bin/sh -c "exec ~/.config/sway/scripts/apply-polonium-settings.py"
-Terminal=false
-NoDisplay=true
-X-KDE-autostart-phase=2
