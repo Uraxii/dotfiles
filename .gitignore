@@ -90,3 +90,6 @@ db.sqlite3
 
 # Session handoff docs, never committed.
 .handoffs/
+
+# Agent scratch space (beads, kb, worktrees, decision logs) — never committed
+.nikki-agents/
