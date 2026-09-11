@@ -62,6 +62,14 @@ DESIRED_SETTINGS = [
     ("Plugins", "poloniumEnabled", "true"),
     ("Script-polonium", "BTreeInsertInActive", "true"),
     ("Script-polonium", "BTreeInsertionStyle", "1"),
+    # Borders=1 is "Border Floating Only": a window Polonium has tiled
+    # loses its title bar, a window Nicole has floated keeps one, so the
+    # title bar shows at a glance which mode a window is in. The number
+    # is an index into the combobox in Polonium's own
+    # contents/ui/config.ui, whose options run 0 No Borders, 1 Border
+    # Floating Only, 2 Border Active Only, 3 Border Floating/Active,
+    # 4 Border All (4 is the shipped default).
+    ("Script-polonium", "Borders", "1"),
     ("Script-polonium", "IgnoreWindowClasses", IGNORE_WINDOW_CLASSES),
 ]
 
