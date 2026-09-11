@@ -10,18 +10,18 @@ Prerequisites: `git`, `stow`.
 sudo pacman -S git stow         # Arch / Manjaro
 git clone <this-repo> ~/dotfiles
 cd ~/dotfiles
-./setup.sh                      # two stow passes: repo root -> ~/.config, then autostart/
+./setup.sh                      # stow: repo root -> ~/.config
 ./setup.sh --force-repo -n      # preview which live files --force-repo would delete
 ./setup.sh --force-repo         # DESTRUCTIVE: delete blocking live files, then stow
 stow -R .                       # restow after changes
 stow -n -v .                    # dry run
 ```
 
-`setup.sh` is not stock stow. It runs two `deploy` passes: the repo root into
-`~/.config`, then `autostart/` into `~/.config/autostart` with `--no-folding`.
-Extra arguments pass through to stow. `--force-repo` is the script's own mode:
-it dry-runs stow, reads the conflicts, and `rm -f`s every plain live file that
-blocks a link, so the repo wins. Run `--force-repo -n` first and read the list.
+`setup.sh` is not stock stow. It runs one `deploy` pass: the repo root into
+`~/.config`. Extra arguments pass through to stow. `--force-repo` is the
+script's own mode: it dry-runs stow, reads the conflicts, and `rm -f`s every
+plain live file that blocks a link, so the repo wins. Run `--force-repo -n`
+first and read the list.
 
 ### Helper scripts (uv)
 

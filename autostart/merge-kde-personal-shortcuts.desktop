@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Merge KDE Personal Shortcuts
-Comment=Restore Nicole's personal KDE shortcuts beyond the Polonium set
-Exec=/bin/sh -c "exec ~/.config/sway/scripts/merge-kde-personal-shortcuts.py"
-Terminal=false
-NoDisplay=true
-X-KDE-autostart-phase=2

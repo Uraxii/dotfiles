@@ -79,10 +79,9 @@ Each takes `--check` to report what it would change without writing anything.
 
 ### Autostart
 
-`autostart/` holds one `.desktop` entry per script, stowed into
-`~/.config/autostart/` by `setup.py`. Their `Exec=` lines carry absolute
-paths on purpose: `systemd-xdg-autostart-generator` does **not** expand
-`${HOME}`, and silently skips any entry whose `Exec=` binary it cannot find.
+Nothing here runs at login. The three scripts above are a one-time restore
+after a fresh install; from then on the KDE System Settings UI is the source
+of truth, and a login-time rerun would overwrite whatever was changed there.
 
 ### Mapping
 

@@ -234,40 +234,6 @@ class SetupApp(App):
                     log(f"[red]  stow {pkg} failed (exit {proc.returncode})[/]")
                     errors += 1
 
-            # Autostart entries — stow individually into existing ~/.config/autostart/
-            autostart_src = os.path.join(DOTFILES_DIR, "autostart")
-            autostart_dst = os.path.join(
-                os.path.expanduser("~"), ".config", "autostart"
-            )
-            if os.path.isdir(autostart_src):
-                os.makedirs(autostart_dst, exist_ok=True)
-                log("  stow autostart (individual)...")
-                proc = subprocess.run(
-                    [
-                        "stow",
-                        "--no-folding",
-                        "-d",
-                        DOTFILES_DIR,
-                        "-t",
-                        autostart_dst,
-                        "autostart",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
-                )
-                if proc.stdout:
-                    for line in proc.stdout.strip().split("\n"):
-                        if line and "WARNING: in simulation mode" not in line:
-                            log(f"  {line}")
-                if proc.stderr and "WARNING:" not in proc.stderr:
-                    log(f"[red]  {proc.stderr.strip()}[/]")
-                if proc.returncode == 0:
-                    log("  [green]✓ autostart entries deployed[/]")
-                else:
-                    log(f"[red]  stow autostart failed (exit {proc.returncode})[/]")
-                    errors += 1
-
             if errors == 0:
                 log(f"[green]✓ Stow complete — {len(STOW_PACKAGES)} packages[/]")
             else:
