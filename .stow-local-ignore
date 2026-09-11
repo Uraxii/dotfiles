@@ -56,4 +56,4 @@ tmux/plugins
 ^/starship\.toml\.tmpl$
 
 # Machine-local fish snippets — never deploy, never leave the machine
-.+\.local\.fish
+.+\.local.*
