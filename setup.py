@@ -8,7 +8,7 @@ Usage:
 
 Tasks:
   - Install/update dotfiles via GNU Stow
-  - Apply Sway-style keyboard shortcuts to KDE Plasma 6
+  - Restore the KDE Plasma 6 keybinds: Polonium tiling plus personal chords
 """
 
 from __future__ import annotations
@@ -50,9 +50,16 @@ STOW_PACKAGES = sorted(
     )
 )
 
-KEYBINDS_SCRIPT = os.path.expanduser(
-    "~/.config/sway/scripts/apply-kde-keybinds.sh"
-)
+# Order matters: install the tiler and its settings, restore its shortcuts,
+# then layer the personal chords on top.
+KEYBIND_SCRIPTS = [
+    os.path.expanduser(f"~/.config/sway/scripts/{name}")
+    for name in (
+        "apply-polonium-settings.py",
+        "merge-polonium-shortcuts.py",
+        "merge-kde-personal-shortcuts.py",
+    )
+]
 
 TASKS = {
     "stow": {
@@ -61,8 +68,9 @@ TASKS = {
         "default": True,
     },
     "keybinds": {
-        "label": "Apply KDE keybinds (Sway-style)",
-        "detail": "Meta+hjkl focus, Meta+1-0 desktops, Meta+Space wofi, etc.",
+        "label": "Restore KDE keybinds (Polonium + personal)",
+        "detail": f"{len(KEYBIND_SCRIPTS)} scripts — tiling settings, tiling"
+        " shortcuts, personal chords",
         "default": False,
     },
 }
@@ -266,28 +274,39 @@ class SetupApp(App):
                 log(f"[red]✗ Stow had {errors} error(s)[/]")
             return errors
 
-        def run_keybinds() -> int:
-            log("[yellow]→ Applying KDE keybinds...[/]")
-            if not os.path.isfile(KEYBINDS_SCRIPT):
-                log(f"[red]✗ Script not found: {KEYBINDS_SCRIPT}[/]")
+        def run_keybind_script(script: str) -> int:
+            """Run one keybind script and log its output. 0 means clean."""
+            name = os.path.basename(script)
+            if not os.path.isfile(script):
+                log(f"[red]✗ Script not found: {script}[/]")
                 log("[dim]  Install dotfiles first or check the path.[/]")
                 return 1
+            log(f"  {name}...")
             proc = subprocess.run(
-                [KEYBINDS_SCRIPT],
+                [script],
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
-            if proc.stdout:
-                for line in proc.stdout.strip().split("\n"):
-                    log(line)
-            if proc.stderr:
-                log(f"[red]{proc.stderr}[/]")
-            if proc.returncode == 0:
-                log("[green]✓ KDE keybinds applied[/]")
-            else:
-                log(f"[red]✗ Keybinds failed (exit {proc.returncode})[/]")
+            for stream in (proc.stdout, proc.stderr):
+                for line in (stream or "").strip().split("\n"):
+                    if line:
+                        log(f"  {line}")
+            if proc.returncode != 0:
+                log(f"[red]  {name} exited {proc.returncode}[/]")
             return proc.returncode
+
+        def run_keybinds() -> int:
+            log("[yellow]→ Restoring KDE keybinds...[/]")
+            errors = 0
+            for script in KEYBIND_SCRIPTS:
+                if run_keybind_script(script) != 0:
+                    errors += 1
+            if errors == 0:
+                log("[green]✓ KDE keybinds restored[/]")
+            else:
+                log(f"[red]✗ {errors} keybind script(s) failed[/]")
+            return errors
 
         errors = 0
 

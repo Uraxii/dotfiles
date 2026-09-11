@@ -58,27 +58,38 @@ Tiling Wayland compositor. Repo-managed config split across
 
 ## KDE Plasma 6 — Sway-like shortcuts
 
-The script `sway/scripts/apply-kde-keybinds.sh` replicates Sway-style
-keybindings in KDE Plasma 6. Apply it from the setup TUI or manually:
+Three Python scripts put the KDE shortcuts back after a fresh install: one
+installs the Polonium tiling script and its settings, one restores Polonium's
+tiling binds, one restores the personal binds on top. Run them from the setup
+TUI, or by hand in this order:
 
 ```bash
-~/.config/sway/scripts/apply-kde-keybinds.sh
+~/.config/sway/scripts/apply-polonium-settings.py
+~/.config/sway/scripts/merge-polonium-shortcuts.py
+~/.config/sway/scripts/merge-kde-personal-shortcuts.py
 ```
 
-> ⚠️ **Wayland: log out and back in.** On Plasma 6 Wayland, KWin itself is the
-> global-shortcut server and reads `kglobalshortcutsrc` only at startup. There
-> is no separate `kglobalacceld` to restart and no live "reload shortcuts"
-> call, so the script writes the config but the new binds **only take effect
-> after a logout/login**. (On X11, `kglobalacceld` is standalone and the script
-> restarts it in place.)
+Each takes `--check` to report what it would change without writing anything.
+
+> ⚠️ **Wayland.** On Plasma 6 Wayland, KWin is the global-shortcut server
+> and reads `kglobalshortcutsrc` only at startup, so writing the file is not
+> enough on its own. `merge-kde-personal-shortcuts.py` also pushes each chord
+> into the running shortcut daemon, so file and memory agree and a logout has
+> nothing left to clobber.
+
+### Autostart
+
+`autostart/` holds one `.desktop` entry per script, stowed into
+`~/.config/autostart/` by `setup.py`. Their `Exec=` lines carry absolute
+paths on purpose: `systemd-xdg-autostart-generator` does **not** expand
+`${HOME}`, and silently skips any entry whose `Exec=` binary it cannot find.
 
 ### Mapping
 
 | Sway | KDE | Action |
 |------|-----|--------|
-| `$mod+Return` | `Meta+Return` | ghostty |
-| `$mod+d` | `Meta+d` | wofi (toggle) |
-| `$mod+Space` | `Meta+Space` | wofi (Spotlight-style alias) |
+| `$mod+Return` | `Meta+Return` | Alacritty |
+| `$mod+Space` | `Meta+Space` | KRunner |
 | — | `Alt+Space` | KRunner (fallback) |
 | `$mod+h/j/k/l` or arrows | `Meta+h/j/k/l` or `Meta+arrows` | Focus window |
 | `$mod+Shift+h/j/k/l` or arrows | `Meta+Shift+h/j/k/l` or `Meta+Shift+arrows` | Move window |
