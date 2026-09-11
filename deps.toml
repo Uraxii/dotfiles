@@ -98,7 +98,7 @@ enabled = true
 # install. `id` refers to a section header below (e.g. "zsh", "xonsh", "bash").
 # Comment the whole [shell] block to disable the post-install shell switch.
 [shell]
-default = "xonsh"
+default = "fish"
 
 # ============================================================
 # Wayland / Sway ecosystem
