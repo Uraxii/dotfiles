@@ -32,13 +32,14 @@ The `[services]` entries reference `.desktop` files by name, which can
 differ machine to machine:
 
 - `org.kde.krunner.desktop` exists here and is restored.
-- `raxii-box-com.mitchellh.ghostty.desktop` was a distrobox-exported name
-  from the old machine and does not apply here.
-- `com.mitchellh.ghostty.desktop`, the native package's likely name, is
-  bound to Meta+Return only if that `.desktop` file is actually present
-  on this machine. Ghostty was being installed in parallel; if it was not
-  done yet when this ran, the binding is skipped and reported rather than
-  guessed.
+- `raxii-box-com.mitchellh.ghostty.desktop` carried the real Meta+Return
+  chord on the old machine (a distrobox-exported Ghostty). Nicole's
+  instruction on the new machine: bind that chord to whatever terminal she
+  is actually using, not Ghostty specifically ("point at my current
+  terminal, not just ghostty"). Her current terminal is Alacritty
+  (confirmed from her live shell's process ancestry). The chord is written
+  to `Alacritty.desktop` only if that `.desktop` file is actually present
+  on this machine, never guessed.
 - `wlr-which-key.desktop` is skipped outright; that tool was cut from the
   migration.
 
@@ -66,8 +67,9 @@ GROUP_LABEL_KEY = "_k_friendly_name"
 
 # [services][<desktop-id>] entries: which ones may ever be restored, and
 # under what desktop-id. Anything not listed here is left alone.
-GHOSTTY_OLD_ID = "raxii-box-com.mitchellh.ghostty.desktop"  # distrobox export, old machine only
-GHOSTTY_NATIVE_ID = "com.mitchellh.ghostty.desktop"          # native package, this machine
+TERMINAL_CHORD_SOURCE_ID = "raxii-box-com.mitchellh.ghostty.desktop"  # old machine: distrobox-exported Ghostty, holds the real Meta+Return chord
+GHOSTTY_NATIVE_ID = "com.mitchellh.ghostty.desktop"  # not used for the write target; Nicole's terminal is Alacritty, not Ghostty
+TERMINAL_ID = "Alacritty.desktop"  # her current terminal, confirmed 2026-09-10 from live shell process ancestry
 KRUNNER_ID = "org.kde.krunner.desktop"
 WHICH_KEY_ID = "wlr-which-key.desktop"
 
@@ -143,9 +145,8 @@ def allowed_services() -> set[str]:
         str(Path.home() / ".local/share/applications"),
     ]
     for d in search_dirs:
-        matches = list(Path(d).glob("*[Gg]hostty*.desktop")) if Path(d).is_dir() else []
-        if matches:
-            allowed.add(GHOSTTY_NATIVE_ID)
+        if (Path(d) / TERMINAL_ID).exists():
+            allowed.add(TERMINAL_ID)
             break
     return allowed
 
@@ -180,19 +181,24 @@ def collect_candidates(
         for action, old_raw in actions.items():
             if action.startswith(SKIPPED_PREFIXES) or action == GROUP_LABEL_KEY:
                 continue
+            write_groups = groups
             if is_services:
                 desktop_id = groups[1] if len(groups) > 1 else ""
-                if desktop_id in (WHICH_KEY_ID, GHOSTTY_OLD_ID):
-                    continue
-                if desktop_id not in services_allowed:
+                if desktop_id in (WHICH_KEY_ID, GHOSTTY_NATIVE_ID):
+                    continue  # no real chord in this row on the old machine either way
+                if desktop_id == TERMINAL_CHORD_SOURCE_ID:
+                    if TERMINAL_ID not in services_allowed:
+                        continue  # handled by the notes block below
+                    write_groups = ("services", TERMINAL_ID)
+                elif desktop_id not in services_allowed:
                     continue
             desired_tokens = active_tokens(old_raw, is_triple)
             if not desired_tokens:
                 continue  # old machine had no real binding here
 
             old_value = kreadconfig(str(source_path), groups, action)
-            live_raw = live_groups.get(groups, {}).get(action, "")
-            live_value = kreadconfig(LIVE_FILE, groups, action) if live_raw else ""
+            live_raw = live_groups.get(write_groups, {}).get(action, "")
+            live_value = kreadconfig(LIVE_FILE, write_groups, action) if live_raw else ""
 
             if is_triple:
                 old_active = old_value.split(",", 1)[0]
@@ -203,24 +209,13 @@ def collect_candidates(
             if write_value == live_value:
                 continue  # already correct
 
-            candidates.append(Candidate(groups, action, is_triple,
+            candidates.append(Candidate(write_groups, action, is_triple,
                                          desired_tokens, write_value))
 
-    ghostty_native_in_old = old_groups.get(("services", GHOSTTY_NATIVE_ID), {})
-    ghostty_native_bound = active_tokens(
-        ghostty_native_in_old.get("_launch", ""), False)
-    if GHOSTTY_NATIVE_ID not in services_allowed:
+    if TERMINAL_ID not in services_allowed:
         notes.append(
-            f"Ghostty ({GHOSTTY_NATIVE_ID}) not found on this machine yet - "
-            "Meta+Return was not bound. Install Ghostty, then rerun this "
-            "script."
-        )
-    elif not ghostty_native_bound:
-        notes.append(
-            f"Ghostty is installed, but the old machine's {GHOSTTY_NATIVE_ID} "
-            "entry was itself unbound (the Meta+Return chord lived under "
-            f"the old distrobox name {GHOSTTY_OLD_ID} instead). Bind "
-            "Meta+Return to Ghostty by hand if you want it back."
+            f"{TERMINAL_ID} not found on this machine yet - Meta+Return "
+            "was not bound. Install Alacritty, then rerun this script."
         )
 
     return candidates, notes
