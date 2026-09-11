@@ -185,5 +185,5 @@ aliases['tr'] = _tr
 # Machine-local overrides, kept out of this repo
 # ---------------------------------------------------------------------------
 import os as _os_local
-if _os_local.path.isfile(_os_local.path.expanduser('~/.xonshrc.local')):
-    source -e ~/.xonshrc.local
+if _os_local.path.isfile(_os_local.path.expanduser('~/.config/xonsh/rc.local.xsh')):
+    source -e ~/.config/xonsh/rc.local.xsh

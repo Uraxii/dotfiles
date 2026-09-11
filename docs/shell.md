@@ -16,8 +16,7 @@ and tool integrations (nvm, zoxide, opencode).
 - `~/.zshenv` — one-line stub, NOT tracked: `export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"`.
 - `~/.config/zsh/.zshrc.local`: untracked, gitignored (`*.local`)
   machine-local additions. Sourced last, so it can override anything
-  above. Bash is deliberately not covered here: stock `~/.bashrc`
-  already sources `~/.bashrc.d/*` drop-ins.
+  above.
 
 ### Keybindings & UX
 
@@ -31,7 +30,7 @@ and tool integrations (nvm, zoxide, opencode).
 
 Alias: `logout` -> `swaymsg exit` (only when `$SWAYSOCK` set).
 
-Path: prepends `$HOME/.local/bin` and `/home/nikki/.opencode/bin`.
+Path: prepends `$HOME/.local/bin` and `~/.opencode/bin`.
 
 ### Theming integration
 
@@ -60,10 +59,32 @@ Alternative XDG-native shell config (Python-based shell). Mirrors
   what `rc.xsh` sets afterward. `~/.config/xonsh` is a folded stow
   symlink, so files dropped there land in the repo at `xonsh/rc.d/`;
   keep that path untracked.
+- `~/.config/xonsh/rc.local.xsh`: untracked, gitignored (`*.local*`)
+  machine-local additions. Sourced LAST by `rc.xsh` (`rc.d` still loads
+  first), so it can override anything `rc.xsh` sets.
 
 ### External dependencies
 
 `xonsh`, `starship` (optional), `zoxide` (optional).
+
+## bash
+
+### Purpose
+
+Non-interactive-safe Bash config (no `[[ $- != *i* ]]` guard), so it
+also loads for agent shells that run bash without a tty.
+
+### Key files
+
+- `bash/bashrc` — main config (deployed to `~/.config/bash/bashrc`).
+- `~/.bashrc` — one-line stub, NOT tracked (bash always reads
+  `~/.bashrc`, can't be relocated): see README "First-time setup".
+- `~/.config/bash/bashrc.local`: untracked, gitignored (`*.local*`)
+  machine-local additions. Sourced last.
+
+### External dependencies
+
+`bash`.
 
 ## starship
 

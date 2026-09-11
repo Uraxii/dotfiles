@@ -44,10 +44,15 @@ One-time manual step for tools that don't honor XDG:
 cat > ~/.zshenv <<'EOF'
 export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 EOF
+
+# 2. bash: bootstrap stub (bash always reads ~/.bashrc, can't be relocated)
+cat > ~/.bashrc <<'EOF'
+[ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bash/bashrc" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/bash/bashrc"
+EOF
 ```
 
 With the stub in place, zsh reads `.zshrc`, `.zprofile`, and the rest from
-`$ZDOTDIR` instead of `$HOME`.
+`$ZDOTDIR` instead of `$HOME`; bash reads `bash/bashrc` the same way.
 
 AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) is deployed separately by `~/dotai`; see that repo's setup for its own first-time steps.
 
@@ -58,6 +63,7 @@ AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) 
 ├── .stowrc                       # --target=~/.config (omerxx model)
 ├── .stow-local-ignore            # Stow ignore patterns (regex)
 ├── setup.sh                      # IGNORED. Two stow passes, plus --force-repo mode
+├── bash/bashrc                   # → ~/.config/bash/bashrc   (loaded via ~/.bashrc stub)
 ├── ghostty/                      # → ~/.config/ghostty/
 ├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
 ├── nvim/                         # → ~/.config/nvim/   (Kickstart-based)
