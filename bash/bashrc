@@ -1,0 +1,4 @@
+# Bash config (deployed to ~/.config/bash/bashrc via ~/.bashrc stub).
+
+[ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bash/bashrc.local" ] && \
+    . "${XDG_CONFIG_HOME:-$HOME/.config}/bash/bashrc.local"

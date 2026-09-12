@@ -145,9 +145,8 @@ The footguns:
 Current intended behavior:
 
 - `.zprofile` must **not** export `QT_QPA_PLATFORMTHEME=qt6ct` in KDE/Plasma sessions.
-- `sway/scripts/apply-plasma-theme.sh` applies the dotfiles palette to KDE by writing `kdeglobals` and setting the Plasma desktop theme. It runs on every KDE login via `zsh/.zprofile`, so it re-asserts the palette each boot.
-- **Per-machine opt-out**: to keep KDE's *own* color scheme (e.g. WhiteSur-dark selected in System Settings) instead of the dotfiles palette, create the sentinel `touch ~/.config/dotfiles-keep-kde-colorscheme`. The script then still aligns GTK/XDG-portal dark mode (Electron/GTK stay dark) but leaves the KDE Qt color scheme and Plasma desktop theme untouched. The file lives outside the repo, so it stays machine-local/untracked.
-- That script also keeps GTK/XDG portal dark-mode aligned for Electron/GTK apps by setting:
+- Nothing in this repo applies the dotfiles palette to KDE. Set the Qt color scheme and Plasma desktop theme yourself in System Settings; no login shell touches `kdeglobals` or `plasmarc`.
+- GTK/XDG portal dark mode for Electron/GTK apps is not managed here either. Set it by hand if needed:
   ```bash
   gsettings set org.gnome.desktop.interface color-scheme prefer-dark
   ```
