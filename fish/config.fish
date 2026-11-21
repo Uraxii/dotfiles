@@ -17,6 +17,17 @@ fish_add_path ~/.local/bin ~/.npm-global/bin ~/.opencode/bin ~/dev/flutter/bin \
     ~/Android/Sdk/platform-tools ~/Android/Sdk/emulator \
     ~/Android/Sdk/cmdline-tools/latest/bin
 
+# mise: puts the [tools] of ~/.config/mise/config.toml on PATH (starship,
+# zoxide, nvim, ...). Must run before the prompt + nav block below.
+# Termux and NixOS: python and node come from the system, not mise
+# (see SYSTEM_RUNTIMES in mise/lib/dotplat/detect.py).
+if set -q TERMUX_VERSION; or test -e /etc/NIXOS
+    set -gx MISE_DISABLE_TOOLS python,node
+end
+if type -q mise
+    mise activate fish | source
+end
+
 # ---------------------------------------------------------------------------
 # Prompt + nav (starship, zoxide)
 # ---------------------------------------------------------------------------

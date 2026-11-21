@@ -1,0 +1,44 @@
+# Global mise config. Stow links this to ~/.config/mise/config.toml.
+# On Windows, set MISE_CONFIG_DIR to this directory instead (see README).
+#
+# [tools] holds user-level CLI tools: no root, same on every platform.
+# System packages (window manager, compilers, native libs, GUI apps) are
+# installed by the `system` task, per platform. See tasks/ and lib/dotplat/.
+#
+#   mise install             # install the tools below
+#   mise run system          # install system packages for this platform
+#   mise run setup           # both, then link the dotfiles
+
+[tools]
+# python first: every task in tasks/ runs with it. The tasks also declare
+# `#MISE tools={python=...}`, so `mise run` installs it before the task
+# starts, even before `mise install`. Keep the two versions the same.
+# mise also installs python and uv before the pypi: tools below.
+python = "3.13"
+node = "22"
+uv = "latest"
+
+# Editor and search (telescope, tmux-sessionx previews)
+neovim = "latest"
+ripgrep = "latest"
+fd = "latest"
+fzf = "latest"
+bat = "latest"
+jq = "latest"
+
+# Shell and prompt
+starship = "latest"
+zoxide = "latest"
+glow = "latest"
+tealdeer = "latest"
+gh = "latest"
+"pypi:xonsh" = { version = "latest", extras = "full" }
+
+# Notes
+"github:Yakitrak/notesmd-cli" = "latest"
+
+# AI tools
+"npm:@anthropic-ai/claude-code" = "latest"
+"npm:opencode-ai" = "latest"
+"npm:@earendil-works/pi-coding-agent" = "latest"
+"pypi:graphifyy" = "latest"
