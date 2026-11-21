@@ -10,6 +10,10 @@
 #   mise run setup           # both, then link the dotfiles
 
 [tools]
+# python first: every task in tasks/ runs with it. The tasks also declare
+# `#MISE tools={python=...}`, so `mise run` installs it before the task
+# starts, even before `mise install`. Keep the two versions the same.
+# mise also installs python and uv before the pypi: tools below.
 python = "3.13"
 node = "22"
 uv = "latest"
@@ -28,7 +32,7 @@ zoxide = "latest"
 glow = "latest"
 tealdeer = "latest"
 gh = "latest"
-"pipx:xonsh" = { version = "latest", extras = "full" }
+"pypi:xonsh" = { version = "latest", extras = "full" }
 
 # Notes
 "github:Yakitrak/notesmd-cli" = "latest"
@@ -37,4 +41,4 @@ gh = "latest"
 "npm:@anthropic-ai/claude-code" = "latest"
 "npm:opencode-ai" = "latest"
 "npm:@earendil-works/pi-coding-agent" = "latest"
-"pipx:graphifyy" = "latest"
+"pypi:graphifyy" = "latest"

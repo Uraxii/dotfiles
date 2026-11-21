@@ -92,3 +92,17 @@ def test_platform_task_prints_override():
     out = subprocess.run([sys.executable, str(task)], capture_output=True, text=True,
                          env={"DOTFILES_PLATFORM": "nixos", "PATH": ""}, check=True)
     assert out.stdout.strip() == "nixos"
+
+
+def test_tasks_pin_the_config_python():
+    """Each task asks mise for the same python that config.toml installs."""
+    import re
+    import tomllib
+
+    mise_dir = Path(__file__).resolve().parent.parent / "mise"
+    want = tomllib.loads((mise_dir / "config.toml").read_text())["tools"]["python"]
+    for task in sorted((mise_dir / "tasks").iterdir()):
+        text = task.read_text()
+        assert text.startswith("#!/usr/bin/env python\n"), task.name
+        m = re.search(r'^#MISE tools=\{python="([^"]+)"\}$', text, re.MULTILINE)
+        assert m and m.group(1) == want, task.name

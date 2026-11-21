@@ -57,12 +57,21 @@ New Linux machine:
 # 1. install git, stow, and mise (https://mise.jdx.dev/installing-mise.html)
 git clone <this-repo> ~/dotfiles && cd ~/dotfiles
 ./setup.sh                            # links mise/ to ~/.config/mise/
-mise install                          # user tools, including python
-mise run system                       # system packages for this platform
+mise run setup                        # python, then tools, then system packages
 ```
 
-Termux: skip `mise install`. `mise run system` installs the user tools
-with `pkg`, because mise support on Android is limited.
+You do not need a system Python. Each task declares
+`#MISE tools={python="3.13"}`, so `mise run` installs Python before the
+task starts. For `pypi:` tools, `mise install` installs Python and uv first.
+
+Termux: mise support on Android is limited, so do not use mise there.
+Install Python with `pkg`, then run the task file directly. It installs
+the user tools with `pkg`:
+
+```bash
+pkg install -y python
+python ~/.config/mise/tasks/system
+```
 
 New Windows machine (PowerShell). There is no stow on Windows, so mise
 reads the repo directly through `MISE_CONFIG_DIR`:
@@ -72,8 +81,7 @@ winget install jdx.mise Git.Git
 git clone <this-repo> $HOME\dotfiles
 [Environment]::SetEnvironmentVariable("MISE_CONFIG_DIR", "$HOME\dotfiles\mise", "User")
 # open a new terminal, then:
-mise install
-mise run system
+mise run setup
 # put the tools on PATH in every shell: add this line to $PROFILE
 mise activate pwsh | Out-String | Invoke-Expression
 ```

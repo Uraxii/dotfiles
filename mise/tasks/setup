@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #MISE description="Full machine setup: mise tools, then system packages, then link dotfiles"
+#MISE tools={python="3.13"}
 import subprocess
 import sys
 from pathlib import Path
