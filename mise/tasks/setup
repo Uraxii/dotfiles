@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #MISE description="Full machine setup: mise tools, system packages, then link dotfiles (bootstrap.sh runs this)"
 #MISE tools={python="3.13"}
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -9,33 +8,49 @@ from pathlib import Path
 LIB = Path(__file__).resolve().parent.parent / "lib"
 REPO = LIB.parent.parent
 sys.path.insert(0, str(LIB))
-from dotplat import cli
+from dotplat import cli, detect
 
 args = cli.parse(sys.argv[1:], "Full machine setup.")
 ctx = cli.make_ctx(args)
 
 
-def run(argv: list[str]) -> None:
+def run(argv: list[str]) -> int:
+    """Run one command; return its exit code. A failure does not stop setup."""
     print(f"+ {' '.join(argv)}", flush=True)
-    if not ctx.dry_run:
-        subprocess.run(argv, check=True, cwd=REPO)
+    if ctx.dry_run:
+        return 0
+    try:
+        rc = subprocess.run(argv, check=False, cwd=REPO).returncode
+    except OSError as exc:
+        print(f"! {argv[0]}: {exc}")
+        return 1
+    if rc != 0:
+        print(f"! exit {rc}: {' '.join(argv)} (setup continues)")
+    return rc
 
 
 # 1. User tools. In the repo, mise reads mise/config.toml as a project
-#    config, so this works before stow links it. On Termux, python and node
-#    come from pkg (see platforms/termux.py), so mise skips them.
-if ctx.platform == "termux":
-    os.environ.setdefault("MISE_DISABLE_TOOLS", "python,node")
-run(["mise", "install"])
+#    config, so this works before stow links it. On Termux and NixOS,
+#    python and node come from the system, so mise skips them.
+#    If one tool fails, the system packages and stow still run.
+detect.use_system_runtimes(ctx.platform)
+failed = []
+if run(["mise", "install"]) != 0:
+    failed.append("mise install")
 
 # 2. System packages. This also installs stow.
-rc = cli.system(sys.argv[1:])
+if cli.system(sys.argv[1:]) != 0:
+    failed.append("system")
 
 # 3. Link the dotfiles. Windows has no stow: point mise at the repo instead,
 #    so the tools and tasks work from every directory in new terminals.
 if ctx.platform == "windows":
-    run(["setx", "MISE_CONFIG_DIR", str(REPO / "mise")])
+    link = run(["setx", "MISE_CONFIG_DIR", str(REPO / "mise")])
 else:
-    run(["bash", str(REPO / "setup.sh")])
+    link = run(["bash", str(REPO / "setup.sh")])
+if link != 0:
+    failed.append("link dotfiles")
 
-sys.exit(rc)
+if failed:
+    print(f"\nsetup: these parts failed: {', '.join(failed)}. Correct them, then run setup again.")
+sys.exit(1 if failed else 0)

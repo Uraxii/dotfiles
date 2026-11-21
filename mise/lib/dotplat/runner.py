@@ -102,7 +102,7 @@ def run_steps(ctx: Ctx, steps: list[Step]) -> int:
         print(f"- {step.name}", flush=True)
         try:
             step.action(ctx)
-        except (StepFailed, OSError) as exc:
+        except Exception as exc:  # noqa: BLE001 - one bad step must not stop the rest
             print(f"  ! {step.name} failed: {exc}")
             failed.append(step.name)
 

@@ -82,13 +82,22 @@ You do not need a system Python. Each task declares
 `#MISE tools={python="3.13"}`, so `mise run` installs Python before the
 task starts. For `pypi:` tools, `mise install` installs Python and uv first.
 
-Termux: `bootstrap.sh` installs mise, Python and Node with `pkg`
-(`mise.run` does not support Android). mise installs the other tools, as
-on every platform. Python and Node stay on the `pkg` builds, because mise's
-own builds of them are not known to run on Android: on Termux,
-`MISE_DISABLE_TOOLS=python,node` is set by `bootstrap.sh`, the `setup`
-task, and the fish, zsh and bash configs. If another tool fails on
-Termux, install it with `pkg` and add it to `MISE_DISABLE_TOOLS`.
+Termux and NixOS: mise's prebuilt Python and Node do not run there
+(Android's libc; no `/lib64/ld-linux` on NixOS). So `bootstrap.sh`
+installs mise, Python and Node with `pkg` (Termux) or from nixpkgs
+(NixOS), and mise skips Python and Node through
+`MISE_DISABLE_TOOLS=python,node`. `bootstrap.sh`, the `setup` task, and
+the fish, zsh and bash configs set it (`SYSTEM_RUNTIMES` in
+`mise/lib/dotplat/detect.py`). On NixOS, the other prebuilt mise tools
+need nix-ld: set `programs.nix-ld.enable = true;` in configuration.nix.
+If a tool still fails, install it with the system package manager and add
+it to `MISE_DISABLE_TOOLS`.
+
+Enterprise Linux (RHEL, CentOS, Rocky, Alma) is not supported: its base
+repos do not have stow, fish or the sway stack.
+
+If `mise install` fails for one tool, `setup` still installs the system
+packages and links the dotfiles, then exits 1 and names the failed part.
 
 Windows: to put the tools on PATH in every shell, add this line to
 `$PROFILE`:

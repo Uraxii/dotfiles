@@ -19,8 +19,9 @@ fish_add_path ~/.local/bin ~/.npm-global/bin ~/.opencode/bin ~/dev/flutter/bin \
 
 # mise: puts the [tools] of ~/.config/mise/config.toml on PATH (starship,
 # zoxide, nvim, ...). Must run before the prompt + nav block below.
-# Termux: python and node come from pkg, not mise (see mise/lib/dotplat/platforms/termux.py).
-if set -q TERMUX_VERSION
+# Termux and NixOS: python and node come from the system, not mise
+# (see SYSTEM_RUNTIMES in mise/lib/dotplat/detect.py).
+if set -q TERMUX_VERSION; or test -e /etc/NIXOS
     set -gx MISE_DISABLE_TOOLS python,node
 end
 if type -q mise

@@ -1,4 +1,4 @@
-"""Fedora, RHEL, CentOS, Rocky: dnf, plus upstream installers.
+"""Fedora: dnf, plus upstream installers.
 
 Bazzite is NOT here; it has its own module (atomic image, no dnf layering).
 """

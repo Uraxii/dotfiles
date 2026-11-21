@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import shutil
 import subprocess
 import tempfile
@@ -83,7 +84,9 @@ def nix_profile(names: list[str], group: str = "core", unfree: bool = False) -> 
     """NixOS: `nix profile install nixpkgs#<name>` for each missing name."""
     def action(ctx: Ctx) -> None:
         have = _nix_installed() if has_bin("nix") else set()
-        missing = [n for n in names if n not in have]
+        # Profile elements are named by the last attribute component:
+        # nerd-fonts._0xproto is listed as _0xproto.
+        missing = [n for n in names if n.rsplit(".", 1)[-1] not in have]
         if not missing:
             print("  already installed")
             return
@@ -145,8 +148,11 @@ def nerd_font(group: str = "desktop") -> Step:
 
 
 def godots_linux(group: str = "desktop") -> Step:
-    """Godots (Godot version manager) from the upstream release zip."""
+    """Godots (Godot version manager) from the upstream release zip (x86_64 only)."""
     def action(ctx: Ctx) -> None:
+        if platform.machine() not in ("x86_64", "AMD64"):
+            ctx.note(f"godots: the upstream release is x86_64 only; this CPU is {platform.machine()}")
+            return
         app_dir = ctx.home / ".local" / "share" / "godots"
         link = ctx.home / ".local" / "bin" / "godots"
         with tempfile.TemporaryDirectory() as tmp:

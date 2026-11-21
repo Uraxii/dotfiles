@@ -25,7 +25,7 @@ from dotplat.runner import Ctx, run_steps
         ('ID=fedora\n', "fedora"),
         ('ID=bazzite\nID_LIKE="fedora"\n', "bazzite"),
         ('ID=nixos\n', "nixos"),
-        ('ID=somethingnew\nID_LIKE="rhel fedora"\n', "fedora"),
+        ('ID=somethingnew\nID_LIKE="fedora"\n', "fedora"),
     ],
 )
 def test_detect_from_os_release(tmp_path, os_release, expected):
@@ -41,9 +41,14 @@ def test_detect_windows_and_termux(tmp_path):
                          os_release=missing) == "termux"
 
 
-def test_detect_unknown_distro(tmp_path):
+@pytest.mark.parametrize("os_release", [
+    "ID=gentoo\n",
+    'ID=rocky\nID_LIKE="rhel centos fedora"\n',
+    'ID=almalinux\nID_LIKE="rhel centos fedora"\n',
+])
+def test_detect_unsupported_distro(tmp_path, os_release):
     f = tmp_path / "os-release"
-    f.write_text("ID=gentoo\n")
+    f.write_text(os_release)
     with pytest.raises(detect.UnsupportedPlatform):
         detect.detect(environ={}, sys_platform="linux", os_release=f)
 
@@ -106,3 +111,76 @@ def test_tasks_pin_the_config_python():
         assert text.startswith("#!/usr/bin/env python\n"), task.name
         m = re.search(r'^#MISE tools=\{python="([^"]+)"\}$', text, re.MULTILINE)
         assert m and m.group(1) == want, task.name
+
+
+def test_system_runtimes_only_on_termux_and_nixos():
+    for platform in detect.PLATFORMS:
+        env: dict[str, str] = {}
+        detect.use_system_runtimes(platform, env)
+        if platform in ("termux", "nixos"):
+            assert env == {"MISE_DISABLE_TOOLS": "python,node"}
+        else:
+            assert env == {}
+    env = {"MISE_DISABLE_TOOLS": "python,node,gh"}
+    detect.use_system_runtimes("termux", env)
+    assert env["MISE_DISABLE_TOOLS"] == "python,node,gh"  # a user value wins
+
+
+def test_nix_matches_nested_attr_names(monkeypatch, capsys):
+    from dotplat import common
+
+    monkeypatch.setattr(common, "has_bin", lambda *n: True)
+    monkeypatch.setattr(common, "_nix_installed", lambda: {"_0xproto", "sway"})
+    step = common.nix_profile(["sway", "nerd-fonts._0xproto"])
+    step.action(Ctx(platform="nixos", dry_run=True))
+    assert "already installed" in capsys.readouterr().out
+
+
+def test_unexpected_exception_fails_only_that_step(capsys):
+    from dotplat.runner import Step
+
+    ran = []
+
+    def boom(ctx):
+        import zipfile
+        raise zipfile.BadZipFile("truncated download")
+
+    steps = [Step("bad", boom), Step("good", lambda ctx: ran.append("good"))]
+    assert run_steps(Ctx(platform="arch"), steps) == 1
+    assert ran == ["good"]
+    assert "Failed steps: bad" in capsys.readouterr().out
+
+
+def test_godots_is_a_note_off_x86_64(monkeypatch):
+    from dotplat import common
+
+    monkeypatch.setattr(common.platform, "machine", lambda: "aarch64")
+    ctx = Ctx(platform="ubuntu", dry_run=True)
+    common.godots_linux().action(ctx)
+    assert any("x86_64 only" in n for n in ctx.notes)
+
+
+def test_setup_continues_when_mise_install_fails(tmp_path):
+    """A failing `mise install` must not stop the system and stow steps."""
+    task = Path(__file__).resolve().parent.parent / "mise" / "tasks" / "setup"
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    for name in ("mise", "bash"):
+        script = fake / name
+        script.write_text(f"#!/bin/sh\necho ran-{name}\nexit {1 if name == 'mise' else 0}\n")
+        script.chmod(0o755)
+    env = {"PATH": str(fake), "DOTFILES_PLATFORM": "arch", "DOTFILES_PROFILE": "server",
+           "DOTFILES_SHELL": "none", "HOME": str(tmp_path)}
+    # The system step would run real package managers, so stub its steps out.
+    code = (
+        "import sys, runpy; sys.path.insert(0, {!r});"
+        "import dotplat.platforms as p; p.steps_for = lambda name: [];"
+        "import dotplat.cli as c; c.steps_for = p.steps_for;"
+        "sys.argv = [{!r}]; runpy.run_path({!r}, run_name='__main__')"
+    ).format(str(task.parent.parent / "lib"), str(task), str(task))
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         env=env, check=False)
+    assert "ran-mise" in out.stdout
+    assert "ran-bash" in out.stdout  # stow still ran
+    assert "these parts failed: mise install" in out.stdout
+    assert out.returncode == 1
