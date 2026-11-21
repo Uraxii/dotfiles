@@ -23,15 +23,77 @@ script's own mode: it dry-runs stow, reads the conflicts, and `rm -f`s every
 plain live file that blocks a link, so the repo wins. Run `--force-repo -n`
 first and read the list.
 
+### Packages (mise)
+
+[mise](https://mise.jdx.dev) installs the packages. `mise/` stows to
+`~/.config/mise/`. It has two parts:
+
+- `mise/config.toml` `[tools]`: user CLI tools (neovim, ripgrep, starship,
+  node, python, the AI CLIs, ...). No root. Same on every platform.
+- `mise run system`: system packages (sway stack, compilers, native libs,
+  GUI apps). The rules are different for each platform.
+
+`system` is a switchboard. It detects the platform, exports it in
+`DOTFILES_PLATFORM`, and runs that platform's rules from
+`mise/lib/dotplat/platforms/<platform>.py`. Platforms: `arch`, `nixos`,
+`ubuntu`, `fedora`, `bazzite`, `termux`, `windows`. The tasks are Python
+file tasks in `mise/tasks/`, so the same task runs on Linux and Windows.
+
+```bash
+mise run platform                     # print the detected platform
+mise run system --dry-run             # print the commands, change nothing
+mise run system --profile server      # core only: no desktop, fonts, GUI apps
+DOTFILES_PLATFORM=fedora mise run system --dry-run   # test another platform's rules
+mise run setup                        # mise install + system + ./setup.sh
+```
+
+If mise does not pass `--dry-run` through, use `DOTFILES_DRY_RUN=1` and
+`DOTFILES_PROFILE=server`. `DOTFILES_SHELL` sets the login shell
+(default `fish`, `none` to skip).
+
+New Linux machine:
+
+```bash
+# 1. install git, stow, and mise (https://mise.jdx.dev/installing-mise.html)
+git clone <this-repo> ~/dotfiles && cd ~/dotfiles
+./setup.sh                            # links mise/ to ~/.config/mise/
+mise install                          # user tools, including python
+mise run system                       # system packages for this platform
+```
+
+Termux: skip `mise install`. `mise run system` installs the user tools
+with `pkg`, because mise support on Android is limited.
+
+New Windows machine (PowerShell). There is no stow on Windows, so mise
+reads the repo directly through `MISE_CONFIG_DIR`:
+
+```powershell
+winget install jdx.mise Git.Git
+git clone <this-repo> $HOME\dotfiles
+[Environment]::SetEnvironmentVariable("MISE_CONFIG_DIR", "$HOME\dotfiles\mise", "User")
+# open a new terminal, then:
+mise install
+mise run system
+# put the tools on PATH in every shell: add this line to $PROFILE
+mise activate pwsh | Out-String | Invoke-Expression
+```
+
+To add a platform: add its id to `PLATFORMS` (and `ALIASES`) in
+`mise/lib/dotplat/detect.py`, then add `platforms/<id>.py` with a
+`steps()` function.
+
 ### Helper scripts (uv)
 
-`setup.py` (stow + KDE-keybind TUI) and `install.py` (cross-distro package installer) run in a `uv`-managed virtualenv. `uv.lock` is committed; `.venv/` is generated.
+`setup.py` (stow + KDE-keybind TUI) runs in a `uv`-managed virtualenv.
+`uv.lock` is committed; `.venv/` is generated.
+
+`install.py` with `deps.toml` is the old package installer. mise replaces
+it. It stays until the mise tasks are tested on each machine.
 
 ```bash
 uv sync                         # one-time: build .venv from uv.lock
 uv run setup.py                 # stow / KDE-keybind TUI (needs textual)
-uv run install.py               # install packages declared in deps.toml
-uv run install.py -n            # dry run
+uv run install.py -n            # old installer, dry run
 uv run pytest                   # test suite
 ```
 
@@ -65,6 +127,7 @@ AI-harness config (Claude Code agents/skills, Codex, Hermes, opencode, Copilot) 
 ├── setup.sh                      # IGNORED. Two stow passes, plus --force-repo mode
 ├── bash/bashrc                   # → ~/.config/bash/bashrc   (loaded via ~/.bashrc stub)
 ├── ghostty/                      # → ~/.config/ghostty/
+├── mise/                         # → ~/.config/mise/   (tools + per-platform system tasks)
 ├── networkmanager-dmenu/         # → ~/.config/networkmanager-dmenu/
 ├── nvim/                         # → ~/.config/nvim/   (Kickstart-based)
 ├── omp/                          # → ~/.config/omp/    (inactive, kept for reference)

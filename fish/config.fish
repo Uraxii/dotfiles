@@ -17,6 +17,12 @@ fish_add_path ~/.local/bin ~/.npm-global/bin ~/.opencode/bin ~/dev/flutter/bin \
     ~/Android/Sdk/platform-tools ~/Android/Sdk/emulator \
     ~/Android/Sdk/cmdline-tools/latest/bin
 
+# mise: puts the [tools] of ~/.config/mise/config.toml on PATH (starship,
+# zoxide, nvim, ...). Must run before the prompt + nav block below.
+if type -q mise
+    mise activate fish | source
+end
+
 # ---------------------------------------------------------------------------
 # Prompt + nav (starship, zoxide)
 # ---------------------------------------------------------------------------

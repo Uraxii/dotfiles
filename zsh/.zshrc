@@ -31,6 +31,10 @@ if [ ! -f "$HOME/.config/starship.toml" ] && [ -f "$HOME/dotfiles/starship.toml"
     cp "$HOME/dotfiles/starship.toml" "$HOME/.config/starship.toml"
 fi
 
+# mise: puts the [tools] of ~/.config/mise/config.toml on PATH (starship,
+# zoxide, nvim, ...). Must run before starship and zoxide init.
+command -v mise >/dev/null && eval "$(mise activate zsh)"
+
 eval "$(starship init zsh)"
 
 ## Oh My Posh

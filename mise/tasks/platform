@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+#MISE description="Print the detected platform (the DOTFILES_PLATFORM value)"
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+from dotplat import detect
+
+print(detect.current())

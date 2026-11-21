@@ -1,4 +1,7 @@
 # Bash config (deployed to ~/.config/bash/bashrc via ~/.bashrc stub).
 
+# mise: puts the [tools] of ~/.config/mise/config.toml on PATH.
+command -v mise >/dev/null && eval "$(mise activate bash)"
+
 [ -r "${XDG_CONFIG_HOME:-$HOME/.config}/bash/bashrc.local" ] && \
     . "${XDG_CONFIG_HOME:-$HOME/.config}/bash/bashrc.local"
