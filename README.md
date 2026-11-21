@@ -48,6 +48,8 @@ first and read the list.
 - `mise run system`: system packages (sway stack, compilers, native libs,
   GUI apps). The rules are different for each platform.
 
+`arch` covers CachyOS, Manjaro, EndeavourOS and Garuda.
+
 `system` is a switchboard. It detects the platform, exports it in
 `DOTFILES_PLATFORM`, and runs that platform's rules from
 `mise/lib/dotplat/platforms/<platform>.py`. Platforms: `arch`, `nixos`,

@@ -1,4 +1,4 @@
-"""Arch Linux and derivatives (Manjaro, EndeavourOS, Garuda): pacman + AUR."""
+"""Arch Linux and derivatives (CachyOS, Manjaro, EndeavourOS, Garuda): pacman + AUR."""
 
 from __future__ import annotations
 

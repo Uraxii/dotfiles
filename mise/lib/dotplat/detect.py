@@ -19,6 +19,7 @@ PLATFORMS = ("arch", "nixos", "ubuntu", "fedora", "bazzite", "termux", "windows"
 # then each ID_LIKE word, so a derivative maps to its parent family.
 ALIASES: dict[str, str] = {
     "arch": "arch", "manjaro": "arch", "endeavouros": "arch", "garuda": "arch",
+    "cachyos": "arch",
     "nixos": "nixos",
     "ubuntu": "ubuntu", "debian": "ubuntu", "linuxmint": "ubuntu", "pop": "ubuntu",
     "fedora": "fedora",

@@ -20,6 +20,8 @@ from dotplat.runner import Ctx, run_steps
     [
         ('ID=arch\n', "arch"),
         ('ID=endeavouros\nID_LIKE=arch\n', "arch"),
+        ('NAME="CachyOS Linux"\nID=cachyos\nID_LIKE=arch\n', "arch"),
+        ('ID=cachyos\n', "arch"),
         ('ID=ubuntu\nID_LIKE=debian\n', "ubuntu"),
         ('ID=linuxmint\nID_LIKE="ubuntu debian"\n', "ubuntu"),
         ('ID=fedora\n', "fedora"),
