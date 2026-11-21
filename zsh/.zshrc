@@ -33,6 +33,8 @@ fi
 
 # mise: puts the [tools] of ~/.config/mise/config.toml on PATH (starship,
 # zoxide, nvim, ...). Must run before starship and zoxide init.
+# Termux: python and node come from pkg, not mise.
+[ -n "${TERMUX_VERSION:-}" ] && export MISE_DISABLE_TOOLS=python,node
 command -v mise >/dev/null && eval "$(mise activate zsh)"
 
 eval "$(starship init zsh)"

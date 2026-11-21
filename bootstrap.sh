@@ -11,15 +11,15 @@
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 
-# Termux: mise support on Android is limited. Use the pkg Python instead;
-# the setup task installs the user tools with pkg on this platform.
-if [ -n "${TERMUX_VERSION:-}" ]; then
-  command -v python >/dev/null || pkg install -y python
-  exec python mise/tasks/setup "$@"
-fi
-
 export PATH="$HOME/.local/bin:$PATH"
-if ! command -v mise >/dev/null; then
+if [ -n "${TERMUX_VERSION:-}" ]; then
+  # Termux: the mise.run installer does not support Android; Termux ships
+  # its own mise build. Python and Node also come from pkg, because mise's
+  # own builds of them are not known to run on Android. The shell configs
+  # set the same MISE_DISABLE_TOOLS on Termux.
+  pkg install -y mise python nodejs
+  export MISE_DISABLE_TOOLS=python,node
+elif ! command -v mise >/dev/null; then
   if [ -e /etc/NIXOS ]; then
     # Generic Linux binaries do not run on NixOS; use the nixpkgs build.
     nix --extra-experimental-features 'nix-command flakes' profile install nixpkgs#mise

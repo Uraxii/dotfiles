@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #MISE description="Full machine setup: mise tools, system packages, then link dotfiles (bootstrap.sh runs this)"
 #MISE tools={python="3.13"}
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -21,10 +22,11 @@ def run(argv: list[str]) -> None:
 
 
 # 1. User tools. In the repo, mise reads mise/config.toml as a project
-#    config, so this works before stow links it. Termux installs the user
-#    tools with pkg instead (see platforms/termux.py).
-if ctx.platform != "termux":
-    run(["mise", "install"])
+#    config, so this works before stow links it. On Termux, python and node
+#    come from pkg (see platforms/termux.py), so mise skips them.
+if ctx.platform == "termux":
+    os.environ.setdefault("MISE_DISABLE_TOOLS", "python,node")
+run(["mise", "install"])
 
 # 2. System packages. This also installs stow.
 rc = cli.system(sys.argv[1:])

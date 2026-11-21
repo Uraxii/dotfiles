@@ -82,9 +82,13 @@ You do not need a system Python. Each task declares
 `#MISE tools={python="3.13"}`, so `mise run` installs Python before the
 task starts. For `pypi:` tools, `mise install` installs Python and uv first.
 
-Termux: mise support on Android is limited, so `bootstrap.sh` does not use
-mise there. It installs Python with `pkg` and runs the task file directly.
-The task installs the user tools with `pkg`.
+Termux: `bootstrap.sh` installs mise, Python and Node with `pkg`
+(`mise.run` does not support Android). mise installs the other tools, as
+on every platform. Python and Node stay on the `pkg` builds, because mise's
+own builds of them are not known to run on Android: on Termux,
+`MISE_DISABLE_TOOLS=python,node` is set by `bootstrap.sh`, the `setup`
+task, and the fish, zsh and bash configs. If another tool fails on
+Termux, install it with `pkg` and add it to `MISE_DISABLE_TOOLS`.
 
 Windows: to put the tools on PATH in every shell, add this line to
 `$PROFILE`:
