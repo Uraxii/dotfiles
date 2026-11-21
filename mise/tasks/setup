@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#MISE description="Full machine setup: mise tools, then system packages, then link dotfiles"
+#MISE description="Full machine setup: mise tools, system packages, then link dotfiles (bootstrap.sh runs this)"
 #MISE tools={python="3.13"}
 import subprocess
 import sys
@@ -17,17 +17,22 @@ ctx = cli.make_ctx(args)
 def run(argv: list[str]) -> None:
     print(f"+ {' '.join(argv)}", flush=True)
     if not ctx.dry_run:
-        subprocess.run(argv, check=True)
+        subprocess.run(argv, check=True, cwd=REPO)
 
 
-# Termux installs the user tools with pkg instead (see platforms/termux.py).
+# 1. User tools. In the repo, mise reads mise/config.toml as a project
+#    config, so this works before stow links it. Termux installs the user
+#    tools with pkg instead (see platforms/termux.py).
 if ctx.platform != "termux":
     run(["mise", "install"])
 
+# 2. System packages. This also installs stow.
 rc = cli.system(sys.argv[1:])
 
+# 3. Link the dotfiles. Windows has no stow: point mise at the repo instead,
+#    so the tools and tasks work from every directory in new terminals.
 if ctx.platform == "windows":
-    print("Windows: no stow. mise reads this repo through MISE_CONFIG_DIR.")
+    run(["setx", "MISE_CONFIG_DIR", str(REPO / "mise")])
 else:
     run(["bash", str(REPO / "setup.sh")])
 
